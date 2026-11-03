@@ -6,7 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Times are **UTC, whole hours**, written `YYYYMMDDHH` (e.g. `2026110112`).
+        If you came from the site's **Request on GitHub** button, the times below are already filled in. Just press **Create**.
+
+        They're in **UTC** (`YYYYMMDDHH`), which is what the builder reads: `2026110112` = 12Z Nov 1 = 7 AM EST.
         Window length 3–72 h; it must end at least ~70 minutes ago.
         REFS is archived from 13 Aug 2026. The case builds in about 10 minutes and a link is posted here.
   - type: input
