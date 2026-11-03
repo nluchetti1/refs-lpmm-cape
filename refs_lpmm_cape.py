@@ -2,24 +2,25 @@
 REFS QPF — Cape Canaveral / Space Coast
 =======================================
 
-Builds a static GitHub Pages site from operational REFS ensemble products on
-NOMADS, plus a running verification against MRMS.
+Static GitHub Pages site from operational REFS ensemble products, running
+verification against MRMS, sea-breeze flow-regime tagging, and event look-backs
+(see lookback.py).
 
-Inputs (all .../refs/prod/refs.YYYYMMDD/CC/ensprod/refs.tCCz.<type>.fFF.conus.grib2)
-  lpmm  1-h localized probability-matched mean QPF      (latest + 2 time-lagged runs)
-  avrg  1-h PMM/mean blend QPF                           (latest run)
-  eas   6-h ensemble-agreement-scale exceedance probs    (latest run, f06..f48)
-  ffri  6-h P(>FFG) and P(>N-yr recurrence interval)      (latest run, f06..f48)
-  MRMS  MultiSensor_QPE_48H_Pass2 (verification)          https://mrms.ncep.noaa.gov/2D/
+Inputs (.../refs.YYYYMMDD/CC/ensprod/refs.tCCz.<type>.fFF.conus.grib2)
+  lpmm  1-h localized PMM QPF                 latest + 2 time-lagged runs
+  avrg  1-h PMM/mean blend QPF                latest run
+  eas   6-h exceedance probabilities          latest run
+  ffri  6-h P(>FFG), P(>N-yr ARI)             latest run
+  mean  UGRD/VGRD 10 m, 925, 850, 700 mb      flow regime (byte-range via .idx)
+  MRMS  MultiSensor_QPE_<N>H_Pass2            verification
 
-Inventories confirmed 2026-11-03 against NOMADS listings and the NCO product
-inventory pages. NCEP MRMS keeps ~25 h of files, so each run's 48-h forecast is
-archived to ./archive and scored on the first run after its window closes.
+Sources (confirmed 2026-11-03)
+  REFS  NOMADS refs/prod (~2 days), then AWS noaa-rrfs-ops-pds (since 2026-08-13)
+  MRMS  mrms.ncep.noaa.gov/2D (~25 h), then AWS noaa-mrms-pds (long-term)
 
-Outputs (./site)
-  trend_48h.png  thresholds_48h.png  loop_06h_NN.png  eas_<thr>_NN.png
-  lpmm_vs_avrg.png  ffri_48h.png  pad_timeline.png  verify.png  verify_map.png
-  meta.json  verify.json  index.html
+Persistent state lives in ./data, which the workflow checks out from and pushes
+to the `data` branch: archive/ (forecasts, scores, regime log), cases/
+(look-backs), site_cache/ (last published site, used by the look-back workflow).
 """
 import matplotlib
 matplotlib.use("Agg")
@@ -27,12 +28,14 @@ matplotlib.use("Agg")
 import glob
 import gzip
 import json
+import math
 import os
 import shutil
 import sys
 import tempfile
 import time
 import traceback
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 
@@ -51,40 +54,64 @@ from urllib3.util.retry import Retry
 # =============================================================================
 # 1. CONFIG
 # =============================================================================
-BASE_URL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/refs/prod"
-FILE_TMPL = "{base}/refs.{date}/{hh}/ensprod/refs.t{hh}z.{ptype}.f{fhr:02d}.conus.grib2"
-MRMS_TMPL = ("https://mrms.ncep.noaa.gov/2D/MultiSensor_QPE_48H_Pass2/"
-             "MRMS_MultiSensor_QPE_48H_Pass2_00.00_{t:%Y%m%d-%H}0000.grib2.gz")
+NOMADS_REFS = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/refs/prod"
+AWS_REFS = "https://noaa-rrfs-ops-pds.s3.amazonaws.com"
+REFS_PATH = "refs.{date}/{hh}/ensprod/refs.t{hh}z.{ptype}.f{fhr:02d}.conus.grib2"
+MRMS_NAME = "MRMS_MultiSensor_QPE_{h:02d}H_Pass2_00.00_{t:%Y%m%d-%H}0000.grib2.gz"
+MRMS_NCEP = "https://mrms.ncep.noaa.gov/2D/MultiSensor_QPE_{h:02d}H_Pass2/" + MRMS_NAME
+MRMS_AWS = "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MultiSensor_QPE_{h:02d}H_Pass2_00.00/{t:%Y%m%d}/" + MRMS_NAME
+RAOB_URL = "https://mesonet.agron.iastate.edu/json/raob.py?station={stn}&ts={t:%Y-%m-%dT%H:00:00Z}"
 
 OUT_DIR = "site"
-ARCHIVE_DIR = "archive"
+DATA_DIR = "data"
+ARCHIVE_DIR = os.path.join(DATA_DIR, "archive")
 FCST_DIR = os.path.join(ARCHIVE_DIR, "fcst")
 SCORES_FILE = os.path.join(ARCHIVE_DIR, "scores.json")
 VERIFY_LATEST = os.path.join(ARCHIVE_DIR, "verify_latest.npz")
+REGIME_LOG = os.path.join(ARCHIVE_DIR, "regime_log.json")
+CASES_DIR = os.path.join(DATA_DIR, "cases")
+SITE_CACHE = os.path.join(DATA_DIR, "site_cache")
+LEGACY_ARCHIVE = "archive"          # v2 kept the archive on main; migrated once
 INDEX_SRC = "index.html"
 
-EXTENT = [-83.0, -79.0, 26.5, 30.5]       # [W, E, S, N]
+EXTENT = [-83.0, -79.0, 26.5, 30.5]
 CROP_PAD = 0.5
 
 ACCUM_HOURS = 48
 N_RUNS = 3
 RUN_SPACING = 6
 MAX_FHR = 60
-WIN = 6                                   # h, loop / EAS / FFRI window
-THRESHOLDS = [1.0, 2.0, 3.0, 5.0]         # in, 48-h LPMM paintball
-EAS_THRESHOLDS = [0.25, 0.5, 1.0, 2.0]    # in, 6-h EAS panels (file also has 0.01, 3)
-FFRI_ARI_YEARS = [2, 10]                  # recurrence intervals to map
-VERIFY_THRESHOLDS = [0.5, 1.0, 2.0]       # in, 48-h ETS / frequency bias
+WIN = 6
+THRESHOLDS = [1.0, 2.0, 3.0, 5.0]
+EAS_THRESHOLDS = [0.25, 0.5, 1.0, 2.0]
+FFRI_ARI_YEARS = [2, 10]
+VERIFY_THRESHOLDS = [0.5, 1.0, 2.0]
 
 EXPECTED_LATENCY = timedelta(hours=3, minutes=15)
 POLL_INTERVAL_S = 300
 MAX_POLLS = 12
-MRMS_LATENCY = timedelta(minutes=70)      # Pass2 posted ~57 min after the hour
-MRMS_RETENTION = timedelta(hours=23)      # NCEP server keeps ~25 h
+MRMS_LATENCY = timedelta(minutes=70)
+MRMS_NCEP_RETENTION = timedelta(hours=23)
+FCST_MAX_AGE = timedelta(days=30)   # give up scoring after this
+
+# ---- flow regime (simple quadrant scheme; edit to match squadron practice)
+REGIME_POINT = (28.4676, -80.5669)  # XMR
+REGIME_RADIUS_KM = 25.0
+REGIME_LEVELS = [("10 m above ground", 1013.0), ("925 mb", 925.0), ("850 mb", 850.0), ("700 mb", 700.0)]
+LIGHT_KT = 5.0                      # layer-mean speed below this = light/variable
+MIXED_CONSISTENCY = 0.5             # |vector mean| / mean speed below this = mixed
+RAOB_STATIONS = ["KXMR", "XMR"]     # unverified IEM IDs; first that returns data wins
+RAOB_HOURS = [10, 12, 22, 0]        # tried per day inside the window
+RAOB_BACKFILL_PER_RUN = 4
+REGIME_MIN_N = 5                    # runs needed before showing a by-regime comparison
+
+AUTO_DAILY_CASE = True              # build a 24-h look-back on each 12Z cycle
+AUTO_CASES_KEPT = 14
 
 MAX_WORKERS = 4
 NBHD_KM = 10.0
 MM_TO_IN = 0.0393701
+MS_TO_KT = 1.94384
 
 SITES = {
     "LC-39A":             (28.6082, -80.6041, "*"),
@@ -93,6 +120,7 @@ SITES = {
     "SLF (KTTS)":         (28.6150, -80.6945, "^"),
     "Patrick (KCOF)":     (28.2349, -80.6101, "^"),
     "Melbourne (KMLB)":   (28.1028, -80.6453, "o"),
+    "Palm Bay":           (28.0345, -80.5887, "o"),
     "Orlando (KMCO)":     (28.4294, -81.3089, "o"),
     "Daytona (KDAB)":     (29.1799, -81.0581, "o"),
 }
@@ -142,16 +170,21 @@ def make_session():
     retry = Retry(total=4, backoff_factor=2, status_forcelist=(429, 500, 502, 503, 504),
                   allowed_methods=("GET", "HEAD"))
     s.mount("https://", HTTPAdapter(max_retries=retry, pool_maxsize=MAX_WORKERS + 2))
-    s.headers["User-Agent"] = "refs-lpmm-cape/2.0 (GitHub Actions)"
+    s.headers["User-Agent"] = "refs-qpf-cape/3.0 (GitHub Actions)"
     return s
 
 
 SESSION = make_session()
 
 
-def url_for(init, ptype, fhr):
-    return FILE_TMPL.format(base=BASE_URL, date=init.strftime("%Y%m%d"),
-                            hh=init.strftime("%H"), ptype=ptype, fhr=fhr)
+def utcnow():
+    return datetime.now(timezone.utc)
+
+
+def refs_urls(init, ptype, fhr):
+    p = REFS_PATH.format(date=init.strftime("%Y%m%d"), hh=init.strftime("%H"), ptype=ptype, fhr=fhr)
+    urls = [f"{NOMADS_REFS}/{p}", f"{AWS_REFS}/{p}"]
+    return urls if utcnow() - init < timedelta(hours=40) else urls[::-1]
 
 
 def exists(url):
@@ -161,14 +194,64 @@ def exists(url):
         return False
 
 
-def download(url, suffix=".grib2", gunzip=False):
-    r = SESSION.get(url, timeout=90)
-    if r.status_code != 200:
-        raise FileNotFoundError(f"{r.status_code} {url}")
+def _tmp(suffix=".grib2"):
     fd, path = tempfile.mkstemp(suffix=suffix)
-    with os.fdopen(fd, "wb") as f:
-        f.write(gzip.decompress(r.content) if gunzip else r.content)
+    os.close(fd)
     return path
+
+
+def download_any(urls, gunzip=False):
+    """First URL that returns 200 wins. Raises FileNotFoundError listing all attempts."""
+    errs = []
+    for url in urls:
+        try:
+            r = SESSION.get(url, timeout=120)
+        except requests.RequestException as e:
+            errs.append(f"{e.__class__.__name__} {url}")
+            continue
+        if r.status_code != 200:
+            errs.append(f"{r.status_code} {url}")
+            continue
+        path = _tmp()
+        with open(path, "wb") as f:
+            f.write(gzip.decompress(r.content) if gunzip else r.content)
+        return path
+    raise FileNotFoundError("; ".join(errs))
+
+
+def download_subset(urls, keep):
+    """Byte-range download of the GRIB records whose .idx line satisfies keep(line)."""
+    errs = []
+    for url in urls:
+        try:
+            r = SESSION.get(url + ".idx", timeout=30)
+            if r.status_code != 200:
+                errs.append(f"{r.status_code} {url}.idx")
+                continue
+            lines = [l for l in r.text.strip().splitlines() if l.count(":") >= 5]
+            offs = [int(l.split(":")[1]) for l in lines]
+            spans = []
+            for k, l in enumerate(lines):
+                if keep(l):
+                    end = offs[k + 1] - 1 if k + 1 < len(offs) else None
+                    if spans and spans[-1][1] is not None and spans[-1][1] + 1 == offs[k]:
+                        spans[-1][1] = end
+                    else:
+                        spans.append([offs[k], end])
+            if not spans:
+                errs.append(f"no matching records in {url}.idx")
+                continue
+            path = _tmp()
+            with open(path, "wb") as f:
+                for a, b in spans:
+                    rr = SESSION.get(url, headers={"Range": f"bytes={a}-{'' if b is None else b}"}, timeout=120)
+                    if rr.status_code not in (200, 206):
+                        raise IOError(f"{rr.status_code} range {a}-{b} {url}")
+                    f.write(rr.content)
+            return path
+        except Exception as e:
+            errs.append(f"{e.__class__.__name__}: {e} {url}")
+    raise FileNotFoundError("; ".join(errs))
 
 
 def cycle_floor(t):
@@ -177,10 +260,10 @@ def cycle_floor(t):
 
 def find_latest_cycle():
     for attempt in range(1, MAX_POLLS + 1):
-        now = datetime.now(timezone.utc)
+        now = utcnow()
         expected = cycle_floor(now - EXPECTED_LATENCY)
         for c in [cycle_floor(now) - timedelta(hours=RUN_SPACING * k) for k in range(5)]:
-            if exists(url_for(c, "lpmm", ACCUM_HOURS)):
+            if any(exists(u) for u in refs_urls(c, "lpmm", ACCUM_HOURS)):
                 if c >= expected or attempt == MAX_POLLS:
                     return c
                 break
@@ -192,6 +275,7 @@ def find_latest_cycle():
 # 4. GRIB
 # =============================================================================
 _GRID = {}
+_CROPS = {}
 _LOGGED = set()
 
 
@@ -218,7 +302,7 @@ def _is_apcp(m):
 
 
 def _log_inventory(tag, msgs):
-    key = tag.split()[0]          # once per product type
+    key = tag.split()[0]
     if key in _LOGGED:
         return
     _LOGGED.add(key)
@@ -232,35 +316,47 @@ def _log_inventory(tag, msgs):
     print(f"[inventory {tag}] " + "; ".join(parts))
 
 
-def _set_grid(msg):
+def make_crop(msg, extent=None, pad=CROP_PAD):
+    """Crop description for msg's grid: row/col slices plus cropped lats/lons (lon in -180..180)."""
+    w, e, s, n = extent or EXTENT
+    key = (msg["Ni"], msg["Nj"], str(msg["gridType"]), round(float(msg["latitudeOfFirstGridPointInDegrees"]), 3),
+           w, e, s, n)
+    if key in _CROPS:
+        return _CROPS[key]
     lats, lons = msg.latlons()
     lons = np.where(lons > 180, lons - 360, lons)
-    w, e, s, n = EXTENT
-    inside = ((lats >= s - CROP_PAD) & (lats <= n + CROP_PAD) &
-              (lons >= w - CROP_PAD) & (lons <= e + CROP_PAD))
+    inside = (lats >= s - pad) & (lats <= n + pad) & (lons >= w - pad) & (lons <= e + pad)
     rows = np.where(inside.any(axis=1))[0]
     cols = np.where(inside.any(axis=0))[0]
     rs, cs = slice(rows.min(), rows.max() + 1), slice(cols.min(), cols.max() + 1)
-    _GRID.update(full=lats.shape, rows=rs, cols=cs, lats=lats[rs, cs], lons=lons[rs, cs])
-    print(f"[grid] full {lats.shape} -> cropped {_GRID['lats'].shape}")
+    crop = dict(full=lats.shape, rows=rs, cols=cs, lats=lats[rs, cs], lons=lons[rs, cs])
+    _CROPS[key] = crop
+    return crop
+
+
+def _set_grid(msg):
+    _GRID.update(make_crop(msg))
+    print(f"[grid] REFS full {_GRID['full']} -> cropped {_GRID['lats'].shape}")
+
+
+def crop_values(msg, crop):
+    vals = np.ma.filled(msg.values, 0.0)
+    if vals.shape != crop["full"]:
+        raise ValueError(f"grid {vals.shape} != {crop['full']}")
+    return vals[crop["rows"], crop["cols"]].astype(np.float32)
 
 
 def _crop(msg):
     if not _GRID:
         _set_grid(msg)
-    vals = np.ma.filled(msg.values, 0.0)
-    if vals.shape != _GRID["full"]:
-        raise ValueError(f"grid {vals.shape} != {_GRID['full']}")
-    return vals[_GRID["rows"], _GRID["cols"]].astype(np.float32)
+    return crop_values(msg, _GRID)
 
 
 def _pct(a):
-    """Probabilities may be encoded as 0-1 or 0-100; return percent."""
     return a * 100.0 if 0 < np.nanmax(a) <= 1.0001 else a
 
 
 def read_1h_qpf(path, fhr, tag):
-    """1-h APCP (in) ending at fhr. f03/f06/... also hold 3-h/6-h sums, so match on step range."""
     with pygrib.open(path) as g:
         msgs = [m for m in g if _is_apcp(m)]
         if len(msgs) > 1:
@@ -274,7 +370,6 @@ def read_1h_qpf(path, fhr, tag):
 
 
 def read_eas_6h(path, fhr):
-    """{threshold_in: P(%)} for the 6-h window ending at fhr."""
     out = {}
     with pygrib.open(path) as g:
         msgs = [m for m in g if _is_apcp(m)]
@@ -282,13 +377,11 @@ def read_eas_6h(path, fhr):
         for m in msgs:
             if _step_range(m) != (fhr - WIN, fhr):
                 continue
-            thr = round(_lower_limit(m) * MM_TO_IN, 2)
-            out[thr] = _pct(_crop(m))
+            out[round(_lower_limit(m) * MM_TO_IN, 2)] = _pct(_crop(m))
     return out
 
 
 def read_ffri_6h(path, fhr):
-    """{'ffg': P(%), 'ari': {years: P(%)}} for the 6-h window ending at fhr."""
     out = {"ffg": None, "ari": {}}
     with pygrib.open(path) as g:
         msgs = list(g)
@@ -304,7 +397,7 @@ def read_ffri_6h(path, fhr):
 
 
 def fetch_decoded(init, ptype, fhr, reader):
-    path = download(url_for(init, ptype, fhr))
+    path = download_any(refs_urls(init, ptype, fhr))
     try:
         return reader(path, fhr)
     finally:
@@ -312,13 +405,12 @@ def fetch_decoded(init, ptype, fhr, reader):
 
 
 def fetch_many(init, ptype, fhrs, reader):
-    """Decode the first file serially (sets the crop grid), the rest in parallel."""
     out = {}
     first, rest = fhrs[0], fhrs[1:]
     try:
         out[first] = fetch_decoded(init, ptype, first, reader)
     except Exception as e:
-        print(f"  ! {ptype} f{first:02d}: {e}")
+        print(f"  ! {ptype} {init:%d/%HZ} f{first:02d}: {e}")
     with ThreadPoolExecutor(MAX_WORKERS) as ex:
         futs = {ex.submit(fetch_decoded, init, ptype, f, reader): f for f in rest}
         for fut in as_completed(futs):
@@ -326,17 +418,20 @@ def fetch_many(init, ptype, fhrs, reader):
             try:
                 out[f] = fut.result()
             except Exception as e:
-                print(f"  ! {ptype} f{f:02d}: {e}")
+                print(f"  ! {ptype} {init:%d/%HZ} f{f:02d}: {e}")
     return out
 
 
-def fetch_qpf_run(init, ptype, lag):
-    fhrs = list(range(lag + 1, lag + ACCUM_HOURS + 1))
+def fetch_qpf_hours(init, ptype, fhrs):
     got = fetch_many(init, ptype, fhrs, lambda p, f: read_1h_qpf(p, f, ptype))
     if len(got) != len(fhrs):
         print(f"  skip {ptype} {init:%Y%m%d %HZ}: {len(got)}/{len(fhrs)} hours")
         return None
     return np.stack([got[f] for f in fhrs])
+
+
+def fetch_qpf_run(init, ptype, lag):
+    return fetch_qpf_hours(init, ptype, list(range(lag + 1, lag + ACCUM_HOURS + 1)))
 
 
 def window_hours():
@@ -348,24 +443,24 @@ def window_hours():
 SITE_IDX = {}
 
 
-def _dist_km(lat, lon):
-    lats, lons = _GRID["lats"], _GRID["lons"]
+def dist_km(lats, lons, lat, lon):
     dlat, dlon = np.radians(lats - lat), np.radians(lons - lon)
     a = np.sin(dlat / 2) ** 2 + np.cos(np.radians(lat)) * np.cos(np.radians(lats)) * np.sin(dlon / 2) ** 2
-    return 6371.0 * 2 * np.arcsin(np.sqrt(a))
+    return 6371.0 * 2 * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
 
 
 def site_index(name):
     if name not in SITE_IDX:
         lat, lon, _ = SITES[name]
-        d = _dist_km(lat, lon)
+        d = dist_km(_GRID["lats"], _GRID["lons"], lat, lon)
         SITE_IDX[name] = (np.unravel_index(np.argmin(d), d.shape), d <= NBHD_KM)
     return SITE_IDX[name]
 
 
-def in_view():
+def in_view(lats=None, lons=None):
     w, e, s, n = EXTENT
-    la, lo = _GRID["lats"], _GRID["lons"]
+    la = _GRID["lats"] if lats is None else lats
+    lo = _GRID["lons"] if lons is None else lons
     return (la >= s) & (la <= n) & (lo >= w) & (lo <= e)
 
 
@@ -373,7 +468,284 @@ def r2(x):
     return None if x is None or not np.isfinite(x) else round(float(x), 2)
 
 # =============================================================================
-# 6. PLOTTING HELPERS
+# 6. MRMS
+# =============================================================================
+def fetch_mrms_raw(hours, valid_end, extent=None, pad=1.0):
+    """MultiSensor Pass2 QPE (mm) cropped to extent+pad. NCEP while fresh, then AWS archive."""
+    urls = []
+    if utcnow() - valid_end < MRMS_NCEP_RETENTION:
+        urls.append(MRMS_NCEP.format(h=hours, t=valid_end))
+    urls.append(MRMS_AWS.format(h=hours, t=valid_end))
+    try:
+        path = download_any(urls, gunzip=True)
+    except FileNotFoundError as e:
+        print(f"[mrms] {hours}H {valid_end:%Y%m%d %HZ} unavailable: {e}")
+        return None
+    try:
+        with pygrib.open(path) as g:
+            m = g.message(1)
+            vals = np.ma.filled(m.values, -999.0).astype(np.float32)
+            lat0 = float(m["latitudeOfFirstGridPointInDegrees"])
+            lon0 = float(m["longitudeOfFirstGridPointInDegrees"])
+            dj = float(m["jDirectionIncrementInDegrees"])
+            di = float(m["iDirectionIncrementInDegrees"])
+            jpos = int(m["jScansPositively"])
+    finally:
+        os.remove(path)
+    lon0 = lon0 - 360 if lon0 > 180 else lon0
+    w, e, s, n = extent or EXTENT
+    if jpos:
+        r0, r1 = int((s - pad - lat0) / dj), int(math.ceil((n + pad - lat0) / dj))
+    else:
+        r0, r1 = int((lat0 - (n + pad)) / dj), int(math.ceil((lat0 - (s - pad)) / dj))
+    c0, c1 = int((w - pad - lon0) / di), int(math.ceil((e + pad - lon0) / di))
+    r0, r1 = max(r0, 0), min(r1, vals.shape[0] - 1)
+    c0, c1 = max(c0, 0), min(c1, vals.shape[1] - 1)
+    sub = vals[r0:r1 + 1, c0:c1 + 1]
+    lat0c = lat0 + r0 * dj if jpos else lat0 - r0 * dj
+    lon0c = lon0 + c0 * di
+    print(f"[mrms] {hours}H {valid_end:%Y%m%d %HZ}: cropped {sub.shape}, max {np.nanmax(np.where(sub >= 0, sub, np.nan)) * MM_TO_IN:.2f}\"")
+    return dict(vals=sub, lat0=lat0c, lon0=lon0c, dj=dj, di=di, jpos=jpos)
+
+
+def mrms_native(raw):
+    """Observed field (in) on its own 0.01° grid, NaN where missing."""
+    nj, ni = raw["vals"].shape
+    lat1 = raw["lat0"] + np.arange(nj) * raw["dj"] * (1 if raw["jpos"] else -1)
+    lon1 = raw["lon0"] + np.arange(ni) * raw["di"]
+    lons, lats = np.meshgrid(lon1, lat1)
+    obs = np.where(raw["vals"] >= 0, raw["vals"], np.nan) * MM_TO_IN
+    return obs, lats, lons
+
+
+def sample_mrms(raw, lats, lons):
+    """3x3 (~3 km) box mean of MRMS (in) at each target point; NaN where missing or outside."""
+    v = raw["vals"]
+    rows = np.rint(((lats - raw["lat0"]) if raw["jpos"] else (raw["lat0"] - lats)) / raw["dj"]).astype(int)
+    cols = np.rint((lons - raw["lon0"]) / raw["di"]).astype(int)
+    stack = []
+    for dr in (-1, 0, 1):
+        for dc in (-1, 0, 1):
+            r, c = rows + dr, cols + dc
+            ok = (r >= 0) & (r < v.shape[0]) & (c >= 0) & (c < v.shape[1])
+            x = v[np.clip(r, 0, v.shape[0] - 1), np.clip(c, 0, v.shape[1] - 1)]
+            stack.append(np.where(ok & (x >= 0), x, np.nan))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        return np.nanmean(np.stack(stack), axis=0) * MM_TO_IN
+
+
+def categorical(f, o, thr):
+    fy, oy = f >= thr, o >= thr
+    hits, fa, miss = int((fy & oy).sum()), int((fy & ~oy).sum()), int((~fy & oy).sum())
+    n = f.size
+    hr = (hits + fa) * (hits + miss) / n if n else 0
+    den = hits + fa + miss - hr
+    ets = (hits - hr) / den if den > 0 else None
+    fbias = (hits + fa) / (hits + miss) if (hits + miss) > 0 else None
+    return (r2(ets) if ets is not None else None), (r2(fbias) if fbias is not None else None)
+
+# =============================================================================
+# 7. FLOW REGIME
+# =============================================================================
+def _cone(msg):
+    l1, l2 = math.radians(float(msg["Latin1InDegrees"])), math.radians(float(msg["Latin2InDegrees"]))
+    if abs(l1 - l2) < 1e-6:
+        return math.sin(l1)
+    return (math.log(math.cos(l1)) - math.log(math.cos(l2))) / \
+           (math.log(math.tan(math.pi / 4 + l2 / 2)) - math.log(math.tan(math.pi / 4 + l1 / 2)))
+
+
+def _earth_relative(msg, u, v, lon):
+    """Rotate grid-relative Lambert winds to earth-relative at longitude lon."""
+    try:
+        grid_rel = int(msg["uvRelativeToGrid"]) == 1
+    except Exception:
+        grid_rel = False
+    if not grid_rel or str(msg["gridType"]) != "lambert":
+        return u, v
+    ang = _cone(msg) * math.radians(lon - float(msg["LoVInDegrees"]))
+    return math.cos(ang) * u + math.sin(ang) * v, -math.sin(ang) * u + math.cos(ang) * v
+
+
+def _box_mean(msg, lat, lon, radius_km):
+    crop = make_crop(msg, extent=[lon - 1, lon + 1, lat - 1, lat + 1], pad=0.2)
+    vals = crop_values(msg, crop)
+    m = dist_km(crop["lats"], crop["lons"], lat, lon) <= radius_km
+    return float(vals[m].mean())
+
+
+def _level_tag(line):
+    for name, _ in REGIME_LEVELS:
+        if f":{name}:" in line:
+            return name
+    return None
+
+
+def read_layer_wind(path, lat, lon):
+    """Pressure-weighted (trapezoid) layer-mean u, v (m/s, earth-relative) over REGIME_LEVELS."""
+    comp = {}
+    with pygrib.open(path) as g:
+        for m in g:
+            if m.parameterCategory != 2 or m.parameterNumber not in (2, 3):
+                continue
+            tl, lev = str(m.typeOfLevel), int(m.level)
+            name = "10 m above ground" if (tl == "heightAboveGround" and lev == 10) else \
+                   f"{lev} mb" if tl == "isobaricInhPa" else None
+            if name is None:
+                continue
+            comp.setdefault(name, {})["uv"[m.parameterNumber - 2]] = (_box_mean(m, lat, lon, REGIME_RADIUS_KM), m)
+    prof = []
+    for name, p in REGIME_LEVELS:
+        if name in comp and "u" in comp[name] and "v" in comp[name]:
+            (u, msg), (v, _) = comp[name]["u"], comp[name]["v"]
+            u, v = _earth_relative(msg, u, v, lon)
+            prof.append((p, u, v))
+    if len(prof) < 2:
+        raise ValueError(f"only {len(prof)} levels decoded")
+    return _layer_mean(prof)
+
+
+def _layer_mean(prof):
+    prof = sorted(prof, key=lambda x: -x[0])
+    num_u = num_v = den = 0.0
+    for (p1, u1, v1), (p2, u2, v2) in zip(prof[:-1], prof[1:]):
+        dp = p1 - p2
+        num_u += 0.5 * (u1 + u2) * dp
+        num_v += 0.5 * (v1 + v2) * dp
+        den += dp
+    return num_u / den, num_v / den
+
+
+def refs_layer_wind(init, fhr):
+    keep = lambda l: (":UGRD:" in l or ":VGRD:" in l) and _level_tag(l) is not None
+    path = download_subset(refs_urls(init, "mean", fhr), keep)
+    try:
+        return read_layer_wind(path, *REGIME_POINT)
+    finally:
+        os.remove(path)
+
+
+def classify(samples):
+    """samples: [(u, v)] in m/s -> regime dict."""
+    if not samples:
+        return None
+    u = np.array([s[0] for s in samples]); v = np.array([s[1] for s in samples])
+    U, V = u.mean(), v.mean()
+    vec = math.hypot(U, V)
+    mean_spd = float(np.hypot(u, v).mean())
+    cons = vec / mean_spd if mean_spd > 0 else 0.0
+    dir_from = (270.0 - math.degrees(math.atan2(V, U))) % 360.0
+    if mean_spd * MS_TO_KT < LIGHT_KT:
+        name = "Light"
+    elif cons < MIXED_CONSISTENCY:
+        name = "Mixed"
+    else:
+        name = ["NE", "SE", "SW", "NW"][int(dir_from // 90) % 4]
+    return {"name": name, "dir": int(round(dir_from)), "spd_kt": round(vec * MS_TO_KT, 1),
+            "consistency": round(cons, 2), "n": len(samples)}
+
+
+def forecast_regime(init):
+    samples = []
+    for f in window_hours():
+        try:
+            samples.append(refs_layer_wind(init, f))
+        except Exception as e:
+            print(f"  ! regime mean f{f:02d}: {e}")
+    reg = classify(samples)
+    print(f"[regime] forecast {init:%d/%HZ}: {reg}")
+    return reg
+
+
+def load_json(path, default):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def save_json(path, obj, indent=0):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(obj, f, indent=indent)
+
+
+def log_analysis_wind(init):
+    """Append the 1-h REFS mean layer wind (analysis proxy) to the regime log."""
+    log = load_json(REGIME_LOG, [])
+    valid = (init + timedelta(hours=1)).isoformat()
+    if any(e["valid"] == valid for e in log):
+        return log
+    try:
+        u, v = refs_layer_wind(init, 1)
+        log.append({"valid": valid, "u": round(u, 2), "v": round(v, 2)})
+    except Exception as e:
+        print(f"  ! analysis wind f01: {e}")
+    cutoff = (utcnow() - timedelta(days=45)).isoformat()
+    log = sorted([e for e in log if e["valid"] >= cutoff], key=lambda e: e["valid"])
+    save_json(REGIME_LOG, log)
+    return log
+
+
+def analysis_regime(log, start, end):
+    s = [(e["u"], e["v"]) for e in log if start.isoformat() <= e["valid"] <= end.isoformat()]
+    return classify(s) if len(s) >= 3 else None
+
+
+_RAOB = {"fails": 0}
+
+
+def raob_layer_wind(t):
+    """Layer-mean wind from an IEM sounding. Gives up for the run after repeated HTTP failures."""
+    if _RAOB["fails"] >= 8:
+        return None, None
+    for stn in RAOB_STATIONS:
+        try:
+            r = SESSION.get(RAOB_URL.format(stn=stn, t=t), timeout=15)
+            if r.status_code != 200:
+                _RAOB["fails"] += 1
+                continue
+            _RAOB["fails"] = 0
+            profs = r.json().get("profiles") or []
+            if not profs or not profs[0].get("profile"):
+                continue
+            prof = []
+            for lv in profs[0]["profile"]:
+                p, d, s = lv.get("pres"), lv.get("drct"), lv.get("sknt")
+                if None in (p, d, s) or p < 700 or p > 1050:
+                    continue
+                spd = s / MS_TO_KT
+                prof.append((p, -spd * math.sin(math.radians(d)), -spd * math.cos(math.radians(d))))
+            if len(prof) >= 3 and min(p for p, _, _ in prof) <= 710:
+                return _layer_mean(prof), stn
+        except Exception:
+            _RAOB["fails"] += 1
+            continue
+    return None, None
+
+
+def raob_regime(start, end):
+    samples, used = [], []
+    d = start.replace(hour=0)
+    while d <= end:
+        for h in RAOB_HOURS:
+            t = d.replace(hour=h)
+            if not (start <= t <= end):
+                continue
+            uv, stn = raob_layer_wind(t)
+            if uv:
+                samples.append(uv); used.append(f"{stn} {t:%d/%HZ}")
+        d += timedelta(days=1)
+    reg = classify(samples)
+    if reg:
+        reg["soundings"] = used
+    print(f"[regime] raob {start:%d/%HZ}-{end:%d/%HZ}: {reg if reg else 'no soundings found'}")
+    return reg
+
+# =============================================================================
+# 8. PLOTTING HELPERS
 # =============================================================================
 def add_basemap(ax, labels=True):
     ax.set_extent(EXTENT, crs=ccrs.PlateCarree())
@@ -398,14 +770,17 @@ def add_basemap(ax, labels=True):
     ax.spines["geo"].set_edgecolor(LINE)
 
 
-def shade(ax, field, kind="qpf"):
+def shade(ax, field, kind="qpf", lats=None, lons=None):
+    lats = _GRID["lats"] if lats is None else lats
+    lons = _GRID["lons"] if lons is None else lons
+    field = np.nan_to_num(field)
     if kind == "qpf":
         data, lev, cm, nm, ext = np.ma.masked_less(field, CLEVS[0]), CLEVS, CMAP, NORM, "max"
     elif kind == "prob":
         data, lev, cm, nm, ext = np.ma.masked_less(field, PLEVS[0]), PLEVS, PCMAP, PNORM, "neither"
     else:
         data, lev, cm, nm, ext = np.ma.masked_inside(field, -0.1, 0.1), DLEVS, DCMAP, DNORM, "both"
-    return ax.contourf(_GRID["lons"], _GRID["lats"], data, lev, cmap=cm, norm=nm, extend=ext,
+    return ax.contourf(lons, lats, data, lev, cmap=cm, norm=nm, extend=ext,
                        alpha=0.92, transform=ccrs.PlateCarree(), zorder=2)
 
 
@@ -417,18 +792,19 @@ def colorbar(fig, cs, rect, label, ticks):
     cb.outline.set_edgecolor(LINE)
 
 
-def annotate_max(ax, field, unit='"', fmt="{:.2f}", floor=0.1):
-    masked = np.where(in_view(), field, -np.inf)
+def annotate_max(ax, field, unit='"', fmt="{:.2f}", floor=0.1, lats=None, lons=None):
+    lats = _GRID["lats"] if lats is None else lats
+    lons = _GRID["lons"] if lons is None else lons
+    masked = np.where(in_view(lats, lons) & np.isfinite(field), field, -np.inf)
     j, i = np.unravel_index(np.argmax(masked), masked.shape)
-    if field[j, i] >= floor:
-        lat, lon = _GRID["lats"][j, i], _GRID["lons"][j, i]
-        ax.plot(lon, lat, "x", color="#ffffff", ms=6, mew=1.4, transform=ccrs.PlateCarree(), zorder=7)
-        ax.text(lon, lat - 0.12, fmt.format(field[j, i]) + unit, fontsize=8, ha="center", va="top",
+    if masked[j, i] >= floor:
+        ax.plot(lons[j, i], lats[j, i], "x", color="#ffffff", ms=6, mew=1.4, transform=ccrs.PlateCarree(), zorder=7)
+        ax.text(lons[j, i], lats[j, i] - 0.12, fmt.format(field[j, i]) + unit, fontsize=8, ha="center", va="top",
                 color="#ffffff", transform=ccrs.PlateCarree(), zorder=7)
 
 
-def savefig(fig, name, dpi):
-    fig.savefig(os.path.join(OUT_DIR, name), dpi=dpi)
+def savefig(fig, name, dpi, out_dir=None):
+    fig.savefig(os.path.join(out_dir or OUT_DIR, name), dpi=dpi)
     plt.close(fig)
 
 
@@ -436,7 +812,7 @@ def fmt_init(t):
     return t.strftime("%a %d %b %HZ")
 
 # =============================================================================
-# 7. PRODUCTS
+# 9. FORECAST PRODUCTS
 # =============================================================================
 def plot_trend(runs, valid_txt):
     fig, axes = plt.subplots(1, 3, figsize=(16, 6.6), subplot_kw={"projection": ccrs.PlateCarree()})
@@ -505,7 +881,6 @@ def plot_loop(run):
 
 
 def plot_eas_loop(init, eas):
-    """eas: {fhr: {thr: P}} -> frames keyed by threshold."""
     out = {}
     for thr in EAS_THRESHOLDS:
         frames = []
@@ -516,8 +891,7 @@ def plot_eas_loop(init, eas):
             start = end - WIN
             v0, v1 = init + timedelta(hours=start), init + timedelta(hours=end)
             fname = f"eas_{str(thr).replace('.', 'p')}_{n:02d}.png"
-            _frame(field, "prob",
-                   f"REFS EAS  P(6-h QPF ≥ {thr:g}\")  ·  f{start:02d}–f{end:02d}",
+            _frame(field, "prob", f"REFS EAS  P(6-h QPF ≥ {thr:g}\")  ·  f{start:02d}–f{end:02d}",
                    f"Valid {v0:%a %HZ} – {v1:%a %HZ %d %b}  ·  {init:%HZ %d %b} init",
                    fname, "Probability (%)", PLEVS, "%", "{:.0f}", 5)
             frames.append({"file": fname, "start": v0.isoformat(), "end": v1.isoformat(),
@@ -621,70 +995,24 @@ def plot_pad_timeline(runs, avrg, eas, valid_start):
     savefig(fig, "pad_timeline.png", 150)
 
 # =============================================================================
-# 8. VERIFICATION (MRMS 48-h Pass2)
+# 10. VERIFICATION
 # =============================================================================
 def to_i16(x):
-    return np.clip(np.round(x * 100), 0, 32767).astype(np.int16)
+    return np.clip(np.round(np.nan_to_num(x) * 100), 0, 32767).astype(np.int16)
 
 
 def from_i16(x):
     return x.astype(np.float32) / 100.0
 
 
-def archive_forecast(init, lpmm_tot, avrg_tot):
+def archive_forecast(init, lpmm_tot, avrg_tot, regime):
     os.makedirs(FCST_DIR, exist_ok=True)
     fn = os.path.join(FCST_DIR, f"refs_{init:%Y%m%d%H}.npz")
     if not os.path.exists(fn):
         np.savez_compressed(fn, lpmm=to_i16(lpmm_tot),
-                            avrg=to_i16(avrg_tot) if avrg_tot is not None else np.zeros(0, np.int16))
+                            avrg=to_i16(avrg_tot) if avrg_tot is not None else np.zeros(0, np.int16),
+                            regime=json.dumps(regime))
         print(f"[archive] saved {fn}")
-
-
-def fetch_mrms_48h(valid_end):
-    """MRMS 48-h Pass2 QPE (in) averaged over a 3x3 (~3 km) box at each REFS point; NaN where missing."""
-    url = MRMS_TMPL.format(t=valid_end)
-    try:
-        path = download(url, gunzip=True)
-    except Exception as e:
-        print(f"[mrms] {e}")
-        return None
-    try:
-        with pygrib.open(path) as g:
-            m = g.message(1)
-            vals = np.ma.filled(m.values, -999.0).astype(np.float32)
-            lat0 = float(m["latitudeOfFirstGridPointInDegrees"])
-            lon0 = float(m["longitudeOfFirstGridPointInDegrees"])
-            dj = float(m["jDirectionIncrementInDegrees"])
-            di = float(m["iDirectionIncrementInDegrees"])
-            jpos = int(m["jScansPositively"])
-    finally:
-        os.remove(path)
-    lon0 = lon0 - 360 if lon0 > 180 else lon0
-    lats, lons = _GRID["lats"], _GRID["lons"]
-    rows = np.rint(((lats - lat0) if jpos else (lat0 - lats)) / dj).astype(int)
-    cols = np.rint((lons - lon0) / di).astype(int)
-    stack = []
-    for dr in (-1, 0, 1):
-        for dc in (-1, 0, 1):
-            r = np.clip(rows + dr, 0, vals.shape[0] - 1)
-            c = np.clip(cols + dc, 0, vals.shape[1] - 1)
-            v = vals[r, c]
-            stack.append(np.where(v >= 0, v, np.nan))
-    with np.errstate(invalid="ignore"):
-        obs = np.nanmean(np.stack(stack), axis=0) * MM_TO_IN
-    print(f"[mrms] {valid_end:%Y%m%d %HZ}: {np.isfinite(obs).mean():.0%} valid, max {np.nanmax(obs):.2f}\"")
-    return obs
-
-
-def categorical(f, o, thr):
-    fy, oy = f >= thr, o >= thr
-    hits, fa, miss = int((fy & oy).sum()), int((fy & ~oy).sum()), int((~fy & oy).sum())
-    n = f.size
-    hr = (hits + fa) * (hits + miss) / n if n else 0
-    den = hits + fa + miss - hr
-    ets = (hits - hr) / den if den > 0 else None
-    fbias = (hits + fa) / (hits + miss) if (hits + miss) > 0 else None
-    return r2(ets) if ets is not None else None, r2(fbias) if fbias is not None else None
 
 
 def score(init, lpmm, avrg, obs):
@@ -706,10 +1034,17 @@ def score(init, lpmm, avrg, obs):
     return rec
 
 
-def verify_pending():
-    scores = json.load(open(SCORES_FILE)) if os.path.exists(SCORES_FILE) else []
+def preferred_regime(s):
+    for key in ("regime_raob", "regime_anl", "regime_fcst"):
+        if s.get(key):
+            return s[key]["name"], key.split("_")[1]
+    return None, None
+
+
+def verify_pending(regime_log):
+    scores = load_json(SCORES_FILE, [])
     done = {s["init"] for s in scores}
-    now = datetime.now(timezone.utc)
+    now = utcnow()
     newest = None
     for fn in sorted(glob.glob(os.path.join(FCST_DIR, "refs_*.npz"))):
         init = datetime.strptime(os.path.basename(fn)[5:15], "%Y%m%d%H").replace(tzinfo=timezone.utc)
@@ -719,27 +1054,42 @@ def verify_pending():
         if vend > now - MRMS_LATENCY:
             continue
         z = np.load(fn)
-        if vend < now - MRMS_RETENTION or z["lpmm"].shape != _GRID["lats"].shape:
-            print(f"[verify] dropping {fn} (MRMS no longer on server or grid changed)")
+        if now - vend > FCST_MAX_AGE or z["lpmm"].shape != _GRID["lats"].shape:
+            print(f"[verify] dropping {fn} (too old or grid changed)")
             os.remove(fn); continue
-        obs = fetch_mrms_48h(vend)
-        if obs is None:
+        raw = fetch_mrms_raw(ACCUM_HOURS, vend)
+        if raw is None:
             continue
+        obs = sample_mrms(raw, _GRID["lats"], _GRID["lons"])
         lp = from_i16(z["lpmm"])
         av = from_i16(z["avrg"]) if z["avrg"].size else None
-        scores.append(score(init, lp, av, obs))
+        rec = score(init, lp, av, obs)
+        rec["regime_fcst"] = json.loads(str(z["regime"])) if "regime" in z.files else None
+        rec["regime_anl"] = analysis_regime(regime_log, init, vend)
+        rec["regime_raob"] = raob_regime(init, vend)
+        scores.append(rec)
         newest = (init, lp, av, obs)
         os.remove(fn)
-        print(f"[verify] scored {init:%Y%m%d %HZ}")
+        print(f"[verify] scored {init:%Y%m%d %HZ}  regime fcst={(rec['regime_fcst'] or {}).get('name')} "
+              f"anl={(rec['regime_anl'] or {}).get('name')} raob={(rec['regime_raob'] or {}).get('name')}")
+    # backfill observed regimes for runs scored before tagging existed
+    n = 0
+    for s in scores:
+        if n >= RAOB_BACKFILL_PER_RUN:
+            break
+        if "regime_raob" not in s or ("regime_anl" not in s):
+            st = datetime.fromisoformat(s["init"]); en = datetime.fromisoformat(s["valid_end"])
+            s.setdefault("regime_anl", analysis_regime(regime_log, st, en))
+            s["regime_raob"] = raob_regime(st, en)
+            s.setdefault("regime_fcst", None)
+            n += 1
     scores.sort(key=lambda s: s["init"])
-    os.makedirs(ARCHIVE_DIR, exist_ok=True)
-    with open(SCORES_FILE, "w") as f:
-        json.dump(scores, f, indent=0)
+    save_json(SCORES_FILE, scores)
     if newest:
         init, lp, av, obs = newest
         np.savez_compressed(VERIFY_LATEST, init=init.isoformat(), lpmm=to_i16(lp),
                             avrg=to_i16(av) if av is not None else np.zeros(0, np.int16),
-                            obs=np.where(np.isfinite(obs), to_i16(np.nan_to_num(obs)), -1).astype(np.int16))
+                            obs=np.where(np.isfinite(obs), to_i16(obs), -1).astype(np.int16))
     return scores
 
 
@@ -760,8 +1110,8 @@ def plot_verify_map():
     cs = None
     for k, ((title, fld, col), ax) in enumerate(zip(fields, axes)):
         add_basemap(ax, labels=(k == 0))
-        cs = shade(ax, np.nan_to_num(fld))
-        annotate_max(ax, np.nan_to_num(fld))
+        cs = shade(ax, fld)
+        annotate_max(ax, fld)
         ax.set_title(title, fontsize=12, fontweight="bold", color=col)
     colorbar(fig, cs, [0.18, 0.1, 0.64, 0.03], "Precipitation (in)", CLEVS)
     vend = init + timedelta(hours=ACCUM_HOURS)
@@ -801,8 +1151,7 @@ def plot_verify_scores(scores):
     a2.xaxis.set_major_locator(loc)
     a2.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
     t_all = [datetime.fromisoformat(s["init"]) for s in scores[-120:]]
-    pad = timedelta(days=1)
-    a2.set_xlim(min(t_all) - pad, max(t_all) + pad)
+    a2.set_xlim(min(t_all) - timedelta(days=1), max(t_all) + timedelta(days=1))
     for a in (a1, a2):
         a.grid(color="#263848", lw=0.6)
         a.legend(frameon=False, fontsize=9, loc="upper left")
@@ -812,10 +1161,38 @@ def plot_verify_scores(scores):
     savefig(fig, "verify.png", 140)
     return True
 
+
+def by_regime(scores):
+    groups = {}
+    for s in scores:
+        name, src = preferred_regime(s)
+        if not name:
+            continue
+        g = groups.setdefault(name, {"n": 0, "src": {}, "ets_l": [], "ets_a": [], "bias_l": [], "bias_a": []})
+        g["n"] += 1
+        g["src"][src] = g["src"].get(src, 0) + 1
+        for k, key, sub in (("ets_l", "lpmm", "ets"), ("ets_a", "avrg", "ets")):
+            v = s.get(key, {}).get(sub, {}).get("1")
+            if v is not None:
+                g[k].append(v)
+        for k, key in (("bias_l", "lpmm"), ("bias_a", "avrg")):
+            v = s.get(key, {}).get("bias_ratio")
+            if v is not None:
+                g[k].append(v)
+    out = []
+    order = ["SW", "SE", "NE", "NW", "Light", "Mixed"]
+    for name in sorted(groups, key=lambda x: order.index(x) if x in order else 99):
+        g = groups[name]
+        mean = lambda a: r2(np.mean(a)) if a else None
+        out.append({"regime": name, "n": g["n"], "sources": g["src"],
+                    "ets1_lpmm": mean(g["ets_l"]), "ets1_avrg": mean(g["ets_a"]), "n_ets": len(g["ets_l"]),
+                    "bias_lpmm": mean(g["bias_l"]), "bias_avrg": mean(g["bias_a"])})
+    return out
+
 # =============================================================================
-# 9. META
+# 11. META
 # =============================================================================
-def build_meta(runs, avrg, eas, ffri_max, valid_start, valid_end, frames, eas_frames, products, scores):
+def build_meta(runs, avrg, eas, ffri_max, valid_start, valid_end, frames, eas_frames, products, scores, regime):
     sites = []
     for name, (lat, lon, mk) in SITES.items():
         (j, i), nb = site_index(name)
@@ -853,17 +1230,22 @@ def build_meta(runs, avrg, eas, ffri_max, valid_start, valid_end, frames, eas_fr
             "n": len(scores),
             "ets1_lpmm": mean_of("lpmm", ("ets", "1")), "ets1_avrg": mean_of("avrg", ("ets", "1")),
             "fbias1_lpmm": mean_of("lpmm", ("fbias", "1")), "fbias1_avrg": mean_of("avrg", ("fbias", "1")),
-            "recent": scores[-10:][::-1],
+            "by_regime": by_regime(scores),
+            "recent": [dict(s, regime=preferred_regime(s)[0]) for s in scores[-10:][::-1]],
         }
 
     return {
-        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "source": BASE_URL, "accum_hours": ACCUM_HOURS,
+        "generated_utc": utcnow().isoformat(timespec="seconds"),
+        "repo": os.environ.get("GITHUB_REPOSITORY"),
+        "accum_hours": ACCUM_HOURS,
         "valid_start": valid_start.isoformat(), "valid_end": valid_end.isoformat(),
         "runs": [{"label": RUN_LABELS[k], "init": r["init"].isoformat(), "color": RUN_COLORS[k]}
                  for k, r in enumerate(runs)],
         "primary_site": PRIMARY_SITE, "nbhd_km": NBHD_KM,
         "thresholds": THRESHOLDS, "eas_thresholds": EAS_THRESHOLDS,
+        "regime": regime, "regime_min_n": REGIME_MIN_N,
+        "regime_rules": {"light_kt": LIGHT_KT, "mixed_consistency": MIXED_CONSISTENCY,
+                         "layer": "10 m–700 mb (pressure-weighted)", "point": "XMR, 25 km mean"},
         "domain_max": {"value": r2(tot[j, i]), "lat": round(float(_GRID["lats"][j, i]), 3),
                        "lon": round(float(_GRID["lons"][j, i]), 3)},
         "sites": sites, "frames": frames, "eas_frames": eas_frames, "products": products,
@@ -872,20 +1254,46 @@ def build_meta(runs, avrg, eas, ffri_max, valid_start, valid_end, frames, eas_fr
     }
 
 # =============================================================================
-# 10. MAIN
+# 12. MAIN
 # =============================================================================
-def optional(label, fn, *a):
-    """Run a non-core product; a failure is logged and the rest of the site still builds."""
+def optional(label, fn, *a, **kw):
     try:
-        return fn(*a)
+        return fn(*a, **kw)
     except Exception:
         print(f"[warn] {label} failed:\n{traceback.format_exc()}")
         return None
 
 
+def migrate_legacy_archive():
+    if os.path.isdir(LEGACY_ARCHIVE) and not os.path.exists(SCORES_FILE):
+        os.makedirs(ARCHIVE_DIR, exist_ok=True)
+        shutil.copytree(LEGACY_ARCHIVE, ARCHIVE_DIR, dirs_exist_ok=True)
+        print(f"[migrate] copied ./{LEGACY_ARCHIVE} into {ARCHIVE_DIR}; you can delete it from main")
+
+
+def publish_cases(site_dir):
+    """Copy look-back cases into the site and write cases/index.json."""
+    dst = os.path.join(site_dir, "cases")
+    if os.path.isdir(dst):
+        shutil.rmtree(dst)
+    os.makedirs(dst, exist_ok=True)
+    index = []
+    for cj in sorted(glob.glob(os.path.join(CASES_DIR, "*", "case.json"))):
+        cdir = os.path.dirname(cj)
+        meta = load_json(cj, None)
+        if not meta:
+            continue
+        shutil.copytree(cdir, os.path.join(dst, os.path.basename(cdir)))
+        index.append({k: meta.get(k) for k in ("id", "title", "start", "end", "hours", "auto", "obs", "headline", "built")})
+    index.sort(key=lambda c: c["end"], reverse=True)
+    save_json(os.path.join(dst, "index.json"), index, indent=1)
+    return len(index)
+
+
 def main():
     assert (N_RUNS - 1) * RUN_SPACING + ACCUM_HOURS <= MAX_FHR, "time-lag window exceeds f60"
     os.makedirs(OUT_DIR, exist_ok=True)
+    migrate_legacy_archive()
 
     latest = find_latest_cycle()
     if latest is None:
@@ -912,6 +1320,9 @@ def main():
     eas = optional("eas", fetch_many, latest, "eas", window_hours(), read_eas_6h) or {}
     print("FFRI latest")
     ffri = optional("ffri", fetch_many, latest, "ffri", window_hours(), read_ffri_6h) or {}
+    print("Flow regime")
+    regime = optional("forecast regime", forecast_regime, latest)
+    regime_log = optional("analysis wind", log_analysis_wind, latest) or load_json(REGIME_LOG, [])
 
     ffri_max = {}
     if ffri:
@@ -926,9 +1337,8 @@ def main():
     lpmm_tot = runs[0]["data"].sum(axis=0)
     avrg_tot = avrg.sum(axis=0) if avrg is not None else None
 
-    # verification bookkeeping first, so a plotting failure can't lose the archive
-    archive_forecast(latest, lpmm_tot, avrg_tot)
-    scores = optional("verification", verify_pending) or []
+    archive_forecast(latest, lpmm_tot, avrg_tot, regime)
+    scores = optional("verification", verify_pending, regime_log) or load_json(SCORES_FILE, [])
 
     plot_trend(runs, valid_txt)
     plot_thresholds(runs, valid_txt)
@@ -945,16 +1355,27 @@ def main():
     }
     plot_pad_timeline(runs, avrg, eas, valid_start)
 
-    meta = build_meta(runs, avrg, eas, ffri_max, valid_start, valid_end, frames, eas_frames, products, scores)
-    with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:
-        json.dump(meta, f, indent=1)
+    if AUTO_DAILY_CASE and latest.hour == 12:
+        import lookback
+        optional("auto look-back", lookback.build_case, end=latest, hours=24,
+                 title=f"24 h ending 12Z {latest:%a %d %b}", auto=True)
+        optional("prune auto cases", lookback.prune_auto, AUTO_CASES_KEPT)
+    products["cases"] = (optional("publish cases", publish_cases, OUT_DIR) or 0) > 0
+
+    meta = build_meta(runs, avrg, eas, ffri_max, valid_start, valid_end, frames, eas_frames,
+                      products, scores, regime)
+    save_json(os.path.join(OUT_DIR, "meta.json"), meta, indent=1)
     if os.path.exists(INDEX_SRC):
         shutil.copy(INDEX_SRC, os.path.join(OUT_DIR, "index.html"))
     open(os.path.join(OUT_DIR, ".nojekyll"), "w").close()
 
+    if os.path.isdir(SITE_CACHE):
+        shutil.rmtree(SITE_CACHE)
+    shutil.copytree(OUT_DIR, SITE_CACHE, ignore=shutil.ignore_patterns("cases"))
+
     p = next(s for s in meta["sites"] if s["name"] == PRIMARY_SITE)
     print(f"Done. {PRIMARY_SITE} 48-h LPMM {p['runs'][0]['total']}\", AVRG {p['avrg_total']}\"; "
-          f"products {products}; verified runs {len(scores)}")
+          f"regime {(regime or {}).get('name')}; products {products}; verified runs {len(scores)}")
 
 
 if __name__ == "__main__":

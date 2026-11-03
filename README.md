@@ -1,27 +1,37 @@
 # Space Coast REFS QPF
 
-48-h REFS QPF for Cape Canaveral / KSC: LPMM time-lagged trend, EAS exceedance
-probabilities, LPMM vs AVRG, flash flood / recurrence interval, a pad timeline,
-and running verification against MRMS. Rebuilt 4x daily by GitHub Actions.
+48-h REFS QPF for Cape Canaveral / KSC: LPMM time-lagged trend, EAS probabilities,
+LPMM vs AVRG, flash flood / recurrence interval, pad timeline, MRMS verification
+tagged by sea-breeze flow regime, and event look-backs comparing REFS, HRRR and RRFS.
 
 ## Setup
-1. New repo; push everything here (including `.github/`).
-2. Actions tab → enable workflows → run "REFS QPF (Cape Canaveral)" once manually.
-3. Settings → Pages → Deploy from branch → `gh-pages` / root.
-4. Settings → Actions → General → Workflow permissions → Read and write.
+1. Push everything here (including `.github/`). Delete any old `archive/` folder on
+   main; the first run copies it into the data branch if it still exists.
+2. Settings → Actions → General → Workflow permissions → Read and write.
+3. Actions → "REFS QPF (Cape Canaveral)" → Run workflow (creates the `data` branch).
+4. Settings → Pages → Deploy from branch → `gh-pages` / root.
 
-## Verification
-Each run saves its 48-h LPMM and AVRG totals to `archive/fcst/` (about 30 KB, int16).
-The first run after the window closes pulls MRMS MultiSensor 48H Pass2, scores it,
-deletes the forecast file, and appends to `archive/scores.json`. NCEP keeps MRMS
-about 25 h, so a missed window (for example a multi-run NOMADS outage) is dropped.
+## Branches
+- `main`   code only
+- `gh-pages` published site (rebuilt every run)
+- `data`   persistent state, force-pushed without history:
+  `archive/` forecasts awaiting scoring, scores, regime log;
+  `cases/` look-backs; `site_cache/` last site (lets the look-back workflow republish)
 
-## Tuning (top of `refs_lpmm_cape.py`)
-- `EXTENT` map box; `SITES` point list (first entry drives the pad timeline)
-- `THRESHOLDS` 48-h paintball; `EAS_THRESHOLDS` 6-h probability loop (0.01–3″ available)
-- `FFRI_ARI_YEARS` recurrence intervals to map (1, 2, 5, 10, 25, 50, 100 available)
-- `VERIFY_THRESHOLDS` ETS / frequency-bias thresholds
-- `N_RUNS`, `RUN_SPACING`, `ACCUM_HOURS` with (N_RUNS-1)*RUN_SPACING + ACCUM_HOURS <= 60
+## Look back
+Actions → "Look back" → Run workflow with `end` (YYYYMMDDHH UTC, 00/06/12/18),
+`hours` (6/12/24/48/72) and a title. About 5 min. A 24-h case also builds
+automatically after each 12Z cycle (last 14 kept; manual cases kept forever).
+REFS archive on AWS starts 2026-08-13. Windows over 48 h are past REFS (f60) and
+HRRR (f48) range once lead time is added, so 72-h cases show RRFS only.
 
-Sources: https://nomads.ncep.noaa.gov/pub/data/nccf/com/refs/prod/ (about 2 days kept),
-https://mrms.ncep.noaa.gov/2D/MultiSensor_QPE_48H_Pass2/ (about 25 h kept).
+## Flow regime
+Pressure-weighted 10 m–700 mb mean wind, 25-km mean around XMR. Light < 5 kt;
+mixed when vector-mean / mean speed < 0.5; otherwise NE/SE/SW/NW by quadrant.
+Each scored run gets up to three tags: forecast (REFS mean f06–f48), analysis
+proxy (REFS 1-h mean from each later cycle), and XMR sounding (IEM, best effort).
+Verification groups by sounding, then analysis proxy, then forecast.
+Edit `LIGHT_KT`, `MIXED_CONSISTENCY`, `REGIME_*` and `RAOB_*` in `refs_lpmm_cape.py`.
+
+Sources: NOMADS refs/prod (~2 days) and AWS noaa-rrfs-ops-pds; MRMS NCEP (~25 h)
+and AWS noaa-mrms-pds; HRRR AWS noaa-hrrr-bdp-pds; soundings mesonet.agron.iastate.edu.

@@ -53,6 +53,8 @@
   .grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; margin-top: 28px; }
   @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
   main, aside { min-width: 0; }
+  .grid.wide { grid-template-columns: 1fr; }
+  .grid.wide aside { display: none; }
 
   .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--rule); overflow-x: auto; scrollbar-width: thin; }
   .tabs button { background: none; border: 0; color: var(--muted); cursor: pointer; font: 600 16px var(--display);
@@ -108,6 +110,23 @@
   .up { color: var(--run12); } .down { color: var(--latest); } .flat { color: var(--muted); }
   .p-hi { color: var(--run12); font-weight: 600; } .p-mid { color: var(--run6); } .p-lo { color: var(--muted); }
 
+  .regime-cap { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
+  .regime-cap strong { color: var(--text); font-weight: 600; }
+  .chip { display: inline-block; font: 600 13px var(--display); padding: 1px 8px; border-radius: 10px;
+          border: 1px solid var(--rule); color: var(--text); margin-right: 6px; }
+  .cases { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 20px; }
+  @media (max-width: 800px) { .cases { grid-template-columns: 1fr; } }
+  .case-list { display: flex; flex-direction: column; gap: 6px; max-height: 70vh; overflow-y: auto; }
+  .case-list button { text-align: left; background: var(--panel); border: 1px solid var(--rule); color: var(--text);
+                      border-radius: 6px; padding: 10px 12px; cursor: pointer; font: inherit; }
+  .case-list button:hover { border-color: var(--latest); }
+  .case-list button[aria-current="true"] { border-color: var(--latest); box-shadow: inset 3px 0 0 var(--latest); }
+  .case-list b { display: block; font: 600 15px var(--display); }
+  .case-list small { color: var(--muted); font-size: 13px; }
+  .case-head { font: 700 22px var(--display); margin: 0 0 4px; }
+  .case-sub { color: var(--muted); font-size: 14px; margin: 0 0 12px; max-width: 80ch; }
+  .howto { font-size: 14px; color: var(--muted); }
+  .howto code { color: var(--text); background: var(--ink); padding: 1px 5px; border-radius: 3px; }
   .empty { border: 1px dashed var(--rule); border-radius: 6px; padding: 24px; color: var(--muted); }
 
   #lightbox { position: fixed; inset: 0; background: rgba(6,11,16,.94); display: none; align-items: center;
@@ -139,6 +158,7 @@
     <div class="ribbon-labels" id="ribbon-labels"></div>
   </div>
   <p class="ribbon-cap" id="ribbon-cap">&nbsp;</p>
+  <p class="regime-cap" id="regime-cap"></p>
 
   <div class="grid">
     <main>
@@ -151,6 +171,7 @@
         <button role="tab" aria-selected="false" aria-controls="v-ffri"   id="t-ffri" data-needs="ffri">Flash flood</button>
         <button role="tab" aria-selected="false" aria-controls="v-pad"    id="t-pad">Pad timeline</button>
         <button role="tab" aria-selected="false" aria-controls="v-verify" id="t-verify">Verification</button>
+        <button role="tab" aria-selected="false" aria-controls="v-cases"  id="t-cases">Look back</button>
       </div>
 
       <section class="view" id="v-loop" role="tabpanel" aria-labelledby="t-loop">
@@ -215,6 +236,16 @@
       <section class="view" id="v-verify" role="tabpanel" aria-labelledby="t-verify" hidden>
         <div id="verify-body"></div>
       </section>
+
+      <section class="view" id="v-cases" role="tabpanel" aria-labelledby="t-cases" hidden>
+        <div class="cases">
+          <div>
+            <div class="case-list" id="case-list"></div>
+            <div class="card howto" id="howto" style="margin-top:12px"></div>
+          </div>
+          <div id="case-body"></div>
+        </div>
+      </section>
     </main>
 
     <aside>
@@ -256,7 +287,7 @@
   <footer>
     LPMM is a localized probability-matched mean: realistic amounts and structure, but a single field. Use Probability, Thresholds and LPMM vs AVRG for spread.
     Verification scores each run’s 48-h total against MRMS multi-sensor (Pass 2) QPE once the window closes.
-    Built from NCEP REFS on NOMADS, about 3.5 h after each 00, 06, 12 and 18Z cycle.
+    Look back compares REFS, HRRR and RRFS with MRMS for any past window. Built from NCEP REFS on NOMADS and AWS, about 3.5 h after each 00, 06, 12 and 18Z cycle.
   </footer>
 </div>
 
@@ -284,6 +315,7 @@
       $(t.getAttribute("aria-controls")).hidden = !on;
     });
     loopers.forEach(l => l.stop());
+    document.querySelector(".grid").classList.toggle("wide", tab.id === "t-cases");
     history.replaceState(null, "", "#" + tab.id.slice(2));
   }
   tabs.forEach(t => t.addEventListener("click", () => select(t)));
@@ -441,16 +473,114 @@
       const L = s.lpmm || {}, A = s.avrg || {};
       return `<tr><td>${dayUTC(s.init)}</td><td>${inch(s.pad.obs)}</td><td>${inch(s.pad.lpmm)}</td><td>${inch(s.pad.avrg)}</td>
         <td class="grp">${num(L.ets && L.ets["1"])}</td><td>${num(A.ets && A.ets["1"])}</td>
-        <td class="grp">${num(L.bias_ratio)}</td><td>${num(A.bias_ratio)}</td><td>${inch(s.obs_max)}</td></tr>`;
+        <td class="grp">${num(L.bias_ratio)}</td><td>${num(A.bias_ratio)}</td><td>${inch(s.obs_max)}</td><td>${s.regime || "—"}</td></tr>`;
     }).join("");
+    const reg = (v.by_regime || []).map(g => {
+      const src = Object.entries(g.sources).map(([k, n]) => `${n} ${k}`).join(", ");
+      return `<tr><td>${g.regime}</td><td>${g.n}</td><td class="grp">${num(g.ets1_lpmm)}</td><td>${num(g.ets1_avrg)}</td>
+        <td class="grp">${num(g.bias_lpmm)}</td><td>${num(g.bias_avrg)}</td><td class="flat">${src}</td></tr>`;
+    }).join("");
+    const rr = meta.regime_rules || {};
     $("verify-body").innerHTML = `
       <p class="note">ETS ≥ 1″ near 0 means no skill beyond chance and 1 is perfect. Bias ratio is domain-total forecast over observed, so above 1 is too wet.</p>
       ${p.verify_map ? `<div class="figure"><img src="verify_map.png?v=${stamp}" alt="MRMS vs REFS, most recent verified run"></div>` : ""}
       ${p.verify ? `<div class="figure"><img src="verify.png?v=${stamp}" alt="Verification scores"></div>` : ""}
       <div class="table-wrap" style="margin-top:16px"><table>
         <thead><tr><th>Run</th><th>MRMS at pad</th><th>LPMM</th><th>AVRG</th>
-          <th class="grp">ETS 1″ LPMM</th><th>AVRG</th><th class="grp">Bias LPMM</th><th>AVRG</th><th>MRMS max</th></tr></thead>
-        <tbody>${rows}</tbody></table></div>`;
+          <th class="grp">ETS 1″ LPMM</th><th>AVRG</th><th class="grp">Bias LPMM</th><th>AVRG</th><th>MRMS max</th><th>Flow</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <h2 style="margin-top:24px">By flow regime</h2>
+      <p class="note">${rr.layer || "Layer-mean"} wind at ${rr.point || "XMR"}. Light below ${rr.light_kt} kt; mixed when vector-mean / mean speed is under ${rr.mixed_consistency}.
+        Source order: XMR sounding, then REFS 1-h analysis proxy, then the run’s own forecast.</p>
+      ${reg ? `<div class="table-wrap"><table><thead><tr><th>Regime</th><th>Runs</th><th class="grp">ETS 1″ LPMM</th><th>AVRG</th>
+        <th class="grp">Bias LPMM</th><th>AVRG</th><th>Tag source</th></tr></thead><tbody>${reg}</tbody></table></div>`
+        : `<div class="empty">No regime tags yet.</div>`}`;
+  }
+
+  const regTxt = (r) => r ? `${r.name}${r.name === "Light" || r.name === "Mixed" ? "" : ` ${r.dir}°`}, ${Math.round(r.spd_kt)} kt` : "—";
+  function drawRegime() {
+    const r = meta.regime;
+    if (!r) { $("regime-cap").textContent = ""; return; }
+    let t = `<span class="chip">${r.name}</span>Forecast 10 m–700 mb flow at XMR, next 48 h: <strong>${regTxt(r)}</strong>.`;
+    const g = meta.verify && (meta.verify.by_regime || []).find(x => x.regime === r.name);
+    if (g && g.n_ets >= meta.regime_min_n && g.ets1_lpmm != null && g.ets1_avrg != null) {
+      const better = g.ets1_avrg > g.ets1_lpmm + 0.02 ? "AVRG" : g.ets1_lpmm > g.ets1_avrg + 0.02 ? "LPMM" : null;
+      t += ` In past ${r.name} runs (${g.n_ets}), ETS ≥ 1″ was LPMM ${num(g.ets1_lpmm)} vs AVRG ${num(g.ets1_avrg)}` +
+           (better ? `, so lean on <strong>${better}</strong>.` : ", no clear winner.");
+    } else if (g) {
+      t += ` ${g.n} past ${r.name} run${g.n === 1 ? "" : "s"} scored; ${meta.regime_min_n} needed before comparing LPMM and AVRG.`;
+    }
+    $("regime-cap").innerHTML = t;
+  }
+
+  // ---------- look back
+  let caseIndex = [], caseSel = null;
+  async function loadCases() {
+    if (!(meta.products || {}).cases) { caseIndex = []; drawCases(); return; }
+    try {
+      const r = await fetch("cases/index.json?v=" + stamp, { cache: "no-store" });
+      caseIndex = r.ok ? await r.json() : [];
+    } catch (e) { caseIndex = []; }
+    drawCases();
+  }
+  function drawCases() {
+    const repo = meta.repo;
+    const wf = repo ? `https://github.com/${repo}/actions/workflows/lookback.yml` : null;
+    $("howto").innerHTML = `<h2>Build a case</h2>
+      ${wf ? `<p>Open <a href="${wf}" target="_blank" rel="noreferrer">the look-back workflow</a>, choose <strong>Run workflow</strong>, and enter:</p>`
+           : `<p>In the repository’s Actions tab, run <strong>Look back</strong> with:</p>`}
+      <p><code>end</code> window end, YYYYMMDDHH UTC at 00/06/12/18<br><code>hours</code> 6, 12, 24, 48 or 72<br><code>title</code> what happened</p>
+      <p>It takes about 5 min. REFS is archived from 13 Aug 2026; 72-h windows exceed REFS and HRRR range, so only RRFS is shown.</p>`;
+    if (!caseIndex.length) {
+      $("case-list").innerHTML = "";
+      $("case-body").innerHTML = `<div class="empty">No look-backs yet. A 24-h case builds automatically after each 12Z cycle, or build one for a specific event with the workflow.</div>`;
+      return;
+    }
+    $("case-list").innerHTML = caseIndex.map(c => `
+      <button data-id="${c.id}" aria-current="${c.id === caseSel}">
+        <b>${c.title}</b>
+        <small>${c.hours} h to ${dayUTC(c.end)}${c.obs ? `, max ${inch(c.obs.max)} near ${c.obs.near}` : ""}</small>
+      </button>`).join("");
+    $("case-list").querySelectorAll("button").forEach(b => b.onclick = () => showCase(b.dataset.id));
+    if (!caseSel || !caseIndex.find(c => c.id === caseSel)) {
+      const want = location.hash.startsWith("#case-") ? location.hash.slice(6) : null;
+      showCase(caseIndex.find(c => c.id === want) ? want : caseIndex[0].id, !!want);
+    }
+  }
+  async function showCase(id, fromHash) {
+    caseSel = id;
+    $("case-list").querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.id === id));
+    if (!fromHash && !$("v-cases").hidden) history.replaceState(null, "", "#case-" + id);
+    let c;
+    try { c = await (await fetch(`cases/${id}/case.json?v=${stamp}`)).json(); }
+    catch (e) { $("case-body").innerHTML = `<div class="empty">case.json for ${id} could not be loaded.</div>`; return; }
+    const img = (f, alt) => c.images.includes(f) ? `<div class="figure"><img src="cases/${id}/${f}?v=${stamp}" alt="${alt}"></div>` : "";
+    const rows = c.rows.slice().sort((a, b) => a.model.localeCompare(b.model) || a.lead - b.lead).map(r => `
+      <tr><td style="color:${{REFS: "var(--latest)", AVRG: "var(--avrg)", HRRR: "var(--run6)", RRFS: "var(--good)"}[r.model]}">${r.model === "REFS" ? "REFS LPMM" : r.model === "AVRG" ? "REFS AVRG" : r.model}</td>
+        <td>${dayUTC(r.init)}</td><td>${r.lead} h</td><td>${inch(r.near_event_max)}</td><td>${inch(r.domain_max)}</td>
+        <td class="grp">${num(r.ets_1)}</td><td>${num(r.ets_2)}</td><td>${num(r.ets_4)}</td><td class="grp">${num(r.bias_ratio)}</td></tr>`).join("");
+    const shortest = {};
+    c.rows.forEach(r => { if (!shortest[r.model] || r.lead < shortest[r.model].lead) shortest[r.model] = r; });
+    const models = ["REFS", "AVRG", "HRRR", "RRFS"].filter(m => shortest[m]);
+    const siteRows = Object.keys(c.obs.sites).map(n => `<tr><td>${n}</td><td>${inch(c.obs.sites[n])}</td>${
+      models.map(m => `<td>${inch(shortest[m].sites[n])}</td>`).join("")}</tr>`).join("");
+    $("case-body").innerHTML = `
+      <h3 class="case-head">${c.title}</h3>
+      <p class="case-sub">${dayUTC(c.start)} to ${dayUTC(c.end)}. MRMS max <strong>${inch(c.obs.max)}</strong> ${c.obs.near_km < 3 ? "at" : `${c.obs.near_km} km from`} ${c.obs.near}${
+        (() => { const r = c.rows.filter(x => x.model === "REFS").sort((a, b) => a.lead - b.lead)[0];
+                 return r && r.near_event_max != null ? `; the shortest-lead REFS LPMM reached ${inch(r.near_event_max)} within ${c.event_radius_km} km` : ""; })()}.
+        The ○ on every map marks the observed max.</p>
+      ${img("dprog.png", "Forecast trend by lead time")}
+      ${img("models.png", "Shortest-lead forecast from each model vs MRMS")}
+      ${img("refs.png", "REFS LPMM at each lead vs MRMS")}
+      <div class="table-wrap" style="margin-top:16px"><table>
+        <thead><tr><th>Model</th><th>Init</th><th>Lead</th><th>Near max</th><th>Domain max</th>
+          <th class="grp">ETS 1″</th><th>2″</th><th>4″</th><th class="grp">Bias</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <div class="table-wrap" style="margin-top:16px"><table>
+        <thead><tr><th>Site</th><th>MRMS</th>${models.map(m => `<th>${m === "REFS" ? "LPMM" : m} ${shortest[m].lead} h</th>`).join("")}</tr></thead>
+        <tbody>${siteRows}</tbody></table></div>
+      ${c.notes.length ? `<p class="note" style="margin-top:12px">Missing: ${c.notes.join(", ")}.</p>` : ""}`;
   }
 
   function drawStatus() {
@@ -465,7 +595,8 @@
   function drawTabs() {
     const p = meta.products || {};
     tabs.forEach(t => { if (t.dataset.needs) t.hidden = !p[t.dataset.needs]; });
-    const want = tabs.find(t => "#" + t.id.slice(2) === location.hash && !t.hidden);
+    const h = location.hash.startsWith("#case-") ? "#cases" : location.hash;
+    const want = tabs.find(t => "#" + t.id.slice(2) === h && !t.hidden);
     const cur = tabs.find(t => t.getAttribute("aria-selected") === "true");
     if (want && want !== cur) select(want);
     else if (cur && cur.hidden) select(tabs[0]);
@@ -485,7 +616,7 @@
       const m = await r.json();
       if (m.generated_utc !== stamp) {
         meta = m; stamp = m.generated_utc;
-        drawTabs(); drawStatus(); drawRibbon(); drawSites(); drawSide(); drawVerify(); drawImages();
+        drawTabs(); drawStatus(); drawRibbon(); drawRegime(); drawSites(); drawSide(); drawVerify(); drawImages(); loadCases();
       } else drawStatus();
     } catch (e) {
       if (!meta) {
