@@ -45,6 +45,8 @@ def main():
         end = L.parse_time(field(body, "Window end (UTC)"))
         L.validate_window(start, end)
     except Exception as e:
+        raw = f"start `{field(body, 'Window start (UTC)')}`, end `{field(body, 'Window end (UTC)')}`"
+        e = f"{e} (received {raw})"
         reply(f"Couldn't build this look-back: {e}\n\nEdit the times to `YYYYMMDDHH` UTC and open a new request.", 2)
     title = re.sub(r"[^\w\s\-\.,/()&'’]", "", field(body, "Title"))[:80].strip() or None
 
@@ -67,7 +69,9 @@ def main():
     L.republish()
     c = R.load_json(os.path.join(R.CASES_DIR, cid, "case.json"), {})
     missing = f"\n\nNot available for this window: {', '.join(c['notes'])}." if c.get("notes") else ""
-    reply(f"Ready: {site_url(cid)}\n\nMRMS max {c['obs']['max']}″ near {c['obs']['near']}.{missing}\n\n"
+    window = f"{start:%HZ %a %d %b %Y} to {end:%HZ %a %d %b %Y} ({L.hours_between(start, end)} h)"
+    reply(f"Ready: {site_url(cid)}\n\nWindow: **{window}**, read from your request as "
+          f"`{start:%Y%m%d%H}` to `{end:%Y%m%d%H}` UTC.\n\nMRMS max {c['obs']['max']}″ near {c['obs']['near']}.{missing}\n\n"
           f"The page updates within a minute or two of this comment.", 0)
 
 

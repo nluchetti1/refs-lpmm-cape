@@ -92,6 +92,18 @@ def plan_inits(key, start, end):
             out.append((f0, init))
     return out
 
+def skip_reason(key, start, end):
+    """Plain-language reason plan_inits found no usable run."""
+    m = MODELS[key]
+    hrs = hours_between(start, end)
+    step = m["step"](hrs)
+    if step > 1 and (start.hour % step or end.hour % step):
+        return f"output every {step} h, so start and end must be on {step}-h boundaries such as 00, {step:02d}, 12Z"
+    if hrs > m["fmax"]:
+        return f"runs end at f{m['fmax']}, shorter than a {hrs}-h window"
+    return f"no run reaches f{m['fmax']} with the window inside it; try 00/06/12/18Z edges"
+
+
 # ---------------------------------------------------------------- readers
 def refs_window(init, ptype, f0, f1):
     if init < REFS_AWS_START and R.utcnow() - init > timedelta(hours=40):
@@ -460,7 +472,7 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
                 if key == "REFS":
                     refs_panels.append((fld, la, lo, f"REFS LPMM  ·  {lead} h lead ({init:%d/%HZ})", MODELS[key]["color"]))
         if not any(r["model"].startswith(key) for r in rows) and not plan_inits(key, start, end):
-            notes.append(f"{MODELS[key]['label']} (window outside its range or output steps)")
+            notes.append(f"{MODELS[key]['label']} ({skip_reason(key, start, end)})")
 
     win_txt = f"{start:%HZ %a %d %b} to {end:%HZ %a %d %b %Y}"
     obs_panel = (obs, olat, olon, f"MRMS {hours}-h QPE (Pass 2)", R.TEXT)

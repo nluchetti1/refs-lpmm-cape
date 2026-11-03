@@ -547,26 +547,52 @@
                                     start, end, case_title: title || "" });
     return `https://github.com/${repo}/issues/new?${q}`;
   }
-  const toStamp = (v) => v ? v.replace(/[-:T]/g, "").slice(0, 10) : "";
   function drawCases() {
     const now = new Date(Date.now() - 75 * 60e3);
     const iso = (d) => d.toISOString().slice(0, 13) + ":00";
+    const hourOpts = (sel) => Array.from({ length: 24 }, (_, h) =>
+      `<option value="${String(h).padStart(2, "0")}" ${h === sel ? "selected" : ""}>${String(h).padStart(2, "0")}Z</option>`).join("");
+    const lastSyn = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), Math.floor(now.getUTCHours() / 6) * 6));
+    const dayStr = (d) => d.toISOString().slice(0, 10);
+    const prev = new Date(lastSyn - 24 * 3.6e6);
     $("howto").innerHTML = `<h2>Request a look-back</h2>
       <div class="req">
-        <label for="rq-start">Start (UTC)</label><input id="rq-start" type="datetime-local" step="3600" value="${iso(new Date(now - 24 * 3.6e6))}">
-        <label for="rq-end">End (UTC)</label><input id="rq-end" type="datetime-local" step="3600" value="${iso(now)}">
+        <label>Start, UTC</label>
+        <div style="display:flex;gap:6px"><input id="rq-sd" type="date" value="${dayStr(prev)}" style="flex:1"><select id="rq-sh" class="btn" style="width:84px">${hourOpts(prev.getUTCHours())}</select></div>
+        <label>End, UTC</label>
+        <div style="display:flex;gap:6px"><input id="rq-ed" type="date" value="${dayStr(lastSyn)}" style="flex:1"><select id="rq-eh" class="btn" style="width:84px">${hourOpts(lastSyn.getUTCHours())}</select></div>
         <label for="rq-title">Title</label><input id="rq-title" type="text" maxlength="80" placeholder="What happened">
+        <p class="note" id="rq-prev" style="margin:10px 0 0"></p>
         <button class="btn" id="rq-go">Request on GitHub</button>
         <div class="err" id="rq-err"></div>
       </div>
-      <p>Opens a pre-filled GitHub issue (a free GitHub account is needed). The case builds in about 10 minutes and the link is posted on the issue.
-        Windows of 3–72 h, whole hours, ending at least 70 minutes ago. REFS is archived from 13 Aug 2026.</p>`;
+      <p>Opens a pre-filled GitHub issue (free GitHub account needed). Builds in about 10–15 min; the link is posted on the issue.
+        3–72 h windows ending at least 70 min ago. REFS is archived from 13 Aug 2026.</p>`;
+    const read = () => {
+      const s = $("rq-sd").value && new Date($("rq-sd").value + "T" + $("rq-sh").value + ":00Z");
+      const e = $("rq-ed").value && new Date($("rq-ed").value + "T" + $("rq-eh").value + ":00Z");
+      return { s, e, hrs: s && e ? (e - s) / 3.6e6 : NaN };
+    };
+    const stampOf = (d) => d.toISOString().slice(0, 13).replace(/[-T]/g, "");
+    const preview = () => {
+      const { s, e, hrs } = read();
+      if (!s || !e) { $("rq-prev").textContent = ""; return; }
+      const f = (d) => d.toLocaleString("en-US", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short", hour: "2-digit", hour12: false }) + "Z";
+      const syn = s.getUTCHours() % 6 === 0 && e.getUTCHours() % 6 === 0;
+      const tri = s.getUTCHours() % 3 === 0 && e.getUTCHours() % 3 === 0;
+      $("rq-prev").innerHTML = `Window <strong>${f(s)} to ${f(e)}</strong> (${hrs} h).` +
+        (syn ? (hrs > 48 ? " HRRR runs end at f48, so it’s skipped for windows over 48 h." : " All models included.")
+             : tri ? " <span style=\"color:var(--warn)\">AIFS is skipped: start and end must be on 00/06/12/18Z.</span>"
+                   : " <span style=\"color:var(--warn)\">GEFS, ECMWF IFS/ENS and AIFS are skipped: use 3-hourly (best 00/06/12/18Z) edges.</span>");
+    };
+    ["rq-sd", "rq-sh", "rq-ed", "rq-eh"].forEach(id => $(id).onchange = preview);
+    preview();
     $("rq-go").onclick = () => {
-      const s = toStamp($("rq-start").value), e = toStamp($("rq-end").value);
-      const hrs = (Date.parse($("rq-end").value + "Z") - Date.parse($("rq-start").value + "Z")) / 3.6e6;
+      const { s, e, hrs } = read();
+      if (!s || !e) { $("rq-err").textContent = "Pick both dates."; return; }
       if (!(hrs >= 3 && hrs <= 72)) { $("rq-err").textContent = "Window must be 3–72 h long."; return; }
-      if (Date.parse($("rq-end").value + "Z") > now) { $("rq-err").textContent = "End must be at least 70 minutes ago."; return; }
-      const url = issueUrl(s, e, $("rq-title").value.trim());
+      if (e > now) { $("rq-err").textContent = "End must be at least 70 minutes ago."; return; }
+      const url = issueUrl(stampOf(s), stampOf(e), $("rq-title").value.trim());
       if (!url) { $("rq-err").textContent = "Repository unknown; run the main workflow once so the site knows its repo."; return; }
       $("rq-err").textContent = ""; window.open(url, "_blank", "noopener");
     };
