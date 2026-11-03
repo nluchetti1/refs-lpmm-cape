@@ -1,37 +1,39 @@
 # Space Coast REFS QPF
 
 48-h REFS QPF for Cape Canaveral / KSC: LPMM time-lagged trend, EAS probabilities,
-LPMM vs AVRG, flash flood / recurrence interval, pad timeline, MRMS verification
-tagged by sea-breeze flow regime, and event look-backs comparing REFS, HRRR and RRFS.
+LPMM vs AVRG, flash flood / recurrence interval, per-site timelines for every
+launch complex plus KXMR, KTTS and KCOF, MRMS verification tagged by flow regime,
+and event look-backs across REFS, HRRR, RRFS, GFS, ECMWF IFS/AIFS, GEFS and ECMWF ENS.
 
 ## Setup
-1. Push everything here (including `.github/`). Delete any old `archive/` folder on
-   main; the first run copies it into the data branch if it still exists.
+1. Push everything here, including `.github/` (workflows and ISSUE_TEMPLATE).
 2. Settings → Actions → General → Workflow permissions → Read and write.
-3. Actions → "REFS QPF (Cape Canaveral)" → Run workflow (creates the `data` branch).
-4. Settings → Pages → Deploy from branch → `gh-pages` / root.
+3. Settings → General → Features → Issues on (needed for public requests).
+4. Issues → Labels → New label `lookback-request` (optional; titles starting
+   "Look-back:" also trigger the request workflow).
+5. Actions → "REFS QPF (Cape Canaveral)" → Run workflow (creates the `data` branch).
+6. Settings → Pages → Deploy from branch → `gh-pages` / root.
+
+## Look-backs
+- **Anyone:** the site's Look back tab → Request on GitHub. This opens a pre-filled
+  issue; a workflow validates it, builds the case, comments the link and closes
+  the issue. A free GitHub account is required. Limit 3 per person per day;
+  repeated windows return the existing case.
+- **You:** Actions → "Look back" → Run workflow with start/end (YYYYMMDDHH UTC).
+- **Automatic:** 24 h ending 12Z after each 12Z cycle (last 14 kept).
+
+Any whole-hour window of 3–72 h. Models are included only where their output steps
+land on the window edges: ECMWF IFS/ENS 3-hourly, AIFS 6-hourly, the others hourly.
+Windows that aren't 6-h aligned make GEFS read every 3-h file (about 2.5x slower).
+Coarse models are scored against MRMS averaged over their own grid box.
+Ensembles show member mean, 75th percentile and max (an upper envelope, not a forecast).
 
 ## Branches
-- `main`   code only
-- `gh-pages` published site (rebuilt every run)
-- `data`   persistent state, force-pushed without history:
-  `archive/` forecasts awaiting scoring, scores, regime log;
-  `cases/` look-backs; `site_cache/` last site (lets the look-back workflow republish)
-
-## Look back
-Actions → "Look back" → Run workflow with `end` (YYYYMMDDHH UTC, 00/06/12/18),
-`hours` (6/12/24/48/72) and a title. About 5 min. A 24-h case also builds
-automatically after each 12Z cycle (last 14 kept; manual cases kept forever).
-REFS archive on AWS starts 2026-08-13. Windows over 48 h are past REFS (f60) and
-HRRR (f48) range once lead time is added, so 72-h cases show RRFS only.
+- `main` code · `gh-pages` site · `data` persistent state (force-pushed, no history):
+  `archive/` forecasts awaiting scoring, scores, regime log; `cases/`; `site_cache/`.
 
 ## Flow regime
-Pressure-weighted 10 m–700 mb mean wind, 25-km mean around XMR. Light < 5 kt;
-mixed when vector-mean / mean speed < 0.5; otherwise NE/SE/SW/NW by quadrant.
-Each scored run gets up to three tags: forecast (REFS mean f06–f48), analysis
-proxy (REFS 1-h mean from each later cycle), and XMR sounding (IEM, best effort).
-Verification groups by sounding, then analysis proxy, then forecast.
-Edit `LIGHT_KT`, `MIXED_CONSISTENCY`, `REGIME_*` and `RAOB_*` in `refs_lpmm_cape.py`.
-
-Sources: NOMADS refs/prod (~2 days) and AWS noaa-rrfs-ops-pds; MRMS NCEP (~25 h)
-and AWS noaa-mrms-pds; HRRR AWS noaa-hrrr-bdp-pds; soundings mesonet.agron.iastate.edu.
+Pressure-weighted 10 m–700 mb wind, 25-km mean around XMR. Light < 5 kt; mixed when
+vector-mean / mean speed < 0.5; otherwise NE/SE/SW/NW. Tags: XMR sounding (IEM, best
+effort), REFS 1-h analysis proxy, run forecast. Edit `LIGHT_KT`, `MIXED_CONSISTENCY`,
+`REGIME_*`, `RAOB_*` in `refs_lpmm_cape.py`.

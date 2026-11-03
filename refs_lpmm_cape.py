@@ -113,9 +113,15 @@ NBHD_KM = 10.0
 MM_TO_IN = 0.0393701
 MS_TO_KT = 1.94384
 
+# Launch-complex coordinates are approximate (±0.005°, well under one 3-km grid box)
 SITES = {
     "LC-39A":             (28.6082, -80.6041, "*"),
+    "LC-39B":             (28.6272, -80.6208, "*"),
     "SLC-40":             (28.5619, -80.5772, "*"),
+    "SLC-41":             (28.5833, -80.5830, "*"),
+    "SLC-37":             (28.5317, -80.5650, "*"),
+    "LC-36":              (28.4706, -80.5378, "*"),
+    "SLC-46":             (28.4584, -80.5284, "*"),
     "Skid Strip (KXMR)":  (28.4676, -80.5669, "^"),
     "SLF (KTTS)":         (28.6150, -80.6945, "^"),
     "Patrick (KCOF)":     (28.2349, -80.6101, "^"),
@@ -125,6 +131,8 @@ SITES = {
     "Daytona (KDAB)":     (29.1799, -81.0581, "o"),
 }
 PRIMARY_SITE = "LC-39A"
+TIMELINE_SITES = ["LC-39A", "LC-39B", "SLC-40", "SLC-41", "SLC-37", "LC-36", "SLC-46",
+                  "Skid Strip (KXMR)", "SLF (KTTS)", "Patrick (KCOF)"]
 MAP_LABELS = ["LC-39A", "Skid Strip (KXMR)", "Melbourne (KMLB)", "Orlando (KMCO)", "Daytona (KDAB)"]
 
 # =============================================================================
@@ -290,11 +298,26 @@ def _step_range(msg):
         return None, int(sr) if sr.isdigit() else None
 
 
-def _lower_limit(msg):
+def _limit(msg, which):
     try:
-        return float(msg["lowerLimit"])
+        return float(msg[f"{which}Limit"])
     except Exception:
-        return float(msg["scaledValueOfLowerLimit"]) * 10.0 ** (-float(msg["scaleFactorOfLowerLimit"]))
+        return float(msg[f"scaledValueOf{which.capitalize()}Limit"]) * \
+               10.0 ** (-float(msg[f"scaleFactorOf{which.capitalize()}Limit"]))
+
+
+def _lower_limit(msg):
+    """Event threshold of a probability record (GRIB2 code table 4.9).
+
+    Types 1 (above upper limit) and 4 (below upper limit) carry the threshold in
+    the UPPER limit; 0, 2 and 3 in the lower. NCEP "prob >X" records are
+    usually type 1, so reading only the lower limit gives garbage thresholds.
+    """
+    try:
+        ptype = int(msg["probabilityType"])
+    except Exception:
+        ptype = 3
+    return _limit(msg, "upper" if ptype in (1, 4) else "lower")
 
 
 def _is_apcp(m):
@@ -353,7 +376,18 @@ def _crop(msg):
 
 
 def _pct(a):
-    return a * 100.0 if 0 < np.nanmax(a) <= 1.0001 else a
+    """Percent, clipped to 0-100. Fractions (max <= 1) are scaled first."""
+    a = a * 100.0 if np.nanmax(a) <= 1.0001 else a
+    return np.clip(a, 0.0, 100.0)
+
+
+def _snap(value, choices, tol):
+    """Nearest configured threshold within tol, else None (absorbs mm->in rounding)."""
+    best = min(choices, key=lambda c: abs(c - value))
+    return best if abs(best - value) <= tol else None
+
+
+DIAG = {"eas": {}, "ffri": {}}
 
 
 def read_1h_qpf(path, fhr, tag):
@@ -370,14 +404,22 @@ def read_1h_qpf(path, fhr, tag):
 
 
 def read_eas_6h(path, fhr):
-    out = {}
+    """{threshold_in: P(%)} for the 6-h window ending at fhr."""
+    out, seen = {}, []
     with pygrib.open(path) as g:
         msgs = [m for m in g if _is_apcp(m)]
         _log_inventory(f"eas f{fhr:02d}", msgs)
         for m in msgs:
             if _step_range(m) != (fhr - WIN, fhr):
                 continue
-            out[round(_lower_limit(m) * MM_TO_IN, 2)] = _pct(_crop(m))
+            thr_in = _lower_limit(m) * MM_TO_IN
+            seen.append(round(thr_in, 3))
+            key = _snap(thr_in, EAS_THRESHOLDS + [0.01, 3.0], 0.03)
+            if key is not None:
+                out[key] = _pct(_crop(m))
+    DIAG["eas"][f"f{fhr:02d}"] = {"thresholds_in": sorted(seen), "matched": sorted(k for k in out if k in EAS_THRESHOLDS)}
+    if not out:
+        print(f"  ! eas f{fhr:02d}: no 6-h records matched; thresholds seen (in) {sorted(seen)}")
     return out
 
 
@@ -393,6 +435,7 @@ def read_ffri_6h(path, fhr):
                 out["ari"][int(round(_lower_limit(m)))] = _pct(_crop(m))
             else:
                 out["ffg"] = _pct(_crop(m))
+    DIAG["ffri"][f"f{fhr:02d}"] = {"ari_years": sorted(out["ari"]), "ffg": out["ffg"] is not None}
     return out
 
 
@@ -508,6 +551,31 @@ def fetch_mrms_raw(hours, valid_end, extent=None, pad=1.0):
     return dict(vals=sub, lat0=lat0c, lon0=lon0c, dj=dj, di=di, jpos=jpos)
 
 
+MRMS_NATIVE_HOURS = (1, 3, 6, 12, 24, 48, 72)
+
+
+def fetch_mrms_window(start, end):
+    """MRMS Pass2 QPE for any whole-hour window up to 72 h: a native NNH file when
+    one matches, otherwise the sum of hourly 01H files."""
+    hours = int(round((end - start).total_seconds() / 3600))
+    if hours in MRMS_NATIVE_HOURS:
+        raw = fetch_mrms_raw(hours, end)
+        if raw is not None:
+            return raw
+    total = None
+    for k in range(1, hours + 1):
+        r = fetch_mrms_raw(1, start + timedelta(hours=k))
+        if r is None:
+            print(f"[mrms] hourly sum incomplete at {start + timedelta(hours=k):%d/%HZ}")
+            return None
+        if total is None:
+            total = r
+        else:
+            both = (total["vals"] >= 0) & (r["vals"] >= 0)
+            total["vals"] = np.where(both, total["vals"] + r["vals"], -1.0).astype(np.float32)
+    return total
+
+
 def mrms_native(raw):
     """Observed field (in) on its own 0.01° grid, NaN where missing."""
     nj, ni = raw["vals"].shape
@@ -518,7 +586,42 @@ def mrms_native(raw):
     return obs, lats, lons
 
 
-def sample_mrms(raw, lats, lons):
+def grid_spacing_km(lats, lons):
+    j, i = lats.shape[0] // 2, lats.shape[1] // 2
+    return float(dist_km(np.array(lats[j, i]), np.array(lons[j, i]), lats[j, min(i + 1, lats.shape[1] - 1)],
+                         lons[j, min(i + 1, lats.shape[1] - 1)]))
+
+
+def sample_mrms(raw, lats, lons, half=None):
+    """Box-mean MRMS (in) at each target point, NaN where missing.
+
+    half = box half-width in MRMS pixels. Default: matched to the target grid
+    spacing (1 px = ~3 km box for 3-km models, ~12 px = ~25 km box for 0.25°),
+    so coarse models are scored against area means, not 1-km peaks."""
+    if half is None:
+        half = max(1, int(round(grid_spacing_km(lats, lons) / 2 / 1.1))) if lats.size > 1 else 1
+    if half > 1:
+        return _box_mean_sat(raw, lats, lons, half)
+    return _sample_3x3(raw, lats, lons)
+
+
+def _box_mean_sat(raw, lats, lons, half):
+    v = raw["vals"]
+    ok = v >= 0
+    s = np.pad(np.where(ok, v, 0).cumsum(0).cumsum(1), ((1, 0), (1, 0)))
+    c = np.pad(ok.astype(np.int32).cumsum(0).cumsum(1), ((1, 0), (1, 0)))
+    rows = np.rint(((lats - raw["lat0"]) if raw["jpos"] else (raw["lat0"] - lats)) / raw["dj"]).astype(int)
+    cols = np.rint((lons - raw["lon0"]) / raw["di"]).astype(int)
+    r0 = np.clip(rows - half, 0, v.shape[0]); r1 = np.clip(rows + half + 1, 0, v.shape[0])
+    c0 = np.clip(cols - half, 0, v.shape[1]); c1 = np.clip(cols + half + 1, 0, v.shape[1])
+    tot = s[r1, c1] - s[r0, c1] - s[r1, c0] + s[r0, c0]
+    cnt = c[r1, c1] - c[r0, c1] - c[r1, c0] + c[r0, c0]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out = np.where(cnt > 0.5 * (r1 - r0) * (c1 - c0), tot / np.maximum(cnt, 1), np.nan)
+    return out * MM_TO_IN
+
+
+def _sample_3x3(raw, lats, lons):
     """3x3 (~3 km) box mean of MRMS (in) at each target point; NaN where missing or outside."""
     v = raw["vals"]
     rows = np.rint(((lats - raw["lat0"]) if raw["jpos"] else (raw["lat0"] - lats)) / raw["dj"]).astype(int)
@@ -939,8 +1042,12 @@ def plot_ffri(ffri_max, init, valid_txt):
     return True
 
 
-def plot_pad_timeline(runs, avrg, eas, valid_start):
-    (j, i), _ = site_index(PRIMARY_SITE)
+def slug(name):
+    return "".join(c if c.isalnum() else "_" for c in name.split(" (")[0]).strip("_").lower()
+
+
+def plot_pad_timeline(runs, avrg, eas, valid_start, site=PRIMARY_SITE):
+    (j, i), _ = site_index(site)
     times = [valid_start + timedelta(hours=h) for h in range(1, ACCUM_HOURS + 1)]
     has_eas = bool(eas)
     fig, axs = plt.subplots(3 if has_eas else 2, 1, figsize=(12, 9.5 if has_eas else 7), sharex=True,
@@ -989,10 +1096,12 @@ def plot_pad_timeline(runs, avrg, eas, valid_start):
     a1.legend(h[::-1], l[::-1], loc="upper left", frameon=False, fontsize=9, ncol=4)
     axs[-1].xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 6, 12, 18]))
     axs[-1].xaxis.set_major_formatter(mdates.DateFormatter("%d/%HZ"))
-    lat, lon, _ = SITES[PRIMARY_SITE]
-    fig.suptitle(f"REFS at {PRIMARY_SITE} ({lat:.3f}, {lon:.3f}), nearest grid point\nShaded = local night",
+    lat, lon, _ = SITES[site]
+    fig.suptitle(f"REFS at {site} ({lat:.3f}, {lon:.3f}), nearest grid point\nShaded = local night",
                  fontsize=13, fontweight="bold", y=0.975)
-    savefig(fig, "pad_timeline.png", 150)
+    fname = f"timeline_{slug(site)}.png"
+    savefig(fig, fname, 130)
+    return {"site": site, "file": fname}
 
 # =============================================================================
 # 10. VERIFICATION
@@ -1353,7 +1462,8 @@ def main():
         "verify_map": bool(optional("verify map", plot_verify_map)),
         "verify": bool(optional("verify scores", plot_verify_scores, scores)),
     }
-    plot_pad_timeline(runs, avrg, eas, valid_start)
+    timelines = [t for t in (optional(f"timeline {n}", plot_pad_timeline, runs, avrg, eas, valid_start, n)
+                             for n in TIMELINE_SITES if n in SITES) if t]
 
     if AUTO_DAILY_CASE and latest.hour == 12:
         import lookback
@@ -1364,6 +1474,8 @@ def main():
 
     meta = build_meta(runs, avrg, eas, ffri_max, valid_start, valid_end, frames, eas_frames,
                       products, scores, regime)
+    meta["timelines"] = timelines
+    meta["diagnostics"] = DIAG
     save_json(os.path.join(OUT_DIR, "meta.json"), meta, indent=1)
     if os.path.exists(INDEX_SRC):
         shutil.copy(INDEX_SRC, os.path.join(OUT_DIR, "index.html"))

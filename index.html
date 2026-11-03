@@ -51,9 +51,9 @@
   .ribbon-cap strong { color: var(--text); font-weight: 600; }
 
   .grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; margin-top: 28px; }
-  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1000px) { .grid { grid-template-columns: minmax(0, 1fr); } }
   main, aside { min-width: 0; }
-  .grid.wide { grid-template-columns: 1fr; }
+  .grid.wide { grid-template-columns: minmax(0, 1fr); }
   .grid.wide aside { display: none; }
 
   .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--rule); overflow-x: auto; scrollbar-width: thin; }
@@ -115,7 +115,8 @@
   .chip { display: inline-block; font: 600 13px var(--display); padding: 1px 8px; border-radius: 10px;
           border: 1px solid var(--rule); color: var(--text); margin-right: 6px; }
   .cases { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 20px; }
-  @media (max-width: 800px) { .cases { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) { .cases { grid-template-columns: minmax(0, 1fr); } }
+  .cases > * { min-width: 0; }
   .case-list { display: flex; flex-direction: column; gap: 6px; max-height: 70vh; overflow-y: auto; }
   .case-list button { text-align: left; background: var(--panel); border: 1px solid var(--rule); color: var(--text);
                       border-radius: 6px; padding: 10px 12px; cursor: pointer; font: inherit; }
@@ -126,6 +127,11 @@
   .case-head { font: 700 22px var(--display); margin: 0 0 4px; }
   .case-sub { color: var(--muted); font-size: 14px; margin: 0 0 12px; max-width: 80ch; }
   .howto { font-size: 14px; color: var(--muted); }
+  .req label { display: block; font: 600 13px var(--display); color: var(--muted); margin: 10px 0 4px; }
+  .req input { width: 100%; background: var(--ink); color: var(--text); border: 1px solid var(--rule); border-radius: 4px;
+               padding: 7px 8px; font: 14px var(--body); color-scheme: dark; }
+  .req .btn { margin-top: 12px; width: 100%; }
+  .req .err { color: var(--bad); font-size: 13px; min-height: 1.2em; margin-top: 6px; }
   .howto code { color: var(--text); background: var(--ink); padding: 1px 5px; border-radius: 3px; }
   .empty { border: 1px dashed var(--rule); border-radius: 6px; padding: 24px; color: var(--muted); }
 
@@ -169,7 +175,7 @@
         <button role="tab" aria-selected="false" aria-controls="v-thresh" id="t-thresh">Thresholds</button>
         <button role="tab" aria-selected="false" aria-controls="v-avrg"   id="t-avrg" data-needs="avrg">LPMM vs AVRG</button>
         <button role="tab" aria-selected="false" aria-controls="v-ffri"   id="t-ffri" data-needs="ffri">Flash flood</button>
-        <button role="tab" aria-selected="false" aria-controls="v-pad"    id="t-pad">Pad timeline</button>
+        <button role="tab" aria-selected="false" aria-controls="v-pad"    id="t-pad">Site timeline</button>
         <button role="tab" aria-selected="false" aria-controls="v-verify" id="t-verify">Verification</button>
         <button role="tab" aria-selected="false" aria-controls="v-cases"  id="t-cases">Look back</button>
       </div>
@@ -228,9 +234,10 @@
       </section>
 
       <section class="view" id="v-pad" role="tabpanel" aria-labelledby="t-pad" hidden>
-        <p class="note" id="pad-note">Nearest grid point. Bars are the latest LPMM, solid lines earlier runs, dashed AVRG. The bottom panel is the EAS 6-h probability at the pad.</p>
-        <div class="figure"><img data-src="pad_timeline.png" alt="Hourly, accumulated and probabilistic QPF at the pad"></div>
-        <div class="fig-actions"><a data-dl="pad_timeline.png" download>Download PNG</a></div>
+        <p class="note" id="pad-note">Nearest grid point. Bars are the latest LPMM, solid lines earlier runs, dashed AVRG. The bottom panel is the EAS 6-h probability at the site.</p>
+        <div class="seg" id="tl-seg" role="group" aria-label="Site" style="flex-wrap:wrap"></div>
+        <div class="figure"><img id="tl-img" alt="Hourly, accumulated and probabilistic QPF at the site"></div>
+        <div class="fig-actions"><a id="tl-dl" download>Download PNG</a></div>
       </section>
 
       <section class="view" id="v-verify" role="tabpanel" aria-labelledby="t-verify" hidden>
@@ -275,19 +282,28 @@
     <div class="table-wrap"><table>
       <thead>
         <tr>
-          <th>Site</th><th>LPMM</th><th>AVRG</th><th>Δ vs −6 h</th><th id="nb-head">10 km max</th><th>Peak 1 h</th>
-          <th class="grp" title="Highest EAS probability in any 6-h window">P 6 h ≥ 0.5″</th><th title="Highest EAS probability in any 6-h window">P 6 h ≥ 1″</th>
-          <th title="Highest probability 6-h QPF exceeds flash flood guidance">P &gt; FFG</th>
+          <th></th><th colspan="5" style="text-align:left">REFS 48-h QPF, latest run</th>
+          <th class="grp" colspan="3" style="text-align:left">REFS ensemble probability, highest 6-h window</th>
+        </tr>
+        <tr>
+          <th>Site</th><th>LPMM</th><th>AVRG</th><th title="Latest LPMM minus the run 6 h earlier, same 48-h window">LPMM vs −6 h run</th>
+          <th id="nb-head">LPMM 10 km max</th><th>LPMM peak 1 h</th>
+          <th class="grp" title="EAS: share of members (with neighborhood) at or above the threshold">EAS ≥ 0.5″</th>
+          <th title="EAS: share of members (with neighborhood) at or above the threshold">EAS ≥ 1″</th>
+          <th title="FFRI: probability 6-h QPF exceeds flash flood guidance">FFRI &gt; FFG</th>
         </tr>
       </thead>
       <tbody id="sites"></tbody>
     </table></div>
+    <p class="note" style="margin:10px 0 0">LPMM and AVRG are single fields built from the REFS members. The probability columns come from all members, not from LPMM:
+      EAS is the ensemble-agreement-scale probability that 6-h QPF reaches the threshold, and FFRI is the probability 6-h QPF exceeds flash flood guidance. Each is the highest value over the eight 6-h windows in the next 48 h.</p>
+    <p class="note" id="diag-note" style="margin:6px 0 0"></p>
   </section>
 
   <footer>
     LPMM is a localized probability-matched mean: realistic amounts and structure, but a single field. Use Probability, Thresholds and LPMM vs AVRG for spread.
     Verification scores each run’s 48-h total against MRMS multi-sensor (Pass 2) QPE once the window closes.
-    Look back compares REFS, HRRR and RRFS with MRMS for any past window. Built from NCEP REFS on NOMADS and AWS, about 3.5 h after each 00, 06, 12 and 18Z cycle.
+    Look back compares REFS, HRRR, RRFS, GFS, ECMWF IFS/AIFS and the GEFS/ECMWF ensembles with MRMS for any past window. Built from NCEP REFS on NOMADS and AWS, about 3.5 h after each 00, 06, 12 and 18Z cycle.
   </footer>
 </div>
 
@@ -301,6 +317,7 @@
   const fmtUTC = (iso, opts) => new Date(iso).toLocaleString("en-US",
     Object.assign({ timeZone: "UTC", weekday: "short", hour: "2-digit", hour12: false }, opts || {})) + "Z";
   const dayUTC = (iso) => fmtUTC(iso, { day: "2-digit", month: "short" });
+  const esc = (t) => String(t ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const inch = (v) => v == null ? "—" : (v < 0.01 ? "0" : v.toFixed(2)) + "″";
   const num = (v, d = 2) => v == null ? "—" : v.toFixed(d);
   const pcls = (p) => p == null ? "" : p >= 50 ? "p-hi" : p >= 20 ? "p-mid" : "p-lo";
@@ -424,7 +441,7 @@
 
   // ---------- tables & sidebar
   function drawSites() {
-    $("nb-head").textContent = `${meta.nbhd_km} km max`;
+    $("nb-head").textContent = `LPMM ${meta.nbhd_km} km max`;
     $("sites").innerHTML = meta.sites.map(s => {
       const [a, b] = s.runs;
       let d = "—", cls = "flat";
@@ -523,22 +540,44 @@
     } catch (e) { caseIndex = []; }
     drawCases();
   }
-  function drawCases() {
+  function issueUrl(start, end, title) {
     const repo = meta.repo;
-    const wf = repo ? `https://github.com/${repo}/actions/workflows/lookback.yml` : null;
-    $("howto").innerHTML = `<h2>Build a case</h2>
-      ${wf ? `<p>Open <a href="${wf}" target="_blank" rel="noreferrer">the look-back workflow</a>, choose <strong>Run workflow</strong>, and enter:</p>`
-           : `<p>In the repository’s Actions tab, run <strong>Look back</strong> with:</p>`}
-      <p><code>end</code> window end, YYYYMMDDHH UTC at 00/06/12/18<br><code>hours</code> 6, 12, 24, 48 or 72<br><code>title</code> what happened</p>
-      <p>It takes about 5 min. REFS is archived from 13 Aug 2026; 72-h windows exceed REFS and HRRR range, so only RRFS is shown.</p>`;
+    if (!repo) return null;
+    const q = new URLSearchParams({ template: "lookback.yml", title: `Look-back: ${title || start + " to " + end}`,
+                                    start, end, case_title: title || "" });
+    return `https://github.com/${repo}/issues/new?${q}`;
+  }
+  const toStamp = (v) => v ? v.replace(/[-:T]/g, "").slice(0, 10) : "";
+  function drawCases() {
+    const now = new Date(Date.now() - 75 * 60e3);
+    const iso = (d) => d.toISOString().slice(0, 13) + ":00";
+    $("howto").innerHTML = `<h2>Request a look-back</h2>
+      <div class="req">
+        <label for="rq-start">Start (UTC)</label><input id="rq-start" type="datetime-local" step="3600" value="${iso(new Date(now - 24 * 3.6e6))}">
+        <label for="rq-end">End (UTC)</label><input id="rq-end" type="datetime-local" step="3600" value="${iso(now)}">
+        <label for="rq-title">Title</label><input id="rq-title" type="text" maxlength="80" placeholder="What happened">
+        <button class="btn" id="rq-go">Request on GitHub</button>
+        <div class="err" id="rq-err"></div>
+      </div>
+      <p>Opens a pre-filled GitHub issue (a free GitHub account is needed). The case builds in about 10 minutes and the link is posted on the issue.
+        Windows of 3–72 h, whole hours, ending at least 70 minutes ago. REFS is archived from 13 Aug 2026.</p>`;
+    $("rq-go").onclick = () => {
+      const s = toStamp($("rq-start").value), e = toStamp($("rq-end").value);
+      const hrs = (Date.parse($("rq-end").value + "Z") - Date.parse($("rq-start").value + "Z")) / 3.6e6;
+      if (!(hrs >= 3 && hrs <= 72)) { $("rq-err").textContent = "Window must be 3–72 h long."; return; }
+      if (Date.parse($("rq-end").value + "Z") > now) { $("rq-err").textContent = "End must be at least 70 minutes ago."; return; }
+      const url = issueUrl(s, e, $("rq-title").value.trim());
+      if (!url) { $("rq-err").textContent = "Repository unknown; run the main workflow once so the site knows its repo."; return; }
+      $("rq-err").textContent = ""; window.open(url, "_blank", "noopener");
+    };
     if (!caseIndex.length) {
       $("case-list").innerHTML = "";
-      $("case-body").innerHTML = `<div class="empty">No look-backs yet. A 24-h case builds automatically after each 12Z cycle, or build one for a specific event with the workflow.</div>`;
+      $("case-body").innerHTML = `<div class="empty">No look-backs yet. A 24-h case builds automatically after each 12Z cycle, or request one.</div>`;
       return;
     }
     $("case-list").innerHTML = caseIndex.map(c => `
       <button data-id="${c.id}" aria-current="${c.id === caseSel}">
-        <b>${c.title}</b>
+        <b>${esc(c.title)}</b>
         <small>${c.hours} h to ${dayUTC(c.end)}${c.obs ? `, max ${inch(c.obs.max)} near ${c.obs.near}` : ""}</small>
       </button>`).join("");
     $("case-list").querySelectorAll("button").forEach(b => b.onclick = () => showCase(b.dataset.id));
@@ -547,6 +586,12 @@
       showCase(caseIndex.find(c => c.id === want) ? want : caseIndex[0].id, !!want);
     }
   }
+  const STAT = { mean: "mean", p75: "P75", max: "max" };
+  function modelInfo(c, name) {
+    const [k, st] = name.split("_");
+    const m = (c.models || {})[k] || { label: k, color: "var(--text)" };
+    return { label: m.label + (st ? " " + STAT[st] : ""), color: m.color, base: k, stat: st };
+  }
   async function showCase(id, fromHash) {
     caseSel = id;
     $("case-list").querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.id === id));
@@ -554,33 +599,59 @@
     let c;
     try { c = await (await fetch(`cases/${id}/case.json?v=${stamp}`)).json(); }
     catch (e) { $("case-body").innerHTML = `<div class="empty">case.json for ${id} could not be loaded.</div>`; return; }
-    const img = (f, alt) => c.images.includes(f) ? `<div class="figure"><img src="cases/${id}/${f}?v=${stamp}" alt="${alt}"></div>` : "";
-    const rows = c.rows.slice().sort((a, b) => a.model.localeCompare(b.model) || a.lead - b.lead).map(r => `
-      <tr><td style="color:${{REFS: "var(--latest)", AVRG: "var(--avrg)", HRRR: "var(--run6)", RRFS: "var(--good)"}[r.model]}">${r.model === "REFS" ? "REFS LPMM" : r.model === "AVRG" ? "REFS AVRG" : r.model}</td>
-        <td>${dayUTC(r.init)}</td><td>${r.lead} h</td><td>${inch(r.near_event_max)}</td><td>${inch(r.domain_max)}</td>
-        <td class="grp">${num(r.ets_1)}</td><td>${num(r.ets_2)}</td><td>${num(r.ets_4)}</td><td class="grp">${num(r.bias_ratio)}</td></tr>`).join("");
+    const img = (f, alt) => (c.images || []).includes(f) ? `<div class="figure"><img src="cases/${id}/${f}?v=${stamp}" alt="${alt}"></div>` : "";
+    const order = Object.keys(c.models || {});
+    const sorted = c.rows.slice().sort((a, b) => {
+      const A = modelInfo(c, a.model), B = modelInfo(c, b.model);
+      return order.indexOf(A.base) - order.indexOf(B.base) || (A.stat || "").localeCompare(B.stat || "") || a.lead - b.lead;
+    });
+    const rows = sorted.map(r => { const m = modelInfo(c, r.model); return `
+      <tr><td style="color:${m.color}">${m.label}</td><td>${dayUTC(r.init)}</td><td>${r.lead} h</td><td class="flat">${r.grid_km ? Math.round(r.grid_km) + " km" : ""}</td>
+        <td>${inch(r.near_event_max)}</td><td>${inch(r.domain_max)}</td>
+        <td class="grp">${num(r.ets_1)}</td><td>${num(r.ets_2)}</td><td>${num(r.ets_4)}</td><td class="grp">${num(r.bias_ratio)}</td></tr>`; }).join("");
     const shortest = {};
     c.rows.forEach(r => { if (!shortest[r.model] || r.lead < shortest[r.model].lead) shortest[r.model] = r; });
-    const models = ["REFS", "AVRG", "HRRR", "RRFS"].filter(m => shortest[m]);
+    const cols = Object.keys(shortest).filter(k => !k.endsWith("_mean"))
+      .sort((a, b) => order.indexOf(modelInfo(c, a).base) - order.indexOf(modelInfo(c, b).base) || a.localeCompare(b));
     const siteRows = Object.keys(c.obs.sites).map(n => `<tr><td>${n}</td><td>${inch(c.obs.sites[n])}</td>${
-      models.map(m => `<td>${inch(shortest[m].sites[n])}</td>`).join("")}</tr>`).join("");
+      cols.map(m => `<td>${inch(shortest[m].sites[n])}</td>`).join("")}</tr>`).join("");
+    const refs0 = c.rows.filter(x => x.model === "REFS").sort((a, b) => a.lead - b.lead)[0];
     $("case-body").innerHTML = `
-      <h3 class="case-head">${c.title}</h3>
-      <p class="case-sub">${dayUTC(c.start)} to ${dayUTC(c.end)}. MRMS max <strong>${inch(c.obs.max)}</strong> ${c.obs.near_km < 3 ? "at" : `${c.obs.near_km} km from`} ${c.obs.near}${
-        (() => { const r = c.rows.filter(x => x.model === "REFS").sort((a, b) => a.lead - b.lead)[0];
-                 return r && r.near_event_max != null ? `; the shortest-lead REFS LPMM reached ${inch(r.near_event_max)} within ${c.event_radius_km} km` : ""; })()}.
-        The ○ on every map marks the observed max.</p>
+      <h3 class="case-head">${esc(c.title)}</h3>
+      <p class="case-sub">${dayUTC(c.start)} to ${dayUTC(c.end)} (${c.hours} h). MRMS max <strong>${inch(c.obs.max)}</strong>
+        ${c.obs.near_km < 3 ? "at" : `${c.obs.near_km} km from`} ${c.obs.near}${refs0 && refs0.near_event_max != null ? `; the shortest-lead REFS LPMM reached ${inch(refs0.near_event_max)} within ${c.event_radius_km} km` : ""}.
+        ○ marks the observed max. Coarse models are scored against MRMS averaged over their grid box (the 25-km-mean MRMS max was ${inch(c.obs.area_max)}),
+        so compare a 0.25° model with that number, not the 1-km peak. Ensemble “max” is the wettest member at each point, an upper envelope rather than a forecast.</p>
       ${img("dprog.png", "Forecast trend by lead time")}
-      ${img("models.png", "Shortest-lead forecast from each model vs MRMS")}
+      ${img("models.png", "Shortest-lead forecasts vs MRMS")}
+      ${img("ens.png", "Global ensembles vs MRMS")}
       ${img("refs.png", "REFS LPMM at each lead vs MRMS")}
       <div class="table-wrap" style="margin-top:16px"><table>
-        <thead><tr><th>Model</th><th>Init</th><th>Lead</th><th>Near max</th><th>Domain max</th>
+        <thead><tr><th>Model</th><th>Init</th><th>Lead</th><th>Grid</th><th>Near max</th><th>Domain max</th>
           <th class="grp">ETS 1″</th><th>2″</th><th>4″</th><th class="grp">Bias</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <div class="table-wrap" style="margin-top:16px"><table>
-        <thead><tr><th>Site</th><th>MRMS</th>${models.map(m => `<th>${m === "REFS" ? "LPMM" : m} ${shortest[m].lead} h</th>`).join("")}</tr></thead>
+        <thead><tr><th>Site</th><th>MRMS</th>${cols.map(m => { const i = modelInfo(c, m); return `<th style="color:${i.color}">${i.label} ${shortest[m].lead} h</th>`; }).join("")}</tr></thead>
         <tbody>${siteRows}</tbody></table></div>
-      ${c.notes.length ? `<p class="note" style="margin-top:12px">Missing: ${c.notes.join(", ")}.</p>` : ""}`;
+      ${c.notes.length ? `<p class="note" style="margin-top:12px">Not available: ${esc(c.notes.join(", "))}.</p>` : ""}`;
+  }
+
+  let tlSel = null;
+  function drawTimelines() {
+    const t = meta.timelines || [{ site: meta.primary_site, file: "pad_timeline.png" }];
+    if (!tlSel || !t.find(x => x.site === tlSel)) tlSel = t[0].site;
+    $("tl-seg").innerHTML = t.map(x => `<button aria-pressed="${x.site === tlSel}" data-s="${x.site}">${x.site.split(" (")[0]}</button>`).join("");
+    $("tl-seg").querySelectorAll("button").forEach(b => b.onclick = () => { tlSel = b.dataset.s; drawTimelines(); });
+    const f = t.find(x => x.site === tlSel).file;
+    $("tl-img").src = f + "?v=" + stamp; $("tl-dl").href = f + "?v=" + stamp;
+  }
+  function drawDiag() {
+    const d = (meta.diagnostics || {}).eas || {};
+    const keys = Object.keys(d);
+    const matched = keys.filter(k => (d[k].matched || []).length).length;
+    $("diag-note").textContent = keys.length && !matched
+      ? `EAS decoded no usable thresholds this run (thresholds seen, in: ${(d[keys[0]].thresholds_in || []).join(", ") || "none"}). The EAS columns and Probability tab are empty until that is fixed.`
+      : "";
   }
 
   function drawStatus() {
@@ -616,7 +687,7 @@
       const m = await r.json();
       if (m.generated_utc !== stamp) {
         meta = m; stamp = m.generated_utc;
-        drawTabs(); drawStatus(); drawRibbon(); drawRegime(); drawSites(); drawSide(); drawVerify(); drawImages(); loadCases();
+        drawTabs(); drawStatus(); drawRibbon(); drawRegime(); drawSites(); drawSide(); drawVerify(); drawImages(); drawTimelines(); drawDiag(); loadCases();
       } else drawStatus();
     } catch (e) {
       if (!meta) {
