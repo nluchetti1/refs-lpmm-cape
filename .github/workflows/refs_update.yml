@@ -3,24 +3,32 @@ name: REFS QPF (Cape Canaveral)
 on:
   schedule:
     # ~3h25m after each REFS cycle (f60 posted by +3h12m for 06Z on 2026-11-03).
-    # GitHub cron often fires 5-30 min late; the script also waits up to 60 min.
     - cron: '25 3,9,15,21 * * *'
   workflow_dispatch:
 
 concurrency:
-  group: refs-qpf-cape
+  group: refs-qpf-cape          # shared with lookback.yml so they never race on the data branch
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     permissions:
       contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Persistent state (forecast archive, scores, regime log, look-back cases,
+      # last published site). Missing on the very first run, which is fine.
+      - name: Checkout data branch
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: data
+          path: data
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,26 +49,23 @@ jobs:
       - name: Install Python libraries
         run: pip install -r requirements.txt
 
-      - name: Build maps and score verification
+      - name: Build maps, score verification, tag regimes
         run: python refs_lpmm_cape.py
 
-      # Forecast archive + scores live on main so they survive between runs.
-      # NCEP keeps MRMS ~25 h, so a forecast must be on disk when its window closes.
-      - name: Commit verification archive
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add -A archive
-          if git diff --cached --quiet; then
-            echo "archive unchanged"
-          else
-            git commit -m "archive: $(date -u +%Y%m%d%H)Z"
-            git pull --rebase --autostash
-            git push
-          fi
+      - name: Prepare data branch
+        run: rm -rf data/.git
 
-      # Only reached when the script succeeds, so a NOMADS outage leaves the
-      # last good site in place instead of publishing an empty page.
+      - name: Save data branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: data
+          publish_dir: ./data
+          force_orphan: true
+          enable_jekyll: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
