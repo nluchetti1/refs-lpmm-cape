@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Space Coast REFS QPF</title>
+<title>REFS QPF</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
@@ -150,8 +150,8 @@
 
   <header>
     <div>
-      <h1>Space Coast REFS QPF</h1>
-      <p class="sub" id="sub">48-h ensemble QPF for Cape Canaveral and Kennedy Space Center</p>
+      <h1 id="h-title">REFS QPF</h1>
+      <p class="sub" id="sub">48-h ensemble QPF</p>
     </div>
     <div class="status" id="status" data-s="unknown" role="status">
       <span class="dot"></span>
@@ -507,8 +507,8 @@
           <th class="grp">ETS 1″ LPMM</th><th>AVRG</th><th class="grp">Bias LPMM</th><th>AVRG</th><th>MRMS max</th><th>Flow</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <h2 style="margin-top:24px">By flow regime</h2>
-      <p class="note">${rr.layer || "Layer-mean"} wind at ${rr.point || "XMR"}. Light below ${rr.light_kt} kt; mixed when vector-mean / mean speed is under ${rr.mixed_consistency}.
-        Source order: XMR sounding, then REFS 1-h analysis proxy, then the run’s own forecast.</p>
+      <p class="note">${rr.layer || "Layer-mean"} wind at ${rr.point || "the sounding site"}. Light below ${rr.light_kt} kt; mixed when vector-mean / mean speed is under ${rr.mixed_consistency}.
+        Source order: ${(meta.regime_rules || {}).point_name || "local"} sounding, then REFS 1-h analysis proxy, then the run’s own forecast.</p>
       ${reg ? `<div class="table-wrap"><table><thead><tr><th>Regime</th><th>Runs</th><th class="grp">ETS 1″ LPMM</th><th>AVRG</th>
         <th class="grp">Bias LPMM</th><th>AVRG</th><th>Tag source</th></tr></thead><tbody>${reg}</tbody></table></div>`
         : `<div class="empty">No regime tags yet.</div>`}`;
@@ -518,7 +518,7 @@
   function drawRegime() {
     const r = meta.regime;
     if (!r) { $("regime-cap").textContent = ""; return; }
-    let t = `<span class="chip">${r.name}</span>Forecast 10 m–700 mb flow at XMR, next 48 h: <strong>${regTxt(r)}</strong>.`;
+    let t = `<span class="chip">${r.name}</span>Forecast 10 m–700 mb flow at ${(meta.regime_rules || {}).point_name || "the sounding site"}, next 48 h: <strong>${regTxt(r)}</strong>.`;
     const g = meta.verify && (meta.verify.by_regime || []).find(x => x.regime === r.name);
     if (g && g.n_ets >= meta.regime_min_n && g.ets1_lpmm != null && g.ets1_avrg != null) {
       const better = g.ets1_avrg > g.ets1_lpmm + 0.02 ? "AVRG" : g.ets1_lpmm > g.ets1_avrg + 0.02 ? "LPMM" : null;
@@ -540,62 +540,100 @@
     } catch (e) { caseIndex = []; }
     drawCases();
   }
-  function issueUrl(start, end, title) {
+  function issueUrl(start, end, title, human) {
     const repo = meta.repo;
     if (!repo) return null;
-    const q = new URLSearchParams({ template: "lookback.yml", title: `Look-back: ${title || start + " to " + end}`,
+    const q = new URLSearchParams({ template: "lookback.yml", title: `Look-back: ${title ? title + " · " : ""}${human}`,
                                     start, end, case_title: title || "" });
     return `https://github.com/${repo}/issues/new?${q}`;
   }
   function drawCases() {
     const now = new Date(Date.now() - 75 * 60e3);
     const iso = (d) => d.toISOString().slice(0, 13) + ":00";
-    const hourOpts = (sel) => Array.from({ length: 24 }, (_, h) =>
-      `<option value="${String(h).padStart(2, "0")}" ${h === sel ? "selected" : ""}>${String(h).padStart(2, "0")}Z</option>`).join("");
-    const lastSyn = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), Math.floor(now.getUTCHours() / 6) * 6));
-    const dayStr = (d) => d.toISOString().slice(0, 10);
-    const prev = new Date(lastSyn - 24 * 3.6e6);
-    $("howto").innerHTML = `<h2>Request a look-back</h2>
-      <div class="req">
-        <label>Start, UTC</label>
-        <div style="display:flex;gap:6px"><input id="rq-sd" type="date" value="${dayStr(prev)}" style="flex:1"><select id="rq-sh" class="btn" style="width:84px">${hourOpts(prev.getUTCHours())}</select></div>
-        <label>End, UTC</label>
-        <div style="display:flex;gap:6px"><input id="rq-ed" type="date" value="${dayStr(lastSyn)}" style="flex:1"><select id="rq-eh" class="btn" style="width:84px">${hourOpts(lastSyn.getUTCHours())}</select></div>
-        <label for="rq-title">Title</label><input id="rq-title" type="text" maxlength="80" placeholder="What happened">
-        <p class="note" id="rq-prev" style="margin:10px 0 0"></p>
-        <button class="btn" id="rq-go">Request on GitHub</button>
-        <div class="err" id="rq-err"></div>
-      </div>
-      <p>Opens a pre-filled GitHub issue (free GitHub account needed). Builds in about 10–15 min; the link is posted on the issue.
-        3–72 h windows ending at least 70 min ago. REFS is archived from 13 Aug 2026.</p>`;
-    const read = () => {
-      const s = $("rq-sd").value && new Date($("rq-sd").value + "T" + $("rq-sh").value + ":00Z");
-      const e = $("rq-ed").value && new Date($("rq-ed").value + "T" + $("rq-eh").value + ":00Z");
-      return { s, e, hrs: s && e ? (e - s) / 3.6e6 : NaN };
+    // Times are entered in Eastern (default) or UTC; the issue always receives UTC stamps.
+    const TZ = "America/New_York";
+    const zoneOffsetMin = (utcMs) => {           // minutes to add to UTC to get Eastern wall time
+      const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: TZ, hourCycle: "h23",
+        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+        .formatToParts(new Date(utcMs)).map(x => [x.type, x.value]));
+      return (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - utcMs) / 60e3;
     };
+    const wallToUtc = (dateStr, hour, zone) => {   // "2026-11-01", 7, "et" -> Date (UTC)
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const guess = Date.UTC(y, m - 1, d, hour);
+      if (zone === "utc") return new Date(guess);
+      let t = guess - zoneOffsetMin(guess) * 60e3;
+      t = guess - zoneOffsetMin(t) * 60e3;         // second pass settles DST edges
+      return new Date(t);
+    };
+    const etLabel = (d) => d.toLocaleString("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric" }) +
+      " " + (zoneOffsetMin(d.getTime()) === -240 ? "EDT" : "EST");
+    const zLabel = (d) => d.toLocaleString("en-US", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short", hour: "2-digit", hour12: false }) + "Z";
     const stampOf = (d) => d.toISOString().slice(0, 13).replace(/[-T]/g, "");
+    let zone = localStorage.getItem("rqZone") || "et";
+    const hourOpts = (sel) => Array.from({ length: 24 }, (_, h) => {
+      const lab = zone === "utc" ? `${String(h).padStart(2, "0")}Z` : `${(h % 12) || 12} ${h < 12 ? "AM" : "PM"}`;
+      return `<option value="${h}" ${h === sel ? "selected" : ""}>${lab}</option>`;
+    }).join("");
+    const lastSyn = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), Math.floor(now.getUTCHours() / 6) * 6));
+    const prevSyn = new Date(lastSyn - 24 * 3.6e6);
+    const wall = (d) => {                           // Date -> {date, hour} in the chosen zone
+      const x = zone === "utc" ? d : new Date(d.getTime() + zoneOffsetMin(d.getTime()) * 60e3);
+      return { date: x.toISOString().slice(0, 10), hour: x.getUTCHours() };
+    };
+    const renderForm = (sDate, eDate) => {
+      const s0 = wall(sDate), e0 = wall(eDate);
+      $("howto").innerHTML = `<h2>Request a look-back</h2>
+        <div class="seg" role="group" aria-label="Time zone" style="margin:4px 0 2px">
+          <button data-z="et" aria-pressed="${zone === "et"}">Eastern</button><button data-z="utc" aria-pressed="${zone === "utc"}">UTC</button>
+        </div>
+        <div class="req">
+          <label>Start</label>
+          <div style="display:flex;gap:6px"><input id="rq-sd" type="date" value="${s0.date}" style="flex:1"><select id="rq-sh" class="btn" style="width:92px">${hourOpts(s0.hour)}</select></div>
+          <label>End</label>
+          <div style="display:flex;gap:6px"><input id="rq-ed" type="date" value="${e0.date}" style="flex:1"><select id="rq-eh" class="btn" style="width:92px">${hourOpts(e0.hour)}</select></div>
+          <label for="rq-title">Title</label><input id="rq-title" type="text" maxlength="80" placeholder="What happened">
+          <p class="note" id="rq-prev" style="margin:10px 0 0"></p>
+          <button class="btn" id="rq-go">Request on GitHub</button>
+          <div class="err" id="rq-err"></div>
+        </div>
+        <p>Opens a pre-filled GitHub issue (free GitHub account needed); press <strong>Create</strong> there without editing the times.
+          The issue shows them in UTC, which is what the builder reads. Builds in about 10–15 min; the link is posted on the issue.</p>`;
+      $("howto").querySelectorAll("[data-z]").forEach(b => b.onclick = () => {
+        const cur = read(); zone = b.dataset.z; localStorage.setItem("rqZone", zone);
+        renderForm(cur.s || sDate, cur.e || eDate);
+      });
+      ["rq-sd", "rq-sh", "rq-ed", "rq-eh"].forEach(id => $(id).onchange = preview);
+      $("rq-go").onclick = submit;
+      preview();
+    };
+    const read = () => {
+      const sd = $("rq-sd") && $("rq-sd").value, ed = $("rq-ed") && $("rq-ed").value;
+      const s = sd ? wallToUtc(sd, +$("rq-sh").value, zone) : null;
+      const e = ed ? wallToUtc(ed, +$("rq-eh").value, zone) : null;
+      return { s, e, hrs: s && e ? Math.round((e - s) / 3.6e6) : NaN };
+    };
     const preview = () => {
       const { s, e, hrs } = read();
       if (!s || !e) { $("rq-prev").textContent = ""; return; }
-      const f = (d) => d.toLocaleString("en-US", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short", hour: "2-digit", hour12: false }) + "Z";
       const syn = s.getUTCHours() % 6 === 0 && e.getUTCHours() % 6 === 0;
       const tri = s.getUTCHours() % 3 === 0 && e.getUTCHours() % 3 === 0;
-      $("rq-prev").innerHTML = `Window <strong>${f(s)} to ${f(e)}</strong> (${hrs} h).` +
-        (syn ? (hrs > 48 ? " HRRR runs end at f48, so it’s skipped for windows over 48 h." : " All models included.")
-             : tri ? " <span style=\"color:var(--warn)\">AIFS is skipped: start and end must be on 00/06/12/18Z.</span>"
-                   : " <span style=\"color:var(--warn)\">GEFS, ECMWF IFS/ENS and AIFS are skipped: use 3-hourly (best 00/06/12/18Z) edges.</span>");
+      $("rq-prev").innerHTML = `<strong>${etLabel(s)} to ${etLabel(e)}</strong><br>= ${zLabel(s)} to ${zLabel(e)} (${hrs} h).` +
+        (syn ? (hrs > 48 ? " HRRR runs end at f48, so it’s skipped over 48 h." : " All models included.")
+             : `<br><span style="color:var(--warn)">${tri ? "AIFS is" : "GEFS, ECMWF IFS/ENS and AIFS are"} skipped at these hours.
+                For every model use 1 AM, 7 AM, 1 PM or 7 PM EST (2/8 AM/PM EDT), which are 06/12/18/00Z.</span>`);
     };
-    ["rq-sd", "rq-sh", "rq-ed", "rq-eh"].forEach(id => $(id).onchange = preview);
-    preview();
-    $("rq-go").onclick = () => {
+    const submit = () => {
       const { s, e, hrs } = read();
       if (!s || !e) { $("rq-err").textContent = "Pick both dates."; return; }
       if (!(hrs >= 3 && hrs <= 72)) { $("rq-err").textContent = "Window must be 3–72 h long."; return; }
       if (e > now) { $("rq-err").textContent = "End must be at least 70 minutes ago."; return; }
-      const url = issueUrl(stampOf(s), stampOf(e), $("rq-title").value.trim());
+      const t = $("rq-title").value.trim();
+      const url = issueUrl(stampOf(s), stampOf(e), t, `${zLabel(s)}–${zLabel(e)} (${etLabel(s)}–${etLabel(e)})`);
       if (!url) { $("rq-err").textContent = "Repository unknown; run the main workflow once so the site knows its repo."; return; }
       $("rq-err").textContent = ""; window.open(url, "_blank", "noopener");
     };
+    renderForm(prevSyn, lastSyn);
     if (!caseIndex.length) {
       $("case-list").innerHTML = "";
       $("case-body").innerHTML = `<div class="empty">No look-backs yet. A 24-h case builds automatically after each 12Z cycle, or request one.</div>`;
@@ -653,11 +691,16 @@
       ${img("ens.png", "Global ensembles vs MRMS")}
       ${img("refs.png", "REFS LPMM at each lead vs MRMS")}
       <div class="table-wrap" style="margin-top:16px"><table>
-        <thead><tr><th>Model</th><th>Init</th><th>Lead</th><th>Grid</th><th>Near max</th><th>Domain max</th>
+        <thead><tr><th></th><th colspan="5" style="text-align:left">${c.hours}-h window totals</th><th class="grp" colspan="3"></th><th class="grp"></th></tr>
+          <tr><th>Model</th><th>Run</th><th>Lead</th><th>Grid</th><th>Near max</th><th>Domain max</th>
           <th class="grp">ETS 1″</th><th>2″</th><th>4″</th><th class="grp">Bias</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <div class="table-wrap" style="margin-top:16px"><table>
-        <thead><tr><th>Site</th><th>MRMS</th>${cols.map(m => { const i = modelInfo(c, m); return `<th style="color:${i.color}">${i.label} ${shortest[m].lead} h</th>`; }).join("")}</tr></thead>
+        <thead>
+          <tr><th></th><th colspan="${cols.length + 1}" style="text-align:left">${c.hours}-h total (in). Each model column is its shortest-lead run: run time and hours before the window start.</th></tr>
+          <tr><th>Site</th><th>MRMS</th>${cols.map(m => { const i = modelInfo(c, m); const r = shortest[m];
+            return `<th style="color:${i.color}">${i.label}<br><span class="flat" style="font-weight:500">${dayUTC(r.init).replace(/^\w+, /, "")} · ${r.lead} h lead</span></th>`; }).join("")}</tr>
+        </thead>
         <tbody>${siteRows}</tbody></table></div>
       ${c.notes.length ? `<p class="note" style="margin-top:12px">Not available: ${esc(c.notes.join(", "))}.</p>` : ""}`;
   }
@@ -666,8 +709,15 @@
   function drawTimelines() {
     const t = meta.timelines || [{ site: meta.primary_site, file: "pad_timeline.png" }];
     if (!tlSel || !t.find(x => x.site === tlSel)) tlSel = t[0].site;
-    $("tl-seg").innerHTML = t.map(x => `<button aria-pressed="${x.site === tlSel}" data-s="${x.site}">${x.site.split(" (")[0]}</button>`).join("");
-    $("tl-seg").querySelectorAll("button").forEach(b => b.onclick = () => { tlSel = b.dataset.s; drawTimelines(); });
+    const lab = (n) => { const s = (meta.sites || []).find(x => x.name === n); return s && s.label && t.length > 12 ? `${s.label} · ${n.split(" (")[0]}` : n.split(" (")[0]; };
+    if (t.length > 12) {
+      $("tl-seg").outerHTML = `<select id="tl-seg" class="btn" aria-label="Site" style="margin-bottom:12px;min-width:260px">${
+        t.map(x => `<option value="${esc(x.site)}" ${x.site === tlSel ? "selected" : ""}>${esc(lab(x.site))}</option>`).join("")}</select>`;
+      $("tl-seg").onchange = (e) => { tlSel = e.target.value; drawTimelines(); };
+    } else {
+      $("tl-seg").innerHTML = t.map(x => `<button aria-pressed="${x.site === tlSel}" data-s="${esc(x.site)}">${esc(lab(x.site))}</button>`).join("");
+      $("tl-seg").querySelectorAll("button").forEach(b => b.onclick = () => { tlSel = b.dataset.s; drawTimelines(); });
+    }
     const f = t.find(x => x.site === tlSel).file;
     $("tl-img").src = f + "?v=" + stamp; $("tl-dl").href = f + "?v=" + stamp;
   }
@@ -686,7 +736,10 @@
     $("status").dataset.s = s;
     $("status-text").textContent = { fresh: "Current", aging: "One cycle behind", stale: "Stale" }[s];
     $("status-detail").textContent = `${dayUTC(meta.runs[0].init)} run, ${ageH.toFixed(1)} h old. Built ${fmtUTC(meta.generated_utc, { minute: "2-digit" })}`;
-    $("sub").textContent = `48-h ensemble QPF for Cape Canaveral and KSC, valid through ${dayUTC(meta.valid_end)}`;
+    const br = meta.branding || {};
+    document.title = br.title || "REFS QPF";
+    $("h-title").textContent = br.title || "REFS QPF";
+    $("sub").textContent = `${br.subtitle || "48-h ensemble QPF"}, valid through ${dayUTC(meta.valid_end)}`;
   }
 
   function drawTabs() {

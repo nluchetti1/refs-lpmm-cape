@@ -1,0 +1,148 @@
+{
+  "branding": {
+    "title": "Space Coast REFS QPF",
+    "subtitle": "48-h ensemble QPF for Cape Canaveral and Kennedy Space Center",
+    "area": "Cape Canaveral and KSC"
+  },
+  "extent": [
+    -83.0,
+    -79.0,
+    26.5,
+    30.5
+  ],
+  "thresholds": [
+    1.0,
+    2.0,
+    3.0,
+    5.0
+  ],
+  "sites": [
+    {
+      "name": "LC-39A",
+      "lat": 28.6082,
+      "lon": -80.6041,
+      "kind": "major"
+    },
+    {
+      "name": "LC-39B",
+      "lat": 28.6272,
+      "lon": -80.6208,
+      "kind": "major"
+    },
+    {
+      "name": "SLC-40",
+      "lat": 28.5619,
+      "lon": -80.5772,
+      "kind": "major"
+    },
+    {
+      "name": "SLC-41",
+      "lat": 28.5833,
+      "lon": -80.583,
+      "kind": "major"
+    },
+    {
+      "name": "SLC-37",
+      "lat": 28.5317,
+      "lon": -80.565,
+      "kind": "major"
+    },
+    {
+      "name": "LC-36",
+      "lat": 28.4706,
+      "lon": -80.5378,
+      "kind": "major"
+    },
+    {
+      "name": "SLC-46",
+      "lat": 28.4584,
+      "lon": -80.5284,
+      "kind": "major"
+    },
+    {
+      "name": "Skid Strip (KXMR)",
+      "lat": 28.4676,
+      "lon": -80.5669,
+      "kind": "asos",
+      "label": "Skid Strip"
+    },
+    {
+      "name": "SLF (KTTS)",
+      "lat": 28.615,
+      "lon": -80.6945,
+      "kind": "asos",
+      "label": "SLF"
+    },
+    {
+      "name": "Patrick (KCOF)",
+      "lat": 28.2349,
+      "lon": -80.6101,
+      "kind": "asos",
+      "label": "Patrick"
+    },
+    {
+      "name": "Melbourne (KMLB)",
+      "lat": 28.1028,
+      "lon": -80.6453,
+      "kind": "awos",
+      "label": "Melbourne"
+    },
+    {
+      "name": "Palm Bay",
+      "lat": 28.0345,
+      "lon": -80.5887,
+      "kind": "awos"
+    },
+    {
+      "name": "Orlando (KMCO)",
+      "lat": 28.4294,
+      "lon": -81.3089,
+      "kind": "awos",
+      "label": "Orlando"
+    },
+    {
+      "name": "Daytona (KDAB)",
+      "lat": 29.1799,
+      "lon": -81.0581,
+      "kind": "awos",
+      "label": "Daytona"
+    }
+  ],
+  "primary": "LC-39A",
+  "timelines": [
+    "LC-39A",
+    "LC-39B",
+    "SLC-40",
+    "SLC-41",
+    "SLC-37",
+    "LC-36",
+    "SLC-46",
+    "Skid Strip (KXMR)",
+    "SLF (KTTS)",
+    "Patrick (KCOF)"
+  ],
+  "map_labels": [
+    "LC-39A",
+    "Skid Strip (KXMR)",
+    "Melbourne (KMLB)",
+    "Orlando (KMCO)",
+    "Daytona (KDAB)"
+  ],
+  "regime": {
+    "name": "XMR",
+    "point": [
+      28.4676,
+      -80.5669
+    ],
+    "raob_stations": [
+      "KXMR",
+      "XMR"
+    ],
+    "raob_hours": [
+      10,
+      12,
+      22,
+      0
+    ]
+  }
+}

@@ -26,6 +26,7 @@ import json
 import os
 import re
 import shutil
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
@@ -34,7 +35,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pygrib
 
-import refs_lpmm_cape as R
+import refs_qpf as R
 
 # ---------------------------------------------------------------- sources
 HRRR_URL = "https://noaa-hrrr-bdp-pds.s3.amazonaws.com/hrrr.{d:%Y%m%d}/conus/hrrr.t{d:%H}z.wrfsfcf{f:02d}.grib2"
@@ -43,7 +44,14 @@ GFS_URLS = ["https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.{d:%Y%m
             "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.{d:%Y%m%d}/{d:%H}/atmos/gfs.t{d:%H}z.pgrb2.0p25.f{f:03d}"]
 GEFS_URLS = ["https://nomads.ncep.noaa.gov/pub/data/nccf/com/gens/prod/gefs.{d:%Y%m%d}/{d:%H}/atmos/pgrb2sp25/{m}.t{d:%H}z.pgrb2s.0p25.f{f:03d}",
              "https://noaa-gefs-pds.s3.amazonaws.com/gefs.{d:%Y%m%d}/{d:%H}/atmos/pgrb2sp25/{m}.t{d:%H}z.pgrb2s.0p25.f{f:03d}"]
-ECMWF_ROOTS = ["https://data.ecmwf.int/forecasts", "https://ecmwf-forecasts.s3.eu-central-1.amazonaws.com"]
+# ECMWF open data mirrors. data.ecmwf.int keeps ~4 days; AWS throttles with 503 SlowDown under
+# load; Azure (Planetary Computer) and Google Cloud carry the same files and layout.
+ECMWF_RECENT = "https://data.ecmwf.int/forecasts"
+ECMWF_MIRRORS = ["https://ai4edataeuwest.blob.core.windows.net/ecmwf",
+                 "https://storage.googleapis.com/ecmwf-open-data",
+                 "https://ecmwf-forecasts.s3.eu-central-1.amazonaws.com"]
+ECMWF_COALESCE_GAP = 2 * 1024 * 1024     # fetch neighbouring records in one request if gap < 2 MB
+ECMWF_PACE_S = 0.15                       # pause between range requests to the same host
 ECMWF_PATH = "{d:%Y%m%d}/{d:%H}z/{model}/0p25/{stream}/{d:%Y%m%d%H}0000-{f}h-{stream}-{type}.grib2"
 REFS_AWS_START = datetime(2026, 8, 13, tzinfo=timezone.utc)
 GEFS_MEMBERS = ["gec00"] + [f"gep{k:02d}" for k in range(1, 31)]
@@ -149,32 +157,73 @@ def det_window(key, init, f0, f1):
 
 
 def ecmwf_urls(model, stream, typ, init, f):
-    urls = [f"{root}/{ECMWF_PATH.format(d=init, model=model, stream=stream, type=typ, f=f)}" for root in ECMWF_ROOTS]
-    return urls if R.utcnow() - init < timedelta(days=3) else urls[::-1]
+    roots = ([ECMWF_RECENT] if R.utcnow() - init < timedelta(days=3, hours=12) else []) + ECMWF_MIRRORS
+    return [f"{root}/{ECMWF_PATH.format(d=init, model=model, stream=stream, type=typ, f=f)}" for root in roots]
+
+
+def _ecmwf_session():
+    """Separate session with patient retries: S3 SlowDown and Azure throttling clear within a minute or two."""
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+    s = R.requests.Session()
+    kw = dict(total=6, backoff_factor=3, status_forcelist=(429, 500, 502, 503, 504),
+              allowed_methods=("GET",), respect_retry_after_header=True)
+    try:
+        retry = Retry(backoff_max=90, **kw)          # urllib3 >= 2
+    except TypeError:
+        retry = Retry(**kw)                          # urllib3 1.26
+    s.mount("https://", HTTPAdapter(max_retries=retry))
+    s.headers["User-Agent"] = R.SESSION.headers.get("User-Agent", "refs-qpf")
+    return s
+
+
+ECMWF_SESSION = None
+
+
+def _coalesce(recs):
+    """[(start, end, [records])] spans covering the records, merging ones within ECMWF_COALESCE_GAP."""
+    spans = []
+    for x in sorted(recs, key=lambda x: int(x["_offset"])):
+        a, b = int(x["_offset"]), int(x["_offset"]) + int(x["_length"]) - 1
+        if spans and a - spans[-1][1] <= ECMWF_COALESCE_GAP:
+            spans[-1][1] = max(spans[-1][1], b); spans[-1][2].append(x)
+        else:
+            spans.append([a, b, [x]])
+    return spans
 
 
 def ecmwf_tp(model, stream, typ, init, f):
     """{member: (tp_mm, crop)} for every tp record in one ECMWF open-data file (byte-range via .index)."""
+    global ECMWF_SESSION
     if f == 0:
         return None
+    if ECMWF_SESSION is None:
+        ECMWF_SESSION = _ecmwf_session()
+    sess = ECMWF_SESSION if R.SESSION.get.__name__ == "get" else R.SESSION   # tests patch R.SESSION
     errs = []
     for url in ecmwf_urls(model, stream, typ, init, f):
+        host = url.split("/")[2]
         try:
-            r = R.SESSION.get(url[:-len(".grib2")] + ".index", timeout=30)
+            r = sess.get(url[:-len(".grib2")] + ".index", timeout=30)
             if r.status_code != 200:
-                errs.append(f"{r.status_code} {url}"); continue
+                errs.append(f"{r.status_code} {host}"); continue
             recs = [json.loads(l) for l in r.text.splitlines() if l.strip()]
             recs = [x for x in recs if x.get("param") == "tp"]
             if not recs:
-                errs.append(f"no tp in index {url}"); continue
+                errs.append(f"no tp in index on {host}"); continue
+            spans = _coalesce(recs)
             path = R._tmp()
             with open(path, "wb") as fh:
-                for x in sorted(recs, key=lambda x: int(x["_offset"])):
-                    a, n = int(x["_offset"]), int(x["_length"])
-                    rr = R.SESSION.get(url, headers={"Range": f"bytes={a}-{a + n - 1}"}, timeout=120)
+                for a, b, members in spans:
+                    rr = sess.get(url, headers={"Range": f"bytes={a}-{b}"}, timeout=180)
                     if rr.status_code not in (200, 206):
-                        raise IOError(f"{rr.status_code} range {url}")
-                    fh.write(rr.content)
+                        raise IOError(f"{rr.status_code} range on {host}")
+                    blob = rr.content
+                    for x in members:
+                        o = int(x["_offset"]) - a
+                        fh.write(blob[o:o + int(x["_length"])])
+                    time.sleep(ECMWF_PACE_S)
+            print(f"    ECMWF {stream} {init:%d/%HZ} f{f}: {len(recs)} tp records in {len(spans)} requests from {host}")
             out = {}
             try:
                 with pygrib.open(path) as g:
@@ -191,8 +240,9 @@ def ecmwf_tp(model, stream, typ, init, f):
                 os.remove(path)
             return out
         except Exception as e:
-            errs.append(f"{e.__class__.__name__}: {e} {url}")
-    raise FileNotFoundError("; ".join(errs))
+            msg = str(e)
+            errs.append(f"{host}: {'throttled (503)' if '503' in msg else e.__class__.__name__}")
+    raise FileNotFoundError("all ECMWF mirrors failed: " + "; ".join(errs))
 
 
 def ecmwf_det(model, init, f0, f1):
@@ -409,6 +459,7 @@ def validate_window(start, end):
 
 
 def build_case(start=None, end=None, hours=None, title=None, auto=False, requested_by=None):
+    R.init_sites()
     if start is None:
         start = end - timedelta(hours=hours)
     start, end = start.replace(minute=0, second=0, microsecond=0), end.replace(minute=0, second=0, microsecond=0)

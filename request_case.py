@@ -11,7 +11,7 @@ import re
 import sys
 from datetime import timedelta
 
-import refs_lpmm_cape as R
+import refs_qpf as R
 import lookback as L
 
 MAX_PER_AUTHOR_PER_DAY = 3
