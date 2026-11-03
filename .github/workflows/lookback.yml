@@ -3,15 +3,12 @@ name: Look back
 on:
   workflow_dispatch:
     inputs:
+      start:
+        description: 'Window start, YYYYMMDDHH UTC'
+        required: true
       end:
-        description: 'Window end, YYYYMMDDHH UTC (hour 00, 06, 12 or 18)'
+        description: 'Window end, YYYYMMDDHH UTC (3-72 h after start)'
         required: true
-      hours:
-        description: 'Window length (h)'
-        required: true
-        default: '24'
-        type: choice
-        options: ['6', '12', '24', '48', '72']
       title:
         description: 'Title shown on the site'
         required: false
@@ -24,7 +21,7 @@ concurrency:
 jobs:
   case:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       contents: write
 
@@ -59,10 +56,10 @@ jobs:
 
       - name: Build case and republish
         env:
+          START: ${{ inputs.start }}
           END: ${{ inputs.end }}
-          HOURS: ${{ inputs.hours }}
           TITLE: ${{ inputs.title }}
-        run: python lookback.py --end "$END" --hours "$HOURS" --title "$TITLE"
+        run: python lookback.py --start "$START" --end "$END" --title "$TITLE"
 
       - name: Prepare data branch
         run: rm -rf data/.git
