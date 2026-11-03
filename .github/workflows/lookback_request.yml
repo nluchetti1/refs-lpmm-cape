@@ -5,7 +5,7 @@ on:
     types: [opened]
 
 concurrency:
-  group: refs-qpf-cape
+  group: refs-qpf
   cancel-in-progress: false
 
 jobs:

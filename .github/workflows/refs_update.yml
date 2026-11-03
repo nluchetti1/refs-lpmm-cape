@@ -1,4 +1,4 @@
-name: REFS QPF (Cape Canaveral)
+name: REFS QPF (build site)
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: refs-qpf-cape          # shared with lookback.yml so they never race on the data branch
+  group: refs-qpf          # shared with the look-back workflows so they never race on the data branch
   cancel-in-progress: false
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Build maps, score verification, tag regimes
-        run: python refs_lpmm_cape.py
+        run: python refs_qpf.py
 
       - name: Prepare data branch
         run: rm -rf data/.git
