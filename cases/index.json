@@ -1,0 +1,202 @@
+[
+ {
+  "id": "auto-2026110612",
+  "title": "24 h ending 12Z Fri 06 Nov",
+  "start": "2026-11-05T12:00:00+00:00",
+  "end": "2026-11-06T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 1.24,
+   "area_max": 0.45,
+   "lat": 29.855,
+   "lon": -82.255,
+   "near": "Daytona",
+   "near_km": 138,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0004,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-06T17:06:41+00:00"
+ },
+ {
+  "id": "auto-2026110512",
+  "title": "24 h ending 12Z Thu 05 Nov",
+  "start": "2026-11-04T12:00:00+00:00",
+  "end": "2026-11-05T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 2.81,
+   "area_max": 1.04,
+   "lat": 30.165,
+   "lon": -82.555,
+   "near": "Daytona",
+   "near_km": 181,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0054,
+    "2": 0.001,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-05T17:07:21+00:00"
+ },
+ {
+  "id": "2026103112-2026110312",
+  "title": "test-ecmwf-fix",
+  "start": "2026-10-31T12:00:00+00:00",
+  "end": "2026-11-03T12:00:00+00:00",
+  "hours": 72,
+  "auto": false,
+  "obs": {
+   "max": 26.39,
+   "area_max": 16.89,
+   "lat": 27.945,
+   "lon": -80.535,
+   "near": "Palm Bay",
+   "near_km": 11,
+   "sites": {
+    "LC-39A": 11.02,
+    "LC-39B": 10.58,
+    "SLC-40": 12.29,
+    "SLC-41": 12.05,
+    "SLC-37": 11.96,
+    "LC-36": 8.79,
+    "SLC-46": 8.88,
+    "Skid Strip (KXMR)": 9.34,
+    "SLF (KTTS)": 10.52,
+    "Patrick (KCOF)": 8.77,
+    "Melbourne (KMLB)": 13.0,
+    "Palm Bay": 17.8,
+    "Orlando (KMCO)": 3.49,
+    "Daytona (KDAB)": 4.04
+   },
+   "coverage": {
+    "1": 0.6351,
+    "2": 0.4325,
+    "4": 0.2744,
+    "8": 0.077
+   }
+  },
+  "headline": null,
+  "built": "2026-11-04T13:42:09+00:00"
+ },
+ {
+  "id": "2026110112-2026110312",
+  "title": "November 2-3rd, 2026 Historic Rainfall Event (48hr Forecast)",
+  "start": "2026-11-01T12:00:00+00:00",
+  "end": "2026-11-03T12:00:00+00:00",
+  "hours": 48,
+  "auto": false,
+  "obs": {
+   "max": 26.13,
+   "area_max": 16.65,
+   "lat": 27.945,
+   "lon": -80.535,
+   "near": "Palm Bay",
+   "near_km": 11,
+   "sites": {
+    "LC-39A": 10.94,
+    "LC-39B": 10.53,
+    "SLC-40": 12.1,
+    "SLC-41": 11.92,
+    "SLC-37": 11.57,
+    "LC-36": 8.5,
+    "SLC-46": 8.52,
+    "Skid Strip (KXMR)": 9.05,
+    "SLF (KTTS)": 10.43,
+    "Patrick (KCOF)": 8.59,
+    "Melbourne (KMLB)": 12.57,
+    "Palm Bay": 17.69,
+    "Orlando (KMCO)": 3.28,
+    "Daytona (KDAB)": 4.04
+   },
+   "coverage": {
+    "1": 0.6226,
+    "2": 0.4237,
+    "4": 0.2622,
+    "8": 0.0706
+   }
+  },
+  "headline": null,
+  "built": "2026-11-03T22:56:36+00:00"
+ },
+ {
+  "id": "2026110212-2026110312",
+  "title": "November 2-3rd, 2026 Historic Rainfall Event (24hr Forecast)",
+  "start": "2026-11-02T12:00:00+00:00",
+  "end": "2026-11-03T12:00:00+00:00",
+  "hours": 24,
+  "auto": false,
+  "obs": {
+   "max": 17.04,
+   "area_max": 9.14,
+   "lat": 27.985,
+   "lon": -80.525,
+   "near": "Palm Bay",
+   "near_km": 8,
+   "sites": {
+    "LC-39A": 2.61,
+    "LC-39B": 2.45,
+    "SLC-40": 2.84,
+    "SLC-41": 2.78,
+    "SLC-37": 3.34,
+    "LC-36": 3.49,
+    "SLC-46": 3.64,
+    "Skid Strip (KXMR)": 3.83,
+    "SLF (KTTS)": 1.77,
+    "Patrick (KCOF)": 2.24,
+    "Melbourne (KMLB)": 4.92,
+    "Palm Bay": 10.76,
+    "Orlando (KMCO)": 0.43,
+    "Daytona (KDAB)": 2.18
+   },
+   "coverage": {
+    "1": 0.3153,
+    "2": 0.1549,
+    "4": 0.0423,
+    "8": 0.0077
+   }
+  },
+  "headline": null,
+  "built": "2026-11-03T22:37:42+00:00"
+ }
+]
