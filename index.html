@@ -253,17 +253,41 @@
 
       <section class="view" id="v-ffg" role="tabpanel" aria-labelledby="t-ffg" hidden>
         <p class="note" id="ffg-note">Top row: the River Forecast Centers’ flash flood guidance (WPC CONUS mosaic), the rain needed in 1, 3 or 6 h to start small-stream flooding.
-          Bottom row: the highest REFS LPMM total for that duration anywhere in the next 48 h, divided by FFG. Inside the white line LPMM reaches guidance.
+          The loop shows LPMM QPF as a percentage of FFG through the run: 100% means forecast rain equals guidance, 200% is twice it. Inside the white line LPMM reaches guidance.
           This is a single best-estimate field; the Flash flood tab gives the ensemble probability of the same exceedance.
           <span class="flat" id="ffg-issued"></span></p>
-        <div class="figure"><img data-src="ffg_ratio.png" alt="Flash flood guidance and LPMM-to-FFG ratio"></div>
+        <div class="seg" id="ffgr-seg" role="group" aria-label="Duration"></div>
+        <div class="loop-wrap" data-loop="ffgr">
+          <div class="figure"><img class="loop-img" alt="loop frame"></div>
+          <div class="controls">
+            <button class="btn prev" aria-label="Previous frame">◀</button>
+            <button class="btn play">Play</button>
+            <button class="btn next" aria-label="Next frame">▶</button>
+            <input type="range" class="slider" min="0" max="1" value="0" aria-label="Frame">
+            <span class="frame-label"></span>
+          </div>
+        </div>
+        <h2 style="margin:22px 0 8px">Guidance and 48-h maximum</h2>
+        <div class="figure"><img data-src="ffg_ratio.png" alt="Flash flood guidance and highest % of FFG"></div>
         <div class="fig-actions"><a data-dl="ffg_ratio.png" download>Download PNG</a></div>
       </section>
 
       <section class="view" id="v-flash" role="tabpanel" aria-labelledby="t-flash" hidden>
         <p class="note"><strong id="flash-age"></strong> Observed, not forecast: MRMS FLASH runs the CREST hydrologic model on radar QPE every 10 min.
           Unit streamflow is the peak flow per km² of basin over the next 12 h of routing; flooding is likely above about 2 and significant above 6 m³ s⁻¹ km⁻²
-          (white lines). QPE ÷ FFG above 100% means observed rain has reached flash flood guidance. Recurrence interval shows how rare the rain is, not how severe the flooding.</p>
+          (white lines). QPE as % of FFG above 100% means observed rain has reached flash flood guidance. Recurrence interval shows how rare the rain is, not how severe the flooding.</p>
+        <div class="seg" id="flash-seg" role="group" aria-label="Product"></div>
+        <div class="loop-wrap" data-loop="flash" data-start="last">
+          <div class="figure"><img class="loop-img" alt="loop frame"></div>
+          <div class="controls">
+            <button class="btn prev" aria-label="Previous frame">◀</button>
+            <button class="btn play">Play</button>
+            <button class="btn next" aria-label="Next frame">▶</button>
+            <input type="range" class="slider" min="0" max="1" value="0" aria-label="Frame">
+            <span class="frame-label"></span>
+          </div>
+        </div>
+        <h2 style="margin:22px 0 8px">Latest scan, all products</h2>
         <div class="figure"><img data-src="flash.png" alt="MRMS FLASH latest"></div>
         <div class="fig-actions"><a data-dl="flash.png" download>Download PNG</a></div>
       </section>
@@ -328,8 +352,8 @@
           <th class="grp" title="EAS: share of members (with neighborhood) at or above the threshold">EAS ≥ 0.5″</th>
           <th title="EAS: share of members (with neighborhood) at or above the threshold">EAS ≥ 1″</th>
           <th title="FFRI: probability 6-h QPF exceeds flash flood guidance">FFRI &gt; FFG</th>
-          <th class="grp" title="Highest LPMM ÷ FFG over 1, 3 and 6 h in the next 48 h">LPMM ÷ FFG</th>
-          <th class="grp" title="MRMS FLASH, highest within 5 km: CREST unit streamflow (m³ s⁻¹ km⁻²) and QPE ÷ FFG">FLASH q · QPE÷FFG</th>
+          <th class="grp" title="Highest LPMM QPF as % of FFG over 1, 3 and 6 h in the next 48 h">LPMM % of FFG</th>
+          <th class="grp" title="MRMS FLASH, highest within 5 km: CREST unit streamflow (m³ s⁻¹ km⁻²) and observed QPE as % of FFG">FLASH q · QPE % of FFG</th>
         </tr>
       </thead>
       <tbody id="sites"></tbody>
@@ -391,13 +415,18 @@
     let frames = [], i = 0, timer = null;
     const self = {
       root,
-      set(f) { frames = f || []; slider.max = Math.max(0, frames.length - 1); self.show(Math.min(i, slider.max)); },
+      set(f) {
+        const fresh = frames !== f;
+        frames = f || []; slider.max = Math.max(0, frames.length - 1);
+        if (fresh && root.dataset.start === "last") i = frames.length - 1;
+        self.show(Math.min(i, slider.max));
+      },
       show(k) {
         if (!frames.length) return;
         i = (k + frames.length) % frames.length;
         const f = frames[i];
         img.src = f.file + "?v=" + stamp; slider.value = i;
-        label.textContent = `${f.fhr}, ends ${fmtUTC(f.end)}`;
+        label.textContent = f.label || `${f.fhr}${f.max_pct != null ? `, max ${f.max_pct}% of FFG` : ""}, ends ${fmtUTC(f.end)}`;
       },
       stop() { clearInterval(timer); timer = null; playBtn.textContent = "Play"; },
       toggle() {
@@ -414,7 +443,9 @@
     return self;
   }
   const loopers = [...document.querySelectorAll("[data-loop]")].map(Looper);
-  const lpmmLoop = loopers[0], easLoop = loopers[1];
+  const byKey = (k) => loopers.find(l => l.root.dataset.loop === k);
+  const lpmmLoop = byKey("lpmm"), easLoop = byKey("eas"), ffgrLoop = byKey("ffgr"), flashLoop = byKey("flash");
+  let ffgrDur = null, flashProd = null;
   let easThr = null;
 
   document.addEventListener("keydown", e => {
@@ -426,6 +457,27 @@
     if (e.key === "ArrowLeft") active.step(-1);
     if (e.key === " ") { e.preventDefault(); active.toggle(); }
   });
+
+  function drawSeg(segId, sets, cur, labelFn, onPick) {
+    const keys = Object.keys(sets || {});
+    if (!keys.length) { $(segId).innerHTML = ""; return null; }
+    if (!cur || !sets[cur]) cur = keys[0];
+    $(segId).innerHTML = keys.map(k => `<button aria-pressed="${k === cur}" data-k="${k}">${labelFn(k)}</button>`).join("");
+    $(segId).querySelectorAll("button").forEach(b => b.onclick = () => onPick(b.dataset.k));
+    return cur;
+  }
+  function drawFfgrSeg() {
+    const sets = meta.ffg_frames || {};
+    ffgrDur = drawSeg("ffgr-seg", sets, ffgrDur, k => `${k}-h`, k => { ffgrDur = k; drawFfgrSeg(); });
+    if (ffgrDur) ffgrLoop.set(sets[ffgrDur]);
+  }
+  function drawFlashSeg() {
+    const sets = (meta.flash && meta.flash.frames) || {};
+    const P = (meta.flash && meta.flash.products) || {};
+    flashProd = drawSeg("flash-seg", sets, flashProd,
+      k => k === "QPE_FFGMAX" ? "QPE % of FFG" : (P[k] ? P[k].label.replace("CREST max ", "") : k), k => { flashProd = k; drawFlashSeg(); });
+    if (flashProd) flashLoop.set(sets[flashProd]);
+  }
 
   function drawEasSeg() {
     const sets = meta.eas_frames || {};
@@ -496,7 +548,7 @@
     }
     const fw = ffgWorst(site);
     if (fw) cap += fw.ratio >= 1
-      ? ` <strong style="color:var(--run12)">LPMM reaches ${fw.ratio.toFixed(1)}× flash flood guidance</strong> (${fw.qpf}″ in ${fw.d} h vs ${fw.ffg}″, ending ${fmtUTC(fw.ends)}).`
+      ? ` <strong style="color:var(--run12)">LPMM QPF reaches ${Math.round(fw.ratio * 100)}% of ${fw.d}-h flash flood guidance</strong> (${fw.qpf}″ vs ${fw.ffg}″, ending ${fmtUTC(fw.ends)}).`
       : ` Peak LPMM is ${Math.round(fw.ratio * 100)}% of ${fw.d}-h flash flood guidance (${fw.ffg}″).`;
     $("ribbon-cap").innerHTML = cap;
   }
@@ -512,7 +564,7 @@
     const w = ffgWorst(s);
     if (!w) return "—";
     const cls = w.ratio >= 1 ? "p-hi" : w.ratio >= 0.5 ? "p-mid" : "p-lo";
-    return `<span class="${cls}" title="${w.qpf}″ in ${w.d} h vs ${w.ffg}″ guidance, ending ${fmtUTC(w.ends)}">${w.ratio.toFixed(2)}×</span> <span class="flat">${w.d} h</span>`;
+    return `<span class="${cls}" title="${w.qpf}″ in ${w.d} h vs ${w.ffg}″ guidance, ending ${fmtUTC(w.ends)}">${Math.round(w.ratio * 100)}%</span> <span class="flat">${w.d} h</span>`;
   }
 
   function flashLevel(q, r) {
@@ -834,7 +886,7 @@
       <div class="table-wrap" style="margin-top:16px"><table>
         <thead>
           <tr><th></th><th colspan="${cols.length + 1 + (c.flash ? 1 : 0)}" style="text-align:left">${c.hours}-h total (in). Each model column is its shortest-lead run: run time and hours before the window start.</th></tr>
-          <tr><th>Site</th><th>MRMS</th>${c.flash ? `<th title="MRMS FLASH maxima within 5 km">FLASH q · QPE÷FFG</th>` : ""}${cols.map(m => { const i = modelInfo(c, m); const r = shortest[m];
+          <tr><th>Site</th><th>MRMS</th>${c.flash ? `<th title="MRMS FLASH maxima within 5 km">FLASH q · QPE % of FFG</th>` : ""}${cols.map(m => { const i = modelInfo(c, m); const r = shortest[m];
             return `<th style="color:${i.color}">${i.label}<br><span class="flat" style="font-weight:500">${dayUTC(r.init).replace(/^\w+, /, "")} · ${r.lead} h lead</span></th>`; }).join("")}</tr>
         </thead>
         <tbody>${siteRows}</tbody></table></div>
@@ -912,7 +964,7 @@
     document.querySelectorAll("img[data-src]").forEach(img => img.src = img.dataset.src + "?v=" + stamp);
     document.querySelectorAll("a[data-dl]").forEach(a => a.href = a.dataset.dl + "?v=" + stamp);
     lpmmLoop.set(meta.frames);
-    drawEasSeg();
+    drawEasSeg(); drawFfgrSeg(); drawFlashSeg();
   }
 
   async function load() {
@@ -920,8 +972,9 @@
       const r = await fetch("meta.json?t=" + Date.now(), { cache: "no-store" });
       if (!r.ok) throw new Error(r.status);
       const m = await r.json();
-      if (m.generated_utc !== stamp) {
-        meta = m; stamp = m.generated_utc;
+      const key = m.generated_utc + "|" + ((m.flash && m.flash.valid) || "");
+      if (key !== stamp) {
+        meta = m; stamp = key;
         drawTabs(); drawStatus(); drawRibbon(); drawRegime(); drawSites(); drawSide(); drawVerify(); drawImages(); drawTimelines(); drawDiag(); drawFfgNote(); drawFlashAge(); loadCases();
       } else { drawStatus(); drawFlashAge(); }
     } catch (e) {
@@ -935,7 +988,7 @@
     }
   }
   load();
-  setInterval(load, 10 * 60 * 1000);
+  setInterval(load, 2 * 60 * 1000);   // FLASH can refresh every ~10 min
 })();
 </script>
 </body>

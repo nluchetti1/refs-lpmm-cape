@@ -116,20 +116,23 @@ FFG_URLS = ["https://ftp.wpc.ncep.noaa.gov/workoff/ffg/5kmffg_{t:%Y%m%d%H}.grb2"
 FFG_DURATIONS = [1, 3, 6]
 FFG_LOOKBACK_ISSUANCES = 12         # search back up to 72 h for the newest file
 FFG_MAX_DIST_KM = 6.0               # REFS points farther than this from an FFG cell get no ratio (offshore)
-RLEVS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0]
+PCT_LEVS = [25, 50, 75, 100, 150, 200, 300, 500]   # % of FFG; 100 = QPF reaches guidance
 RCOLORS = ["#2b4a5f", "#3f7f8f", "#7fbf9f", "#f0d050", "#f0902a", "#e0402a", "#b0207a", "#6a1a9a"]
+FFG_FRAME_STEP = {1: 1, 3: 3, 6: 6}  # frame spacing (h) per duration: hourly 1-h, 3-h blocks, 6-h blocks
 
 # ---- MRMS FLASH (EF5 hydrologic models + QPE ratios on the 0.01 deg MRMS grid, every 10 min)
 FLASH_LATEST = "https://mrms.ncep.noaa.gov/2D/FLASH/{p}/MRMS_FLASH_{p}.latest.grib2.gz"
 FLASH_NCEP = "https://mrms.ncep.noaa.gov/2D/FLASH/{p}/MRMS_FLASH_{p}_00.00_{t:%Y%m%d-%H%M}00.grib2.gz"
 FLASH_AWS = ["https://noaa-mrms-pds.s3.amazonaws.com/CONUS/FLASH_{p}_00.00/{t:%Y%m%d}/MRMS_FLASH_{p}_00.00_{t:%Y%m%d-%H%M}00.grib2.gz",
              "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/{p}_00.00/{t:%Y%m%d}/MRMS_FLASH_{p}_00.00_{t:%Y%m%d-%H%M}00.grib2.gz"]
-FLASH_NBHD_KM = 5.0                 # streamflow lives on channels: report the max within this radius of a site
+FLASH_NBHD_KM = 5.0
+FLASH_LOOP_SCANS = 12               # 10-min scans in the FLASH loop (12 = last 2 h, ending at the newest)
+FLASH_LOOP_PRODUCTS = ["QPE_FFGMAX", "CREST_MAXUNITSTREAMFLOW"]                 # streamflow lives on channels: report the max within this radius of a site
 # thresholds: CREST unit streamflow 2-2.5 (flooding likely) and 6 (significant), QPE/FFG 100% (NWS MEG FLASH study)
 FLASH_PRODUCTS = {
     "CREST_MAXUNITSTREAMFLOW": dict(label="CREST max unit streamflow", unit="m³ s⁻¹ km⁻²", short="q",
                                     levels=[0.5, 1, 2, 2.5, 4, 6, 8, 12, 20], marks=[2.0, 6.0], nbhd=True, cmap="YlOrRd"),
-    "QPE_FFGMAX": dict(label="QPE ÷ FFG, max of 1/3/6 h", unit="%", short="QPE÷FFG",
+    "QPE_FFGMAX": dict(label="QPE as % of FFG, max of 1/3/6 h", unit="% of FFG", short="QPE % of FFG",
                        levels=[25, 50, 75, 100, 125, 150, 200, 300, 500], marks=[100.0], nbhd=True, cmap="magma_r", pct=True),
     "QPE_ARIMAX": dict(label="QPE recurrence interval, max", unit="yr", short="ARI",
                        levels=[1, 2, 5, 10, 25, 50, 100, 200, 500, 1000], marks=[100.0], nbhd=True, cmap="PuRd"),
@@ -1076,9 +1079,45 @@ def annotate_max(ax, field, unit='"', fmt="{:.2f}", floor=0.1, lats=None, lons=N
     masked = np.where(in_view(lats, lons) & np.isfinite(field), field, -np.inf)
     j, i = np.unravel_index(np.argmax(masked), masked.shape)
     if masked[j, i] >= floor:
-        ax.plot(lons[j, i], lats[j, i], "x", color="#ffffff", ms=6, mew=1.4, transform=ccrs.PlateCarree(), zorder=7)
-        ax.text(lons[j, i], lats[j, i] - 0.12, fmt.format(field[j, i]) + unit, fontsize=8, ha="center", va="top",
-                color="#ffffff", transform=ccrs.PlateCarree(), zorder=7)
+        m, = ax.plot(lons[j, i], lats[j, i], "x", color="#ffffff", ms=6, mew=1.4, transform=ccrs.PlateCarree(), zorder=7)
+        t = ax.text(lons[j, i], lats[j, i] - 0.12, fmt.format(field[j, i]) + unit, fontsize=8, ha="center", va="top",
+                    color="#ffffff", transform=ccrs.PlateCarree(), zorder=7)
+        return [m, t]
+    return []
+
+
+class FrameRenderer:
+    """One figure + basemap reused for a whole loop; only the data layer changes per frame."""
+    def __init__(self, figsize=(8.4, 9)):
+        self.fig = plt.figure(figsize=figsize)
+        self.ax = self.fig.add_axes([0.03, 0.15, 0.94, 0.75], projection=ccrs.PlateCarree())
+        add_basemap(self.ax)
+        self.t1 = self.fig.text(0.03, 0.955, "", fontsize=14, fontweight="bold")
+        self.t2 = self.fig.text(0.03, 0.925, "", fontsize=10, color=MUTED)
+        self.has_cbar = False
+        self.dyn = []
+
+    def frame(self, draw, title, subtitle, path, cbar_label, ticks, extend="max", dpi=105):
+        for a in self.dyn:
+            try:
+                a.remove()
+            except Exception:
+                pass
+        mappable, extra = draw(self.ax)
+        self.dyn = [mappable] + list(extra)
+        if not self.has_cbar:
+            cax = self.fig.add_axes([0.08, 0.07, 0.84, 0.025])
+            cb = self.fig.colorbar(mappable, cax=cax, orientation="horizontal", ticks=ticks, extend=extend)
+            cb.ax.set_xticklabels([f"{t:g}" for t in ticks], fontsize=8)
+            cb.set_label(cbar_label, fontsize=10, color=TEXT)
+            cb.outline.set_edgecolor(LINE)
+            self.has_cbar = True
+        self.t1.set_text(title)
+        self.t2.set_text(subtitle)
+        self.fig.savefig(path, dpi=dpi)
+
+    def close(self):
+        plt.close(self.fig)
 
 
 def savefig(fig, name, dpi, out_dir=None):
@@ -1186,6 +1225,49 @@ def plot_flash(raws, suptitle, out_path, times=None):
     return True
 
 
+def build_flash_loop(out_dir, latest_raws, times):
+    """The last FLASH_LOOP_SCANS 10-min scans (ending at the newest) for each loop product."""
+    out = {}
+    for p in FLASH_LOOP_PRODUCTS:
+        if p not in latest_raws or not times.get(p):
+            continue
+        t0 = times[p]
+        scan_times = [t0 - timedelta(minutes=10 * k) for k in range(FLASH_LOOP_SCANS - 1, 0, -1)]
+        with ThreadPoolExecutor(MAX_WORKERS) as ex:
+            got = list(ex.map(lambda t: (t, fetch_flash(p, t)), scan_times))
+        seq = [(t, r) for t, r in got if r is not None] + [(t0, latest_raws[p])]
+        cfg = FLASH_PRODUCTS[p]
+        lev = cfg["levels"]
+        cm = mcolors.ListedColormap(plt.get_cmap(cfg["cmap"])(np.linspace(0.12, 1, len(lev) - 1)))
+        cm.set_over(plt.get_cmap(cfg["cmap"])(1.0))
+        nm = mcolors.BoundaryNorm(lev, cm.N)
+        fr, frames = FrameRenderer(), []
+        for n, (t, raw) in enumerate(seq, start=1):
+            vals, lats, lons = raw_native(raw)
+            def draw(ax, vals=vals, lats=lats, lons=lons):
+                m = ax.pcolormesh(lons, lats, np.ma.masked_less(np.ma.masked_invalid(vals), lev[0]), cmap=cm, norm=nm,
+                                  transform=ccrs.PlateCarree(), zorder=2, shading="nearest")
+                extra = []
+                for k, mk in enumerate(cfg["marks"]):
+                    if np.nanmax(np.nan_to_num(vals)) >= mk:
+                        extra.append(ax.contour(lons, lats, np.nan_to_num(vals), [mk], colors="#ffffff",
+                                                linewidths=0.7 + 0.7 * k, transform=ccrs.PlateCarree(), zorder=3))
+                extra += annotate_max(ax, np.nan_to_num(vals), unit="%" if cfg.get("pct") else "",
+                                      fmt="{:.0f}" if cfg.get("pct") else "{:.1f}", floor=lev[0], lats=lats, lons=lons)
+                return m, extra
+            fname = f"flash_{p.lower()}_{n:02d}.png"
+            marks = f"  ·  white = {', '.join(f'{m:g}' for m in cfg['marks'])}" if cfg["marks"] else ""
+            fr.frame(draw, f"MRMS FLASH {cfg['label']}  ·  {t:%H%MZ}",
+                     f"Scan {n} of {len(seq)}  ·  {t:%a %d %b %H%MZ}  ·  observed (radar QPE)",
+                     os.path.join(out_dir, fname), cfg["unit"] + marks, lev)
+            frames.append({"file": fname, "start": t.isoformat(), "end": t.isoformat(), "fhr": f"{t:%H%MZ}",
+                           "label": f"{t:%H%MZ} ({len(seq) - n} scan{'s' if len(seq) - n != 1 else ''} ago)" if n < len(seq) else f"{t:%H%MZ} (latest)"})
+        fr.close()
+        out[p] = frames
+        print(f"[flash] loop {p}: {len(frames)} scans")
+    return out
+
+
 def build_flash_now(out_dir):
     """Latest FLASH snapshot: flash.png plus a meta block with site values."""
     raws = {p: r for p, r in ((p, fetch_flash(p)) for p in FLASH_PRODUCTS) if r is not None}
@@ -1197,7 +1279,8 @@ def build_flash_now(out_dir):
     for p, r in raws.items():
         print(f"[flash] {p}: valid {r.get('valid')}, max {np.nanmax(raw_native(r)[0]):.2f}{' (' + r['scaled'] + ')' if r.get('scaled') else ''}")
     plot_flash(raws, f"MRMS FLASH, latest  ·  {newest:%a %d %b %H%MZ}", os.path.join(out_dir, "flash.png"), times)
-    return {"valid": newest.isoformat(), "sites": flash_site_values(raws),
+    loops = optional("flash loop", build_flash_loop, out_dir, raws, times) or {}
+    return {"valid": newest.isoformat(), "sites": flash_site_values(raws), "frames": loops,
             "products": {p: {"label": c["label"], "unit": c["unit"], "short": c["short"], "marks": c["marks"]}
                          for p, c in FLASH_PRODUCTS.items() if p in raws}}
 
@@ -1293,8 +1376,8 @@ def plot_ffg(ffg, ratios, init, ffg_time, valid_txt):
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.1, top=0.88, wspace=0.04, hspace=0.32)
     flevs = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8]
     fcm = mcolors.ListedColormap(plt.get_cmap("YlGnBu")(np.linspace(0.15, 1, len(flevs) - 1)))
-    rcm = mcolors.ListedColormap(RCOLORS[:len(RLEVS) - 1]); rcm.set_over(RCOLORS[-1])
-    rnm = mcolors.BoundaryNorm(RLEVS, rcm.N)
+    rcm = mcolors.ListedColormap(RCOLORS[:len(PCT_LEVS) - 1]); rcm.set_over(RCOLORS[-1])
+    rnm = mcolors.BoundaryNorm(PCT_LEVS, rcm.N)
     fs = rs = None
     for k, d in enumerate(durs):
         a0, a1 = axs[0, k], axs[1, k]
@@ -1302,23 +1385,65 @@ def plot_ffg(ffg, ratios, init, ffg_time, valid_txt):
         fs = a0.contourf(_GRID["lons"], _GRID["lats"], np.ma.masked_invalid(ffg[d]), flevs, cmap=fcm,
                          extend="both", transform=ccrs.PlateCarree(), zorder=2)
         a0.set_title(f"{d}-h flash flood guidance", fontsize=12, fontweight="bold")
-        rr = np.ma.masked_less(np.ma.masked_invalid(ratios[d]["ratio"]), RLEVS[0])
-        rs = a1.contourf(_GRID["lons"], _GRID["lats"], rr, RLEVS, cmap=rcm, norm=rnm, extend="max",
+        pct = ratios[d]["ratio"] * 100.0
+        rr = np.ma.masked_less(np.ma.masked_invalid(pct), PCT_LEVS[0])
+        rs = a1.contourf(_GRID["lons"], _GRID["lats"], rr, PCT_LEVS, cmap=rcm, norm=rnm, extend="max",
                          transform=ccrs.PlateCarree(), zorder=2)
-        if np.nanmax(ratios[d]["ratio"]) >= 1:
-            a1.contour(_GRID["lons"], _GRID["lats"], np.nan_to_num(ratios[d]["ratio"]), [1.0], colors="#ffffff",
+        if np.nanmax(pct) >= 100:
+            a1.contour(_GRID["lons"], _GRID["lats"], np.nan_to_num(pct), [100.0], colors="#ffffff",
                        linewidths=0.9, transform=ccrs.PlateCarree(), zorder=3)
-        annotate_max(a1, np.nan_to_num(ratios[d]["ratio"]), unit="×", fmt="{:.1f}", floor=0.25)
-        a1.set_title(f"Max {d}-h LPMM ÷ {d}-h FFG", fontsize=12, fontweight="bold")
+        annotate_max(a1, np.nan_to_num(pct), unit="%", fmt="{:.0f}", floor=PCT_LEVS[0])
+        a1.set_title(f"Highest {d}-h LPMM, % of {d}-h FFG", fontsize=12, fontweight="bold")
     fig.canvas.draw()                                   # cartopy fixes the panel boxes only at draw time
     top_y0 = min(a.get_position().y0 for a in axs[0])
     bot_y0 = min(a.get_position().y0 for a in axs[1])
     colorbar(fig, fs, [0.1, top_y0 - 0.038, 0.8, 0.013], "Flash flood guidance (in)", flevs)
-    colorbar(fig, rs, [0.1, bot_y0 - 0.045, 0.8, 0.014], "Highest ratio in the next 48 h  ·  white line = 1.0 (QPF reaches FFG)", RLEVS)
+    colorbar(fig, rs, [0.1, bot_y0 - 0.045, 0.8, 0.014], "Highest % of FFG in the next 48 h  ·  white line = 100% (QPF reaches FFG)", PCT_LEVS)
     fig.suptitle(f"REFS LPMM vs flash flood guidance, {fmt_init(init)} init  ·  FFG issued {ffg_time:%d/%HZ}\n{valid_txt}",
                  fontsize=14, fontweight="bold", y=0.97)
     savefig(fig, "ffg_ratio.png", 130)
     return True
+
+
+def _pct_cmap():
+    cm = mcolors.ListedColormap(RCOLORS[:len(PCT_LEVS) - 1]); cm.set_over(RCOLORS[-1])
+    return cm, mcolors.BoundaryNorm(PCT_LEVS, cm.N)
+
+
+def plot_ffg_frames(hourly, ffg_grid, init):
+    """Loop frames of LPMM as % of FFG: hourly for 1 h, 3-h blocks for 3 h, 6-h blocks for 6 h."""
+    cm, nm = _pct_cmap()
+    out = {}
+    for dur in FFG_DURATIONS:
+        if dur not in ffg_grid:
+            continue
+        fr, frames = FrameRenderer(), []
+        f = ffg_grid[dur]
+        for n, end in enumerate(range(dur, hourly.shape[0] + 1, FFG_FRAME_STEP[dur]), start=1):
+            q = hourly[end - dur:end].sum(axis=0)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                pct = np.where(np.isfinite(f) & (f > 0), q / f * 100.0, np.nan)
+            def draw(ax, pct=pct):
+                m = ax.contourf(_GRID["lons"], _GRID["lats"], np.ma.masked_less(np.ma.masked_invalid(pct), PCT_LEVS[0]),
+                                PCT_LEVS, cmap=cm, norm=nm, extend="max", transform=ccrs.PlateCarree(), zorder=2)
+                extra = []
+                if np.nanmax(np.nan_to_num(pct)) >= 100:
+                    extra.append(ax.contour(_GRID["lons"], _GRID["lats"], np.nan_to_num(pct), [100.0], colors="#ffffff",
+                                            linewidths=1.0, transform=ccrs.PlateCarree(), zorder=3))
+                extra += annotate_max(ax, np.nan_to_num(pct), unit="%", fmt="{:.0f}", floor=PCT_LEVS[0])
+                return m, extra
+            v0, v1 = init + timedelta(hours=end - dur), init + timedelta(hours=end)
+            fname = f"ffgr_{dur}h_{n:02d}.png"
+            fr.frame(draw, f"REFS LPMM {dur}-h QPF as % of {dur}-h FFG  ·  f{end - dur:02d}–f{end:02d}",
+                     f"Valid {v0:%a %HZ} – {v1:%a %HZ %d %b}  ·  {init:%HZ %d %b} init  ·  white = 100% (reaches FFG)",
+                     os.path.join(OUT_DIR, fname), "% of flash flood guidance", PCT_LEVS)
+            mx = np.nanmax(pct) if np.isfinite(pct).any() else 0
+            frames.append({"file": fname, "start": v0.isoformat(), "end": v1.isoformat(),
+                           "fhr": f"f{end - dur:02d}-f{end:02d}", "max_pct": int(round(mx))})
+        fr.close()
+        out[str(dur)] = frames
+    print(f"[ffg] frames: " + ", ".join(f"{d} h x{len(v)}" for d, v in out.items()))
+    return out
 
 
 # =============================================================================
@@ -1906,6 +2031,7 @@ def main():
         meta["flash"] = fl
         meta.setdefault("products", {})["flash"] = True
     if ffg_rat:
+        meta["ffg_frames"] = optional("ffg frames", plot_ffg_frames, runs[0]["data"], ffg_grid, latest) or {}
         meta["ffg_issued"] = ffg_time.isoformat()
         for site in meta["sites"]:
             (j, i), _ = site_index(site["name"])
