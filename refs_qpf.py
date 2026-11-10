@@ -116,8 +116,12 @@ FFG_URLS = ["https://ftp.wpc.ncep.noaa.gov/workoff/ffg/5kmffg_{t:%Y%m%d%H}.grb2"
 FFG_DURATIONS = [1, 3, 6]
 FFG_LOOKBACK_ISSUANCES = 12         # search back up to 72 h for the newest file
 FFG_MAX_DIST_KM = 6.0               # REFS points farther than this from an FFG cell get no ratio (offshore)
-PCT_LEVS = [25, 50, 75, 100, 150, 200, 300, 500]   # % of FFG; 100 = QPF reaches guidance
-RCOLORS = ["#2b4a5f", "#3f7f8f", "#7fbf9f", "#f0d050", "#f0902a", "#e0402a", "#b0207a", "#6a1a9a"]
+PCT_LEVS = [10, 25, 50, 75, 100, 150, 200, 300, 500]   # % of FFG; 100 = QPF reaches guidance
+# Every bin must stand out from the dark land (#1c2a36) and ocean: the old 25-50% bin (#2b4a5f)
+# was nearly the land colour, so low ratios looked unshaded. Cool/muted below 100%, warm above.
+RCOLORS = ["#7f97a6", "#4fb0d0", "#4fd19a", "#c8e45a",      # 10-25, 25-50, 50-75, 75-100
+           "#f5c542", "#f08a2a", "#e0402a", "#c8207a",      # 100-150, 150-200, 200-300, 300-500
+           "#8a2ad0"]                                        # > 500
 FFG_FRAME_STEP = {1: 1, 3: 3, 6: 6}  # frame spacing (h) per duration: hourly 1-h, 3-h blocks, 6-h blocks
 
 # ---- MRMS FLASH (EF5 hydrologic models + QPE ratios on the 0.01 deg MRMS grid, every 10 min)
