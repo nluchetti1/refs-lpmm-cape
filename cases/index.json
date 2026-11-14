@@ -1,0 +1,562 @@
+[
+ {
+  "id": "auto-2026111412",
+  "title": "24 h ending 12Z Sat 14 Nov",
+  "start": "2026-11-13T12:00:00+00:00",
+  "end": "2026-11-14T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 0.07,
+   "area_max": 0.03,
+   "lat": 27.155,
+   "lon": -79.075,
+   "near": "Palm Bay",
+   "near_km": 178,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-14T15:27:27+00:00"
+ },
+ {
+  "id": "auto-2026111312",
+  "title": "24 h ending 12Z Fri 13 Nov",
+  "start": "2026-11-12T12:00:00+00:00",
+  "end": "2026-11-13T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 2.87,
+   "area_max": 1.02,
+   "lat": 27.455,
+   "lon": -79.225,
+   "near": "Palm Bay",
+   "near_km": 149,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0066,
+    "2": 0.0005,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-13T15:26:49+00:00"
+ },
+ {
+  "id": "auto-2026111212",
+  "title": "24 h ending 12Z Thu 12 Nov",
+  "start": "2026-11-11T12:00:00+00:00",
+  "end": "2026-11-12T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 5.45,
+   "area_max": 1.96,
+   "lat": 26.555,
+   "lon": -82.855,
+   "near": "Orlando",
+   "near_km": 258,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.01,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.09
+   },
+   "coverage": {
+    "1": 0.038,
+    "2": 0.0118,
+    "4": 0.0007,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-12T17:07:55+00:00"
+ },
+ {
+  "id": "auto-2026111112",
+  "title": "24 h ending 12Z Wed 11 Nov",
+  "start": "2026-11-10T12:00:00+00:00",
+  "end": "2026-11-11T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 2.82,
+   "area_max": 0.99,
+   "lat": 27.725,
+   "lon": -79.895,
+   "near": "Palm Bay",
+   "near_km": 76,
+   "sites": {
+    "LC-39A": 0.1,
+    "LC-39B": 0.04,
+    "SLC-40": 0.23,
+    "SLC-41": 0.18,
+    "SLC-37": 0.3,
+    "LC-36": 0.48,
+    "SLC-46": 0.36,
+    "Skid Strip (KXMR)": 0.59,
+    "SLF (KTTS)": 0.01,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.01,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.012,
+    "2": 0.0006,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-11T17:06:31+00:00"
+ },
+ {
+  "id": "2026110912-2026111012",
+  "title": "test",
+  "start": "2026-11-09T12:00:00+00:00",
+  "end": "2026-11-10T12:00:00+00:00",
+  "hours": 24,
+  "auto": false,
+  "obs": {
+   "max": 0.33,
+   "area_max": 0.05,
+   "lat": 28.175,
+   "lon": -79.605,
+   "near": "SLC-46",
+   "near_km": 96,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-10T16:49:31+00:00"
+ },
+ {
+  "id": "auto-2026111012",
+  "title": "24 h ending 12Z Tue 10 Nov",
+  "start": "2026-11-09T12:00:00+00:00",
+  "end": "2026-11-10T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 0.33,
+   "area_max": 0.05,
+   "lat": 28.175,
+   "lon": -79.605,
+   "near": "SLC-46",
+   "near_km": 96,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-10T17:10:04+00:00"
+ },
+ {
+  "id": "auto-2026110912",
+  "title": "24 h ending 12Z Mon 09 Nov",
+  "start": "2026-11-08T12:00:00+00:00",
+  "end": "2026-11-09T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 3.22,
+   "area_max": 0.21,
+   "lat": 30.375,
+   "lon": -80.205,
+   "near": "Daytona",
+   "near_km": 156,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0009,
+    "2": 0.0001,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-09T17:07:48+00:00"
+ },
+ {
+  "id": "auto-2026110812",
+  "title": "24 h ending 12Z Sun 08 Nov",
+  "start": "2026-11-07T12:00:00+00:00",
+  "end": "2026-11-08T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 1.63,
+   "area_max": 0.16,
+   "lat": 27.525,
+   "lon": -79.135,
+   "near": "Palm Bay",
+   "near_km": 154,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0001,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-09T16:50:36+00:00"
+ },
+ {
+  "id": "auto-2026110712",
+  "title": "24 h ending 12Z Sat 07 Nov",
+  "start": "2026-11-06T12:00:00+00:00",
+  "end": "2026-11-07T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 0.91,
+   "area_max": 0.34,
+   "lat": 29.965,
+   "lon": -79.095,
+   "near": "Daytona",
+   "near_km": 209,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.01,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-09T16:47:12+00:00"
+ },
+ {
+  "id": "auto-2026110612",
+  "title": "24 h ending 12Z Fri 06 Nov",
+  "start": "2026-11-05T12:00:00+00:00",
+  "end": "2026-11-06T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 1.24,
+   "area_max": 0.45,
+   "lat": 29.855,
+   "lon": -82.255,
+   "near": "Daytona",
+   "near_km": 138,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0004,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-09T16:44:04+00:00"
+ },
+ {
+  "id": "auto-2026110512",
+  "title": "24 h ending 12Z Thu 05 Nov",
+  "start": "2026-11-04T12:00:00+00:00",
+  "end": "2026-11-05T12:00:00+00:00",
+  "hours": 24,
+  "auto": true,
+  "obs": {
+   "max": 2.81,
+   "area_max": 1.04,
+   "lat": 30.165,
+   "lon": -82.555,
+   "near": "Daytona",
+   "near_km": 181,
+   "sites": {
+    "LC-39A": 0.0,
+    "LC-39B": 0.0,
+    "SLC-40": 0.0,
+    "SLC-41": 0.0,
+    "SLC-37": 0.0,
+    "LC-36": 0.0,
+    "SLC-46": 0.0,
+    "Skid Strip (KXMR)": 0.0,
+    "SLF (KTTS)": 0.0,
+    "Patrick (KCOF)": 0.0,
+    "Melbourne (KMLB)": 0.0,
+    "Palm Bay": 0.0,
+    "Orlando (KMCO)": 0.0,
+    "Daytona (KDAB)": 0.0
+   },
+   "coverage": {
+    "1": 0.0054,
+    "2": 0.001,
+    "4": 0.0,
+    "8": 0.0
+   }
+  },
+  "headline": null,
+  "built": "2026-11-09T16:41:01+00:00"
+ },
+ {
+  "id": "2026103112-2026110312",
+  "title": "test-ecmwf-fix",
+  "start": "2026-10-31T12:00:00+00:00",
+  "end": "2026-11-03T12:00:00+00:00",
+  "hours": 72,
+  "auto": false,
+  "obs": {
+   "max": 26.39,
+   "area_max": 16.89,
+   "lat": 27.945,
+   "lon": -80.535,
+   "near": "Palm Bay",
+   "near_km": 11,
+   "sites": {
+    "LC-39A": 11.02,
+    "LC-39B": 10.58,
+    "SLC-40": 12.29,
+    "SLC-41": 12.05,
+    "SLC-37": 11.96,
+    "LC-36": 8.79,
+    "SLC-46": 8.88,
+    "Skid Strip (KXMR)": 9.34,
+    "SLF (KTTS)": 10.52,
+    "Patrick (KCOF)": 8.77,
+    "Melbourne (KMLB)": 13.0,
+    "Palm Bay": 17.8,
+    "Orlando (KMCO)": 3.49,
+    "Daytona (KDAB)": 4.04
+   },
+   "coverage": {
+    "1": 0.6351,
+    "2": 0.4325,
+    "4": 0.2744,
+    "8": 0.077
+   }
+  },
+  "headline": null,
+  "built": "2026-11-09T16:33:59+00:00"
+ },
+ {
+  "id": "2026110112-2026110312",
+  "title": "Brevard County Historic Flooding Event (48 hr)",
+  "start": "2026-11-01T12:00:00+00:00",
+  "end": "2026-11-03T12:00:00+00:00",
+  "hours": 48,
+  "auto": false,
+  "obs": {
+   "max": 26.13,
+   "area_max": 16.65,
+   "lat": 27.945,
+   "lon": -80.535,
+   "near": "Palm Bay",
+   "near_km": 11,
+   "sites": {
+    "LC-39A": 10.94,
+    "LC-39B": 10.53,
+    "SLC-40": 12.1,
+    "SLC-41": 11.92,
+    "SLC-37": 11.57,
+    "LC-36": 8.5,
+    "SLC-46": 8.52,
+    "Skid Strip (KXMR)": 9.05,
+    "SLF (KTTS)": 10.43,
+    "Patrick (KCOF)": 8.59,
+    "Melbourne (KMLB)": 12.57,
+    "Palm Bay": 17.69,
+    "Orlando (KMCO)": 3.28,
+    "Daytona (KDAB)": 4.04
+   },
+   "coverage": {
+    "1": 0.6226,
+    "2": 0.4237,
+    "4": 0.2622,
+    "8": 0.0706
+   }
+  },
+  "headline": null,
+  "built": "2026-11-12T16:52:16+00:00"
+ },
+ {
+  "id": "2026110212-2026110312",
+  "title": "November 2-3rd, 2026 Historic Rainfall Event (24hr Forecast)",
+  "start": "2026-11-02T12:00:00+00:00",
+  "end": "2026-11-03T12:00:00+00:00",
+  "hours": 24,
+  "auto": false,
+  "obs": {
+   "max": 17.04,
+   "area_max": 9.14,
+   "lat": 27.985,
+   "lon": -80.525,
+   "near": "Palm Bay",
+   "near_km": 8,
+   "sites": {
+    "LC-39A": 2.61,
+    "LC-39B": 2.45,
+    "SLC-40": 2.84,
+    "SLC-41": 2.78,
+    "SLC-37": 3.34,
+    "LC-36": 3.49,
+    "SLC-46": 3.64,
+    "Skid Strip (KXMR)": 3.83,
+    "SLF (KTTS)": 1.77,
+    "Patrick (KCOF)": 2.24,
+    "Melbourne (KMLB)": 4.92,
+    "Palm Bay": 10.76,
+    "Orlando (KMCO)": 0.43,
+    "Daytona (KDAB)": 2.18
+   },
+   "coverage": {
+    "1": 0.3153,
+    "2": 0.1549,
+    "4": 0.0423,
+    "8": 0.0077
+   }
+  },
+  "headline": null,
+  "built": "2026-11-09T16:36:58+00:00"
+ }
+]
