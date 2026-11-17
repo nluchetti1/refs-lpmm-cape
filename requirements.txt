@@ -5,3 +5,4 @@ cartopy
 pygrib
 metpy
 scipy
+shapely

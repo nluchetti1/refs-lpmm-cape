@@ -825,6 +825,7 @@ def republish():
     shutil.copytree(R.SITE_CACHE, R.OUT_DIR)
     if os.path.exists(R.INDEX_SRC):
         shutil.copy(R.INDEX_SRC, os.path.join(R.OUT_DIR, "index.html"))
+        R.copy_pages(R.OUT_DIR)
     meta_p = os.path.join(R.OUT_DIR, "meta.json")
     meta = R.load_json(meta_p, {})
     refresh_summaries()

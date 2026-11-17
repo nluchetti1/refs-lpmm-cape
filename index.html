@@ -131,6 +131,26 @@
   .case-head { font: 700 22px var(--display); margin: 0 0 4px; }
   .case-sub { color: var(--muted); font-size: 14px; margin: 0 0 12px; max-width: 80ch; }
   .howto { font-size: 14px; color: var(--muted); }
+  .board-link { font-size: 14px; padding: 7px 14px; border-color: var(--latest); text-decoration: none; margin-left: auto; }
+  .board-link.alert { border-color: var(--warn); color: var(--warn); }
+  .board-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .bchip { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; }
+  .bchip .k { font: 600 12px var(--display); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .bchip .v { font: 700 20px var(--display); margin-top: 2px; }
+  .bchip .s { font-size: 12.5px; color: var(--muted); }
+  .board-cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 1000px) { .board-cols { grid-template-columns: minmax(0, 1fr); } }
+  .board-cols > * { min-width: 0; }
+  .acts { list-style: none; margin: 0; padding: 0; }
+  .acts li { border-left: 4px solid var(--muted); background: var(--ink); border-radius: 4px; padding: 8px 10px; margin: 0 0 8px; }
+  .acts li.s3 { border-left-color: #e0402a; } .acts li.s2 { border-left-color: #f0b429; }
+  .acts li.s1 { border-left-color: #4fb0d0; } .acts li.s0 { border-left-color: var(--good); }
+  .acts .src { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .acts details { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .acts summary { cursor: pointer; }
+  .ero-pill { display: inline-block; min-width: 26px; text-align: center; border-radius: 3px; padding: 0 5px; font: 700 12px var(--display); color: #111; }
+  .km { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; }
+  .km li { margin: 4px 0; }
   .scorecard { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; margin: 4px 0 18px; }
   .scorecard ul { margin: 6px 0 10px; padding-left: 18px; font-size: 14.5px; }
   .scorecard li { margin: 3px 0; }
@@ -200,6 +220,7 @@
       <h1 id="h-title">REFS QPF</h1>
       <p class="sub" id="sub">48-h ensemble QPF</p>
     </div>
+    <a class="btn board-link" id="board-link" href="board.html" target="_blank" rel="noopener" hidden>Situational awareness board ↗</a>
     <div class="status" id="status" data-s="unknown" role="status">
       <span class="dot"></span>
       <div><span id="status-text">Loading</span><small id="status-detail">&nbsp;</small></div>
@@ -941,7 +962,8 @@
   }
 
   function drawTimelines() {
-    const t = meta.timelines || [{ site: meta.primary_site, file: "pad_timeline.png" }];
+    const t = (meta.timelines && meta.timelines.length) ? meta.timelines : null;
+    if (!t) { $("tl-seg").innerHTML = ""; return; }
     if (!tlSel || !t.find(x => x.site === tlSel)) tlSel = t[0].site;
     const lab = (n) => { const s = (meta.sites || []).find(x => x.name === n); return s && s.label && t.length > 12 ? `${s.label} · ${n.split(" (")[0]}` : n.split(" (")[0]; };
     if (t.length > 12) {
@@ -954,6 +976,15 @@
     }
     const f = t.find(x => x.site === tlSel).file;
     $("tl-img").src = f + "?v=" + stamp; $("tl-dl").href = f + "?v=" + stamp;
+  }
+  function drawBoardLink() {
+    const b = meta.board, el = $("board-link");
+    el.hidden = !b;
+    if (!b) return;
+    const days = (b.ero || {}).days || {};
+    const top = Math.max(0, ...["1", "2", "3"].map(k => (days[k] || {}).max_in_view || 0));
+    el.innerHTML = `Situational awareness board${top ? ` · ERO up to ${["", "Marginal", "Slight", "Moderate", "High"][top]}` : ""} ↗`;
+    el.classList.toggle("alert", top >= 2 || (b.actions || []).some(a => a.severity >= 3));
   }
   function drawFlashAge() {
     const el = $("flash-age");
@@ -993,7 +1024,8 @@
     const want = tabs.find(t => "#" + t.id.slice(2) === h && !t.hidden);
     const cur = tabs.find(t => t.getAttribute("aria-selected") === "true");
     if (want && want !== cur) select(want);
-    else if (cur && cur.hidden) select(tabs[0]);
+    else if (!cur || cur.hidden) select(tabs.find(t => !t.hidden));
+    else document.querySelector(".grid").classList.toggle("wide", cur.id === "t-cases");
   }
 
   function drawImages() {
@@ -1008,10 +1040,14 @@
       const r = await fetch("meta.json?t=" + Date.now(), { cache: "no-store" });
       if (!r.ok) throw new Error(r.status);
       const m = await r.json();
-      const key = m.generated_utc + "|" + ((m.flash && m.flash.valid) || "");
+      const key = m.generated_utc + "|" + ((m.flash && m.flash.valid) || "") + "|" + ((m.board && m.board.built) || "");
       if (key !== stamp) {
         meta = m; stamp = key;
-        drawTabs(); drawStatus(); drawRibbon(); drawRegime(); drawSites(); drawSide(); drawVerify(); drawImages(); drawTimelines(); drawDiag(); drawFfgNote(); drawFlashAge(); loadCases();
+        // each panel draws independently, so one bad block can't blank the rest of the page
+        [drawTabs, drawStatus, drawBoardLink, drawRibbon, drawRegime, drawSites, drawSide, drawVerify, drawImages,
+         drawTimelines, drawDiag, drawFfgNote, drawFlashAge, loadCases].forEach(fn => {
+          try { fn(); } catch (err) { console.error(fn.name, err); }
+        });
       } else { drawStatus(); drawFlashAge(); }
     } catch (e) {
       if (!meta) {

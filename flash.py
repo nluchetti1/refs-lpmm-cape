@@ -9,6 +9,7 @@ while this workflow runs, and never older than 6 h if it stops.
 import os
 import shutil
 import sys
+from datetime import datetime
 
 import refs_qpf as R
 import lookback as L
@@ -24,6 +25,7 @@ def main():
     shutil.copytree(R.SITE_CACHE, R.OUT_DIR)
     if os.path.exists(R.INDEX_SRC):
         shutil.copy(R.INDEX_SRC, os.path.join(R.OUT_DIR, "index.html"))
+        R.copy_pages(R.OUT_DIR)
     fl = R.build_flash_now(R.OUT_DIR)
     if not fl:
         sys.exit(1)
@@ -31,6 +33,22 @@ def main():
     meta = R.load_json(meta_p, {})
     meta["flash"] = fl
     meta.setdefault("products", {})["flash"] = True
+    # Keep the situational awareness board fresh (PPP updates hourly; ERO/AFD several times a day)
+    built = (meta.get("board") or {}).get("built")
+    age = (R.utcnow() - datetime.fromisoformat(built)).total_seconds() / 60 if built else 1e9
+    if age > R.BOARD_MAX_AGE_MIN:
+        b = R.optional("board", R.build_board_block, meta)
+        if b:
+            meta["board"] = b
+            meta["products"]["board"] = True
+            # persist into the cached site so the next refresh starts from this board, not the 6-hourly one
+            cmeta_p = os.path.join(R.SITE_CACHE, "meta.json")
+            cmeta = R.load_json(cmeta_p, {})
+            cmeta["board"] = b
+            cmeta.setdefault("products", {})["board"] = True
+            R.save_json(cmeta_p, cmeta, indent=1)
+            for f in b.get("images", {}).values():
+                shutil.copy(os.path.join(R.OUT_DIR, f), os.path.join(R.SITE_CACHE, f))
     meta["products"]["cases"] = R.publish_cases(R.OUT_DIR) > 0
     R.save_json(meta_p, meta, indent=1)
     print(f"[flash] site refreshed, FLASH valid {fl['valid']}")

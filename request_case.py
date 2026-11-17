@@ -67,8 +67,22 @@ def main():
     title = re.sub(r"[^\w\s\-\.,/()&'’]", "", field(body, "Title"))[:80].strip() or None
 
     cid = L.case_id_for(start, end)
-    if os.path.exists(os.path.join(R.CASES_DIR, cid, "case.json")):
-        reply(f"This window is already built: {site_url(cid)}", 0)
+    rebuild = False
+    cj = os.path.join(R.CASES_DIR, cid, "case.json")
+    if os.path.exists(cj):
+        old = R.load_json(cj, {})
+        stale = []
+        if "flash" not in old:
+            stale.append("it predates MRMS FLASH")
+        if (old.get("ecmwf_reader") or 1) < L.ECMWF_READER_VERSION:
+            stale.append("its ECMWF data used an older reader")
+        forced = bool(re.search(r"-\s*\[[xX]\]\s*Rebuild", body)) and author == os.environ.get("REPO_OWNER", "")
+        if not stale and not forced:
+            reply(f"This window is already built: {site_url(cid)}\n\n"
+                  f"(The repository owner can tick **Rebuild** on the request form to redo it.)", 0)
+        rebuild = True
+        why = "you asked for a rebuild" if forced and not stale else " and ".join(stale)
+        print(f"[request] rebuilding {cid}: {why}")
 
     recent = 0
     for cj in L.glob.glob(os.path.join(R.CASES_DIR, "*", "case.json")):
@@ -79,14 +93,19 @@ def main():
         reply(f"Limit is {MAX_PER_AUTHOR_PER_DAY} look-backs per person per day. Please try again tomorrow.", 2)
 
     try:
-        L.build_case(start=start, end=end, title=title, requested_by=author)
+        L.build_case(start=start, end=end, title=title, requested_by=author, rebuild=rebuild)
     except Exception as e:
         reply(f"The build failed: {e}", 2)
     L.republish()
     c = R.load_json(os.path.join(R.CASES_DIR, cid, "case.json"), {})
     missing = f"\n\nNot available for this window: {', '.join(c['notes'])}." if c.get("notes") else ""
+    fq = ((c.get("flash") or {}).get("max") or {}).get("CREST_MAXUNITSTREAMFLOW")
+    if fq:
+        missing = (f"\n\nMRMS FLASH peak unit streamflow {fq['value']} m³ s⁻¹ km⁻² near {fq['near']}"
+                   f" ({'significant flooding range' if fq['value'] >= 6 else 'flooding likely range' if fq['value'] >= 2 else 'below flooding range'}).") + missing
     window = f"{start:%HZ %a %d %b %Y} to {end:%HZ %a %d %b %Y} ({L.hours_between(start, end)} h)"
-    reply(f"Ready: {site_url(cid)}\n\nWindow: **{window}**, read from your request as "
+    redo = "Rebuilt" if rebuild else "Ready"
+    reply(f"{redo}: {site_url(cid)}\n\nWindow: **{window}**, read from your request as "
           f"`{start:%Y%m%d%H}` to `{end:%Y%m%d%H}` UTC.\n\nMRMS max {c['obs']['max']}″ near {c['obs']['near']}.{missing}\n\n"
           f"The page updates within a minute or two of this comment.", 0)
 

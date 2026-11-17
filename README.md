@@ -52,3 +52,23 @@ GitHub Pages deployed from a branch has a soft limit of 10 builds per hour, and 
 (FLASH, the 6-hourly build, look-backs) counts, so keep FLASH at 10 min or slower. Each FLASH
 run loops the last FLASH_LOOP_SCANS (default 12) 10-min scans of QPE % of FFG and CREST unit
 streamflow, ending at the newest.
+
+## Situational awareness board
+`board.py` builds `board.html`, a full-screen page of its own (linked from the top of the main
+site), from three NWS sources plus this site's own checks:
+- **WPC Probabilistic Precipitation Portal**: low end (10th pct), expected (official NWS) and high end
+  (90th pct) 24/48/72-h QPF from `ftp-wpc.ncep.noaa.gov/prob_precip_portal/co/`.
+- **WPC Excessive Rainfall Outlook** Days 1-5 from the NWS map service (risk category per site).
+- **NWS Area Forecast Discussion** for `board.wfo` in `site_config.json` (key messages, hydrology,
+  watches/warnings/advisories), from api.weather.gov with tgftp as fallback.
+
+Action items are produced by fixed rules (each cites its source). Optional: add an
+`ANTHROPIC_API_KEY` repository secret and the board also shows a short AI-drafted summary of the
+AFD, clearly labelled. The board rebuilds with every main build, and on FLASH refreshes once it is
+more than 55 min old.
+
+### Editing the board
+Press **Edit** on the board page: click any outlined text to change it, change an item's priority,
+hide items, add your own action items, and type a situation summary. Edits are saved in that
+browser only (they survive refreshes and new data, but other people don't see them). **Copy text**
+puts the edited board on the clipboard as a plain-text briefing; **Print** gives a clean printout.

@@ -178,6 +178,9 @@ BRANDING = {"title": "Space Coast REFS QPF",
             "subtitle": "48-h ensemble QPF for Cape Canaveral and Kennedy Space Center",
             "area": "Cape Canaveral and KSC"}
 REGIME_POINT_NAME = "XMR"
+BOARD_WFO = "MLB"                   # NWS office whose AFD feeds the situational awareness board
+BOARD_AFD_REGION = "62"             # FXUS62 = southeast; used only for the tgftp fallback path
+BOARD_MAX_AGE_MIN = 55              # flash.py rebuilds the board when it is older than this
 IEM_STATIONS = None                 # {"network": "NC_ASOS", "wfo": "RAH", "major": [...]}
 CONFIG_FILE = "site_config.json"
 STATIONS_CACHE = os.path.join("data", "stations.json")
@@ -247,6 +250,7 @@ def init_sites():
     """Apply site_config.json (once). Safe to call from lookback and request scripts."""
     global SITES, EXTENT, PRIMARY_SITE, TIMELINE_SITES, MAP_LABELS, THRESHOLDS, BRANDING
     global REGIME_POINT, REGIME_POINT_NAME, RAOB_STATIONS, RAOB_HOURS, IEM_STATIONS, _SITES_READY
+    global BOARD_WFO, BOARD_AFD_REGION
     if _SITES_READY:
         return
     _SITES_READY = True
@@ -265,6 +269,8 @@ def init_sites():
     RAOB_STATIONS = reg.get("raob_stations", RAOB_STATIONS)
     RAOB_HOURS = reg.get("raob_hours", RAOB_HOURS)
     IEM_STATIONS = cfg.get("iem_stations")
+    BOARD_WFO = cfg.get("board", {}).get("wfo", BOARD_WFO)
+    BOARD_AFD_REGION = str(cfg.get("board", {}).get("afd_region", BOARD_AFD_REGION))
 
     SITES = {}
     SITE_LABELS.clear()
@@ -1937,6 +1943,22 @@ def publish_cases(site_dir):
     return len(index)
 
 
+EXTRA_PAGES = ["board.html"]        # standalone pages shipped next to index.html
+
+
+def copy_pages(out_dir):
+    base = os.path.dirname(os.path.abspath(INDEX_SRC))
+    for f in EXTRA_PAGES:
+        src = os.path.join(base, f)
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(out_dir, f))
+
+
+def build_board_block(meta):
+    import board
+    return board.build_board(OUT_DIR, meta, BOARD_WFO, BOARD_AFD_REGION)
+
+
 def main():
     assert (N_RUNS - 1) * RUN_SPACING + ACCUM_HOURS <= MAX_FHR, "time-lag window exceeds f60"
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -2047,9 +2069,12 @@ def main():
                                    "ends": (latest + timedelta(hours=int(rr["end_hour"][j, i]))).isoformat()}
             site["ffg"] = per
     meta["diagnostics"] = DIAG
+    meta["board"] = optional("board", build_board_block, meta)
+    meta.setdefault("products", {})["board"] = bool(meta["board"])
     save_json(os.path.join(OUT_DIR, "meta.json"), meta, indent=1)
     if os.path.exists(INDEX_SRC):
         shutil.copy(INDEX_SRC, os.path.join(OUT_DIR, "index.html"))
+        copy_pages(OUT_DIR)
     open(os.path.join(OUT_DIR, ".nojekyll"), "w").close()
 
     if os.path.isdir(SITE_CACHE):
