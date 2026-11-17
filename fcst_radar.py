@@ -1,18 +1,18 @@
 """
 Forecast "radar" loops for the situational awareness board: simulated composite reflectivity
-coloured by precipitation type, with sea-level pressure isobars and H/L centres, over a regional
-map wide enough to see systems coming.
+on the usual NWS dBZ scale, with sea-level pressure isobars and H/L centres, over a regional map
+wide enough to see systems coming.
 
-  RRFS   3 km, hourly frames to 60-84 h   AWS noaa-rrfs-ops-pds, then NOMADS rrfs/prod
-  GFS    0.25 deg, 3-hourly to 72 h       AWS noaa-gfs-bdp-pds, then NOMADS gfs/prod
+  HRRR   3 km, hourly to 48 h   AWS noaa-hrrr-bdp-pds, then NOMADS hrrr/prod
+  RRFS   3 km, hourly to 60-84 h  AWS noaa-rrfs-ops-pds, then NOMADS rrfs/prod
 
 Only the needed GRIB records are downloaded (byte ranges from each file's .idx). Frames are
 written to site/radar/ and described in meta["radar"]; a run whose model cycle is unchanged
-reuses the previous frames from data/site_cache.
+reuses the previous frames from data/site_cache, and a model that fails keeps its last good loop.
 
-NOTE: the .idx field strings below follow the usual NCEP inventories (REFC:entire atmosphere,
-PRMSL/MSLMA:mean sea level, CRAIN/CSNOW/CFRZR/CICEP:surface). They could not be probed live
-from the build sandbox; the first Actions log prints what each model actually matched.
+NOTE: the .idx field strings follow the usual NCEP inventories (REFC:entire atmosphere,
+MSLMA/PRMSL/MSLET:mean sea level). They could not be probed live from the build sandbox; the
+Actions log prints the URLs tried and the fields each model actually matched.
 """
 import os
 import re
@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.colors as mcolors
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
 import pygrib
@@ -31,38 +32,32 @@ from scipy.ndimage import gaussian_filter, maximum_filter, minimum_filter
 
 import refs_qpf as R
 
+HRRR_URLS = ["https://noaa-hrrr-bdp-pds.s3.amazonaws.com/hrrr.{d:%Y%m%d}/conus/hrrr.t{d:%H}z.wrfsfcf{f:02d}.grib2",
+             "https://nomads.ncep.noaa.gov/pub/data/nccf/com/hrrr/prod/hrrr.{d:%Y%m%d}/conus/hrrr.t{d:%H}z.wrfsfcf{f:02d}.grib2"]
 RRFS_URLS = ["https://noaa-rrfs-ops-pds.s3.amazonaws.com/rrfs.{d:%Y%m%d}/{d:%H}/rrfs.t{d:%H}z.prslev.3km.f{f:03d}.conus.grib2",
-             "https://nomads.ncep.noaa.gov/pub/data/nccf/com/rrfs/prod/rrfs.{d:%Y%m%d}/{d:%H}/rrfs.t{d:%H}z.prslev.3km.f{f:03d}.conus.grib2"]
-GFS_URLS = ["https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.{d:%Y%m%d}/{d:%H}/atmos/gfs.t{d:%H}z.pgrb2.0p25.f{f:03d}",
-            "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.{d:%Y%m%d}/{d:%H}/atmos/gfs.t{d:%H}z.pgrb2.0p25.f{f:03d}"]
+             "https://nomads.ncep.noaa.gov/pub/data/nccf/com/rrfs/prod/rrfs.{d:%Y%m%d}/{d:%H}/rrfs.t{d:%H}z.prslev.3km.f{f:03d}.conus.grib2",
+             "https://noaa-rrfs-ops-pds.s3.amazonaws.com/rrfs.{d:%Y%m%d}/{d:%H}/rrfs.t{d:%H}z.2dfld.3km.f{f:03d}.conus.grib2"]
 
 MODELS = {
-    # cycles: inits tried (6-hourly synoptic runs are the long ones); lengths: longest first
-    "rrfs": {"label": "RRFS 3 km", "urls": RRFS_URLS, "step": 1, "lengths": [72, 60, 48, 36],
-             "latency_h": 2, "smooth": 8.0, "note": "hourly"},
-    "gfs": {"label": "GFS", "urls": GFS_URLS, "step": 3, "lengths": [72],
-            "latency_h": 4, "smooth": 1.0, "note": "every 3 h"},
+    # Only the 6-hourly synoptic cycles are tried (they are the long runs). lengths: longest first.
+    "hrrr": {"label": "HRRR", "urls": HRRR_URLS, "lengths": [48, 36, 18], "latency_h": 2, "smooth": 8.0},
+    "rrfs": {"label": "RRFS", "urls": RRFS_URLS, "lengths": [72, 60, 48, 36, 18], "latency_h": 2, "smooth": 8.0},
 }
-MODEL_ORDER = ["rrfs", "gfs"]
+MODEL_ORDER = ["hrrr", "rrfs"]
 WORKERS = 6
 OUT_SUB = "radar"
 
-# idx line filter: composite reflectivity, MSLP, instantaneous categorical precip type
-_KEEP = re.compile(r":(REFC:entire atmosphere|PRMSL:mean sea level|MSLMA:mean sea level|MSLET:mean sea level|"
-                   r"(CRAIN|CSNOW|CFRZR|CICEP):surface:\d+ (hour|day) fcst)")
+_KEEP = re.compile(r":(REFC:entire atmosphere|MSLMA:mean sea level|PRMSL:mean sea level|MSLET:mean sea level)")
 
-DBZ = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 75]
-RAIN = ["#a6e6a6", "#6fd171", "#3eb44c", "#1f8f35", "#11702a", "#f7e540", "#f5b52e",
-        "#f07c24", "#e2401f", "#b81b1d", "#d13cd0", "#f4b3f2"]
-SNOW = ["#d6ebff", "#b0d5fb", "#88bdf4", "#62a2ea", "#4487dc", "#2f6ccb",
-        "#2156b4", "#18439a", "#123480", "#0d2766", "#0a1d4f", "#07143a"]
-MIX = ["#ffd6ee", "#f9b2dd", "#f08dca", "#e468b5", "#d1489f", "#ba2d89",
-       "#9f1b73", "#84105f", "#6a094c", "#52053b", "#3d032c", "#2a021e"]
-NORM = mcolors.BoundaryNorm(DBZ, len(RAIN))
-CMAPS = {k: mcolors.ListedColormap(v) for k, v in (("rain", RAIN), ("snow", SNOW), ("mix", MIX))}
+# NWS reflectivity scale
+DBZ = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75]
+DBZ_COLORS = ["#019ff4", "#0300f4", "#02fd02", "#01c501", "#008e00", "#fdf802", "#e5bc00",
+              "#fd9500", "#fd0000", "#d40000", "#bc0000", "#f800fd", "#9854c6"]
+CMAP = mcolors.ListedColormap(DBZ_COLORS)
+NORM = mcolors.BoundaryNorm(DBZ, CMAP.N)
 
 EXTENT = None                    # board.radar_extent from site_config.json
-CITIES = []                      # board.radar_cities: [[name, lat, lon], ...]
+CITIES = []                      # board.radar_cities: [[name, lat, lon(, "left")], ...]
 TZ = ZoneInfo("America/New_York")
 
 
@@ -92,6 +87,7 @@ def find_init(model):
         for length in m["lengths"]:
             if any(R.exists(u + ".idx") for u in _urls(model, init, length)):
                 return init, length
+    print(f"[radar] {model}: nothing found; last URLs tried: {_urls(model, base - timedelta(hours=24), m['lengths'][-1])}")
     return None, None
 
 
@@ -101,10 +97,8 @@ def read_frame(model, init, f):
     try:
         with pygrib.open(path) as g:
             for msg in g:
-                sn = msg.shortName.lower()
-                key = {"refc": "refc", "prmsl": "mslp", "mslma": "mslp", "mslet": "mslp",
-                       "crain": "crain", "csnow": "csnow", "cfrzr": "cfrzr", "cicep": "cicep"}.get(sn)
-                if key is None or (key == "mslp" and "mslp" in out):
+                key = {"refc": "refc", "mslma": "mslp", "prmsl": "mslp", "mslet": "mslp"}.get(msg.shortName.lower())
+                if key is None or key in out:
                     continue
                 if crop is None:
                     crop = R.make_crop(msg, EXTENT, pad=0.5)
@@ -118,51 +112,51 @@ def read_frame(model, init, f):
 
 
 # --------------------------------------------------------------------------- drawing
+def _halo(w=2.5):
+    return [pe.withStroke(linewidth=w, foreground="#000000")]
+
+
 class RadarRenderer:
     """One figure and basemap reused for every frame; only the data artists are redrawn."""
 
     def __init__(self, model):
         w, e, s, n = EXTENT
         aspect = (n - s) / ((e - w) * np.cos(np.radians((n + s) / 2)))
-        self.fig = plt.figure(figsize=(9.0, 9.0 * aspect * 0.94 + 0.9))
-        self.ax = self.fig.add_axes([0.0, 0.08, 1.0, 0.84], projection=ccrs.PlateCarree())
-        ax = self.ax
-        ax.set_extent(EXTENT, crs=ccrs.PlateCarree())
+        W = 7.2
+        H = W * aspect + 0.75
+        self.fig = plt.figure(figsize=(W, H))
+        top, bot = 0.36 / H, 0.39 / H
+        self.ax = self.fig.add_axes([0.0, bot, 1.0, 1 - top - bot], projection=ccrs.PlateCarree())
+        ax, pc = self.ax, ccrs.PlateCarree()
+        ax.set_extent(EXTENT, crs=pc)
         ax.add_feature(cfeature.OCEAN.with_scale("50m"), facecolor="#0e1b26", zorder=0)
         ax.add_feature(cfeature.LAND.with_scale("50m"), facecolor="#22313d", zorder=0)
         ax.add_feature(cfeature.LAKES.with_scale("50m"), facecolor="#0e1b26", edgecolor="#4d6476", linewidth=0.4, zorder=3)
-        ax.add_feature(cfeature.COASTLINE.with_scale("50m"), edgecolor="#a9bccb", linewidth=0.7, zorder=4)
-        ax.add_feature(cfeature.STATES.with_scale("50m"), edgecolor="#6d8597", linewidth=0.6, zorder=4)
-        ax.add_feature(cfeature.BORDERS.with_scale("50m"), edgecolor="#6d8597", linewidth=0.6, zorder=4)
-        pc = ccrs.PlateCarree()
-        for c in CITIES:                                  # [name, lat, lon] or [name, lat, lon, "left"]
+        ax.add_feature(cfeature.COASTLINE.with_scale("50m"), edgecolor="#a9bccb", linewidth=0.6, zorder=4)
+        ax.add_feature(cfeature.STATES.with_scale("50m"), edgecolor="#6d8597", linewidth=0.5, zorder=4)
+        ax.add_feature(cfeature.BORDERS.with_scale("50m"), edgecolor="#6d8597", linewidth=0.5, zorder=4)
+        for c in CITIES:
             name, la, lo = c[:3]
             left = len(c) > 3 and c[3] == "left"
-            ax.plot(lo, la, marker="o", ms=3.5, mfc="#e6edf2", mec="#000000", mew=0.6, transform=pc, zorder=9)
-            ax.text(lo + (-0.12 if left else 0.12), la + 0.08, name, fontsize=9, color="#ffffff", transform=pc,
+            ax.plot(lo, la, marker="o", ms=3, mfc="#e6edf2", mec="#000000", mew=0.5, transform=pc, zorder=9)
+            ax.text(lo + (-0.12 if left else 0.12), la + 0.08, name, fontsize=8, color="#ffffff", transform=pc,
                     zorder=9, ha="right" if left else "left", path_effects=_halo())
         plat, plon, _ = R.SITES[R.PRIMARY_SITE]
-        ax.plot(plon, plat, marker="*", ms=15, mfc="#ffd84a", mec="#000000", mew=1.0, transform=pc, zorder=11)
-        ax.text(plon + 0.2, plat, R.SITE_LABELS.get(R.PRIMARY_SITE, R.PRIMARY_SITE), fontsize=10, fontweight="bold",
+        ax.plot(plon, plat, marker="*", ms=13, mfc="#ffd84a", mec="#000000", mew=0.9, transform=pc, zorder=11)
+        ax.text(plon + 0.2, plat, R.SITE_LABELS.get(R.PRIMARY_SITE, R.PRIMARY_SITE), fontsize=9, fontweight="bold",
                 color="#ffd84a", va="center", transform=pc, zorder=11, path_effects=_halo(3))
         ax.spines["geo"].set_edgecolor("#4d6476")
-        self.t1 = self.fig.text(0.015, 0.955, "", fontsize=15, fontweight="bold", color="#ffffff")
-        self.t2 = self.fig.text(0.985, 0.955, "", fontsize=12, color="#c9d6e0", ha="right")
-        self._legend()
+        ty = 1 - 0.18 / H
+        self.t1 = self.fig.text(0.012, ty, "", fontsize=12, fontweight="bold", color="#ffffff", va="center")
+        self.t2 = self.fig.text(0.988, ty, "", fontsize=9.5, color="#c9d6e0", ha="right", va="center")
+        cax = self.fig.add_axes([0.2, 0.13 / H, 0.6, 0.11 / H])
+        cb = self.fig.colorbar(plt.cm.ScalarMappable(norm=NORM, cmap=CMAP), cax=cax, orientation="horizontal", ticks=DBZ)
+        cb.ax.tick_params(labelsize=7.5, colors="#c9d6e0", length=2, pad=1)
+        cb.outline.set_edgecolor("#4d6476")
+        self.fig.text(0.81, 0.185 / H, "dBZ", fontsize=8.5, color="#c9d6e0", va="center")
         self.dyn = []
         self.smooth = MODELS[model]["smooth"]
         self.label = MODELS[model]["label"]
-
-    def _legend(self):
-        x0, y0, w, h = 0.06, 0.035, 0.24, 0.016
-        for k, (name, cm) in enumerate((("Rain", CMAPS["rain"]), ("Snow", CMAPS["snow"]), ("Ice / mix", CMAPS["mix"]))):
-            ax = self.fig.add_axes([x0 + k * 0.31, y0, w, h])
-            ax.imshow(np.arange(cm.N)[None, :], cmap=cm, aspect="auto")
-            ax.set_xticks([]); ax.set_yticks([])
-            for sp in ax.spines.values():
-                sp.set_visible(False)
-            self.fig.text(x0 + k * 0.31, y0 + h + 0.006, name, fontsize=10, color="#e6edf2")
-        self.fig.text(x0 + 2 * 0.31 + w, y0 + h + 0.006, "light → heavy", fontsize=9, color="#8ea3b3", ha="right")
 
     def draw(self, fields, crop, init, f, path):
         for a in self.dyn:
@@ -170,38 +164,27 @@ class RadarRenderer:
         self.dyn = []
         ax, pc = self.ax, ccrs.PlateCarree()
         lats, lons = crop["lats"], crop["lons"]
-        z = np.where(np.isfinite(fields["refc"]), fields["refc"], -99)
-        cls = np.zeros(z.shape, np.int8)                              # 0 rain (default), 1 snow, 2 mix
-        if "csnow" in fields:
-            cls[np.nan_to_num(fields["csnow"]) >= 1] = 1
-        for k in ("cfrzr", "cicep"):
-            if k in fields:
-                cls[np.nan_to_num(fields[k]) >= 1] = 2
-        for c, name in enumerate(("rain", "snow", "mix")):
-            data = np.ma.masked_where((z < DBZ[0]) | (cls != c), z)
-            if data.count():
-                self.dyn.append(ax.pcolormesh(lons, lats, data, cmap=CMAPS[name], norm=NORM,
-                                              transform=pc, zorder=2, shading="auto", rasterized=True))
+        z = np.ma.masked_where(~np.isfinite(fields["refc"]) | (fields["refc"] < DBZ[0]), fields["refc"])
+        if z.count():
+            self.dyn.append(ax.pcolormesh(lons, lats, z, cmap=CMAP, norm=NORM, transform=pc, zorder=2,
+                                          shading="auto", rasterized=True))
         if "mslp" in fields:
             self.dyn += self._isobars(fields["mslp"], lats, lons)
         valid = init + timedelta(hours=f)
         loc = valid.astimezone(TZ)
         self.t1.set_text(f"{loc:%a %b %-d, %-I %p %Z}  ({valid:%HZ})")
-        self.t2.set_text(f"{self.label} forecast radar · hour {f} of the {init:%HZ %a} run")
+        self.t2.set_text(f"{self.label} simulated radar · hour {f} of the {init:%HZ %a} run")
         self.fig.savefig(path, dpi=150, facecolor="#0f1a24")
-        _quantize(path)
+        R.quantize_png(path)
 
     def _isobars(self, p, lats, lons):
         ax, pc = self.ax, ccrs.PlateCarree()
         p = np.where(np.isfinite(p), p, np.nanmean(p))
         hpa = gaussian_filter(p / 100.0 if np.nanmax(p) > 2000 else p, self.smooth)
-        levs = np.arange(960, 1052, 4)
-        out = []
-        cs = ax.contour(lons, lats, hpa, levels=levs, colors="#ffffff", linewidths=1.3, alpha=0.9,
-                        transform=pc, zorder=5)
-        ax.clabel(cs, fmt="%d", fontsize=9, inline=True, inline_spacing=2, colors="#ffffff")
-        out.append(cs)                       # ContourSet.remove() also removes its labels
-        # H / L at well-separated extrema inside the map
+        cs = ax.contour(lons, lats, hpa, levels=np.arange(960, 1052, 4), colors="#ffffff", linewidths=0.9,
+                        alpha=0.8, transform=pc, zorder=5)
+        ax.clabel(cs, fmt="%d", fontsize=7.5, inline=True, inline_spacing=2, colors="#ffffff")
+        out = [cs]                                   # ContourSet.remove() also removes its labels
         size = max(5, int(round(min(hpa.shape) / 5)))
         for kind, filt, color in (("H", maximum_filter, "#4aa3ff"), ("L", minimum_filter, "#ff5a5a")):
             ext = (hpa == filt(hpa, size=size, mode="nearest"))
@@ -210,28 +193,11 @@ class RadarRenderer:
             ext[:, :edge] = ext[:, -edge:] = False
             for j, i in zip(*np.where(ext)):
                 v = hpa[j, i]
-                if kind == "H" and v < 1012 or kind == "L" and v > 1012:
+                if (kind == "H" and v < 1012) or (kind == "L" and v > 1012):
                     continue
-                out.append(ax.text(lons[j, i], lats[j, i], kind, fontsize=20, fontweight="bold", color=color,
+                out.append(ax.text(lons[j, i], lats[j, i], kind, fontsize=16, fontweight="bold", color=color,
                                    ha="center", va="center", transform=pc, zorder=7, path_effects=_halo(3)))
-                out.append(ax.text(lons[j, i], lats[j, i], f"\n\n{v:.0f}", fontsize=8, color=color,
-                                   ha="center", va="center", transform=pc, zorder=7, path_effects=_halo(2)))
         return out
-
-
-def _halo(w=2.5):
-    import matplotlib.patheffects as pe
-    return [pe.withStroke(linewidth=w, foreground="#000000")]
-
-
-def _quantize(path):
-    """Palette PNG: about a third of the size, no visible loss on a radar map."""
-    try:
-        from PIL import Image
-        im = Image.open(path).convert("RGB")
-        im.quantize(colors=160, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(path, optimize=True)
-    except Exception as e:
-        print(f"[radar] quantize skipped: {e}")
 
 
 # --------------------------------------------------------------------------- build
@@ -240,17 +206,16 @@ def build_model(model, out_dir, previous=None):
     init, length = find_init(model)
     if not init:
         raise FileNotFoundError(f"{model}: no recent cycle with a posted f{m['lengths'][-1]:03d}")
-    hours = list(range(m["step"], length + 1, m["step"]))
+    hours = list(range(1, length + 1))
     sub = os.path.join(out_dir, OUT_SUB)
     os.makedirs(sub, exist_ok=True)
-    cache_sub = os.path.join(R.SITE_CACHE, OUT_SUB)
     if previous and previous.get("init") == init.isoformat() and len(previous.get("frames", [])) >= len(hours) * 0.9 \
             and all(os.path.exists(os.path.join(R.SITE_CACHE, fr["img"])) for fr in previous["frames"]):
         for fr in previous["frames"]:
             shutil.copy(os.path.join(R.SITE_CACHE, fr["img"]), os.path.join(out_dir, fr["img"]))
         print(f"[radar] {model} {init:%d/%HZ} unchanged; reused {len(previous['frames'])} frames")
         return previous
-    print(f"[radar] {model} {init:%Y%m%d %HZ}: {len(hours)} frames f{hours[0]:03d}-f{hours[-1]:03d}")
+    print(f"[radar] {model} {init:%Y%m%d %HZ}: {len(hours)} frames f01-f{length:02d}  ({_urls(model, init, 1)[0]})")
 
     def fetch(f):
         try:
@@ -275,7 +240,7 @@ def build_model(model, out_dir, previous=None):
     plt.close(renderer.fig)
     if len(frames) < max(3, len(hours) // 2):
         raise ValueError(f"{model}: only {len(frames)} of {len(hours)} frames")
-    return {"label": m["label"], "note": m["note"], "init": init.isoformat(), "frames": frames}
+    return {"label": m["label"], "note": "hourly", "init": init.isoformat(), "frames": frames}
 
 
 def build_radar(out_dir, previous=None):

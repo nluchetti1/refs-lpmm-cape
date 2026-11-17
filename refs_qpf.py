@@ -183,6 +183,7 @@ BOARD_AFD_REGION = "62"             # FXUS62 = southeast; used only for the tgft
 BOARD_MAX_AGE_MIN = 55              # flash.py rebuilds the board when it is older than this
 BOARD_EXCLUDE = []                  # site names left off the board (e.g. far-off airports)
 BOARD_SAT_SECTOR = "se"             # NOAA STAR GOES-East sector for the board's satellite loop
+BOARD_NEXRAD = "KMLB"               # NWS radar whose live loop the board shows
 IEM_STATIONS = None                 # {"network": "NC_ASOS", "wfo": "RAH", "major": [...]}
 CONFIG_FILE = "site_config.json"
 STATIONS_CACHE = os.path.join("data", "stations.json")
@@ -252,7 +253,7 @@ def init_sites():
     """Apply site_config.json (once). Safe to call from lookback and request scripts."""
     global SITES, EXTENT, PRIMARY_SITE, TIMELINE_SITES, MAP_LABELS, THRESHOLDS, BRANDING
     global REGIME_POINT, REGIME_POINT_NAME, RAOB_STATIONS, RAOB_HOURS, IEM_STATIONS, _SITES_READY
-    global BOARD_WFO, BOARD_AFD_REGION, BOARD_EXCLUDE, BOARD_SAT_SECTOR
+    global BOARD_WFO, BOARD_AFD_REGION, BOARD_EXCLUDE, BOARD_SAT_SECTOR, BOARD_NEXRAD
     if _SITES_READY:
         return
     _SITES_READY = True
@@ -275,6 +276,7 @@ def init_sites():
     BOARD_AFD_REGION = str(cfg.get("board", {}).get("afd_region", BOARD_AFD_REGION))
     BOARD_EXCLUDE = [n for n in (_resolve(k) for k in cfg.get("board", {}).get("exclude_sites", [])) if n]
     BOARD_SAT_SECTOR = cfg.get("board", {}).get("sat_sector", BOARD_SAT_SECTOR)
+    BOARD_NEXRAD = cfg.get("board", {}).get("nexrad", BOARD_NEXRAD)
 
     SITES = {}
     SITE_LABELS.clear()

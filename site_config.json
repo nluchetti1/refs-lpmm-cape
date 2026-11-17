@@ -192,6 +192,7 @@
         -81.09
       ]
     ],
-    "timezone": "America/New_York"
+    "timezone": "America/New_York",
+    "nexrad": "KMLB"
   }
 }

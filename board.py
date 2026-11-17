@@ -550,7 +550,7 @@ def ai_summary(afd_text, board):
 # --------------------------------------------------------------------------- build
 def build_board(out_dir, meta, wfo, afd_region="62"):
     """Fetch everything, draw ero.png / ppp_*.png, return the meta['board'] block."""
-    board = {"built": R.utcnow().isoformat(timespec="seconds"), "wfo": wfo, "images": {}}
+    board = {"built": R.utcnow().isoformat(timespec="seconds"), "wfo": wfo, "images": {}, "nexrad": R.BOARD_NEXRAD}
     ppp = R.optional("ppp fetch", fetch_ppp)
     ppp_sites = None
     if ppp:
