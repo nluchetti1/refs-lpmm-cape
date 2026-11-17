@@ -50,6 +50,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Build maps, score verification, tag regimes
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python refs_qpf.py
 
       - name: Prepare data branch

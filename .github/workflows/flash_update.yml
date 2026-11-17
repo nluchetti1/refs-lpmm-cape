@@ -42,8 +42,24 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Refresh FLASH panel
+      - name: Refresh FLASH panel and situational awareness board
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python flash.py
+
+      - name: Prepare data branch
+        run: rm -rf data/.git
+
+      - name: Save data branch (keeps the refreshed board in the site cache)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: data
+          publish_dir: ./data
+          force_orphan: true
+          enable_jekyll: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
 
       - name: Deploy to GitHub Pages
         if: hashFiles('site/index.html') != ''
