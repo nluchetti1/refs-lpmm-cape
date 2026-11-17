@@ -84,12 +84,35 @@ def _ppp_listing(root, acc, cyc):
     return url, sorted(set(re.findall(r'href="([^"/?]+\.grib2)"', r.text)))
 
 
+def _ppp_pattern(acc, tag):
+    """tag: 'expected' (NDFD p{acc}i file) or an 'ip0pNN' percentile code."""
+    return re.compile(rf"^ndfd_(?:co_)?p{acc}i_(\d{{10}})f(\d{{3}})\.grib2$") if tag == "expected" else \
+        re.compile(rf"^ndfd_(?:co_)?pp{acc}{tag}_(\d{{10}})f(\d{{3}})\.grib2$")
+
+
+def _hours(files, acc, tag):
+    """{forecast hour: file name} for one product in a directory listing."""
+    pat = _ppp_pattern(acc, tag)
+    return {int(m.group(2)): f for f in files for m in [pat.match(f)] if m}
+
+
 def _pick(files, acc, tag):
-    """Soonest-ending file for a product. tag: 'expected' or an 'ip0pNN' percentile code."""
-    pat = re.compile(rf"^ndfd_(?:co_)?p{acc}i_(\d{{10}})f(\d{{3}})\.grib2$") if tag == "expected" else \
-          re.compile(rf"^ndfd_(?:co_)?pp{acc}{tag}_(\d{{10}})f(\d{{3}})\.grib2$")
-    hits = [(int(m.group(2)), f) for f in files for m in [pat.match(f)] if m]
-    return min(hits)[1] if hits else None
+    """File whose window starts closest to the cycle (so the 24-h tab is the next 24 h, not a mostly
+    past window that happens to end soonest)."""
+    hits = _hours(files, acc, tag)
+    return hits[min(hits, key=lambda f: (abs(f - acc), f))] if hits else None
+
+
+def _day_hours(files, cyc):
+    """Forecast hours ending the Day 1-3 24-h periods. WPC days run 12Z to 12Z; Day 1 is the first
+    window ending at 12Z at least 12 h after the cycle (so it is mostly still ahead). Falls back to
+    00Z-ending windows if the directory has no 12Z ends."""
+    fh = sorted(f for f in _hours(files, 24, "expected") if f >= 12)
+    for hh in (12, 0):
+        ends = [f for f in fh if (cyc + timedelta(hours=f)).hour == hh]
+        if ends:
+            return ends[:3]
+    return []
 
 
 def _decode_ppp(path):
@@ -117,7 +140,80 @@ def _to_inches(fields):
     return {k: ((v * R.MM_TO_IN if mm else v).astype(np.float32), c, u) for k, (v, c, u) in fields.items()}, ("mm" if mm else "in")
 
 
+def _ppp_window(url, files, acc, picks, cyc, label):
+    """Download and decode one window's expected/low/high files -> accums entry, or None."""
+    print(f"[ppp] {label}: " + ", ".join(f"{k}={v}" for k, v in picks.items()))
+    fields, fh = {}, None
+    for k, fname in picks.items():
+        if not fname:
+            continue
+        try:
+            p = R.download_any([url + fname])
+            try:
+                fields[k] = _decode_ppp(p)
+            finally:
+                os.remove(p)
+            fh = int(re.search(r"f(\d{3})\.grib2$", fname).group(1))
+        except Exception as e:
+            print(f"[ppp] {fname}: {e}")
+    if not fields:
+        return None
+    fields, unit = _to_inches(fields)
+    end = cyc + timedelta(hours=fh)
+    for k, (v, _, u) in fields.items():
+        print(f"[ppp]   {label} {k}: units {u!r} -> {unit}, domain max {np.nanmax(v):.2f} in")
+    w = {"fields": fields, "hours": acc, "start": (end - timedelta(hours=acc)).isoformat(), "end": end.isoformat()}
+    w["exceed"] = R.optional(f"ppp exceedance {label}", _exceedance, url, files, acc, fh, label) or {}
+    return w
+
+
+_EXC = r"^ndfd_(?:co_)?pp{acc}ige(\d+)p(\d+)_\d{{10}}f{fh:03d}\.grib2$"
+
+
+def _exceedance(url, files, acc, fh, label):
+    """Chance (%) of at least each amount the portal publishes (0.01" ... 18"), sampled at the board
+    sites only: {site: [[inches, pct], ...]} sorted by amount. Amounts come from the file names,
+    so nothing is assumed about which thresholds exist."""
+    from concurrent.futures import ThreadPoolExecutor
+    pat = re.compile(_EXC.format(acc=acc, fh=fh))
+    todo = sorted((float(f"{m.group(1)}.{m.group(2)}"), f) for f in files for m in [pat.match(f)] if m)
+    if not todo:
+        print(f"[ppp]   {label}: no exceedance files at f{fh:03d}")
+        return None
+    sites = board_sites()
+
+    def one(item):
+        thr, fname = item
+        try:
+            p = R.download_any([url + fname])
+            try:
+                vals, crop, _ = _decode_ppp(p)
+            finally:
+                os.remove(p)
+        except Exception as e:
+            print(f"[ppp]   {fname}: {e}")
+            return thr, None
+        out = {}
+        for n, (la, lo, _) in sites.items():
+            d = R.dist_km(crop["lats"], crop["lons"], la, lo)
+            j, i = np.unravel_index(np.argmin(d), d.shape)
+            out[n] = float(vals[j, i]) if np.isfinite(vals[j, i]) else None
+        return thr, out
+
+    with ThreadPoolExecutor(6) as ex:
+        got = [g for g in ex.map(one, todo) if g[1] is not None]
+    if not got:
+        return None
+    top = max((v for _, o in got for v in o.values() if v is not None), default=0)
+    scale = 100.0 if top <= 1.0001 else 1.0                       # fraction or percent, decided once
+    res = {n: [[thr, round(min(100.0, max(0.0, o[n] * scale)))] for thr, o in got if o.get(n) is not None]
+           for n in sites}
+    print(f"[ppp]   {label}: exceedance at {len(got)} amounts ({got[0][0]:g}-{got[-1][0]:g} in)")
+    return res
+
+
 def fetch_ppp():
+    """Windows keyed '24', '48', '72' (accumulated from about now) and 'd1'..'d3' (WPC 12Z-12Z days)."""
     cyc, root = ppp_latest_cycle()
     if not cyc:
         return None
@@ -128,29 +224,21 @@ def fetch_ppp():
         except Exception as e:
             print(f"[ppp] {acc} h listing failed: {e}")
             continue
+        print(f"[ppp] {acc} h directory: {len(files)} files, expected-amount hours "
+              f"{sorted(_hours(files, acc, 'expected'))}")
         picks = {"expected": _pick(files, acc, "expected")}
         picks.update({k: _pick(files, acc, code) for k, code in PPP_PRODUCTS.items()})
-        print(f"[ppp] {acc} h ({len(files)} files): " + ", ".join(f"{k}={v}" for k, v in picks.items()))
-        fields, fh = {}, None
-        for k, fname in picks.items():
-            if not fname:
-                continue
-            try:
-                p = R.download_any([url + fname])
-                try:
-                    fields[k] = _decode_ppp(p)
-                finally:
-                    os.remove(p)
-                fh = int(re.search(r"f(\d{3})\.grib2$", fname).group(1))
-            except Exception as e:
-                print(f"[ppp] {fname}: {e}")
-        if fields:
-            fields, unit = _to_inches(fields)
-            print(f"[ppp]   {acc} h stored in {unit}")
-            end = cyc + timedelta(hours=fh)
-            out["accums"][acc] = {"fields": fields, "start": (end - timedelta(hours=acc)).isoformat(), "end": end.isoformat()}
-            for k, (v, _, u) in fields.items():
-                print(f"[ppp]   {acc} h {k}: units {u!r}, domain max {np.nanmax(v):.2f} in")
+        w = _ppp_window(url, files, acc, picks, cyc, f"{acc} h")
+        if w:
+            out["accums"][str(acc)] = w
+        if acc == 24:
+            for d, fh in enumerate(_day_hours(files, cyc), 1):
+                picks = {"expected": _hours(files, 24, "expected").get(fh)}
+                picks.update({k: _hours(files, 24, code).get(fh) for k, code in PPP_PRODUCTS.items()})
+                w = _ppp_window(url, files, 24, picks, cyc, f"Day {d} (f{fh:03d})")
+                if w:
+                    w["day"] = d
+                    out["accums"][f"d{d}"] = w
     return out if out["accums"] else None
 
 
@@ -164,13 +252,22 @@ def ppp_site_values(ppp):
                 d = R.dist_km(crop["lats"], crop["lons"], la, lo)
                 j, i = np.unravel_index(np.argmin(d), d.shape)
                 v[k] = R.r2(vals[j, i]) if np.isfinite(vals[j, i]) else None
-            per[str(acc)] = v
+            if a.get("exceed", {}).get(name):
+                v["exceed"] = a["exceed"][name]
+            per[acc] = v
         sites[name] = per
     return sites
 
 
-def plot_ppp(ppp, acc, out_dir):
-    a = ppp["accums"].get(acc)
+PPP_ORDER = ["d1", "d2", "d3", "24", "48", "72"]
+
+
+def ppp_label(key, a):
+    return f"Day {a['day']} (24-h)" if a.get("day") else f"{a['hours']}-h total"
+
+
+def plot_ppp(ppp, key, out_dir):
+    a = ppp["accums"].get(key)
     if not a:
         return None
     order = [k for k in ("low", "expected", "high") if k in a["fields"]]
@@ -179,20 +276,29 @@ def plot_ppp(ppp, acc, out_dir):
                              squeeze=False)
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.2, top=0.84, wspace=0.04)
     cs = None
-    for k, (key, ax) in enumerate(zip(order, axes[0])):
-        vals, crop, _ = a["fields"][key]
+    for k, (fk, ax) in enumerate(zip(order, axes[0])):
+        vals, crop, _ = a["fields"][fk]
         R.add_basemap(ax, labels=(k == 0))
         cs = R.shade(ax, vals, lats=crop["lats"], lons=crop["lons"])
         R.annotate_max(ax, np.nan_to_num(vals), lats=crop["lats"], lons=crop["lons"])
-        ax.set_title(titles[key], fontsize=12, fontweight="bold")
+        ax.set_title(titles[fk], fontsize=12, fontweight="bold")
     R.colorbar(fig, cs, [0.18, 0.1, 0.64, 0.03], "Precipitation (in)", R.CLEVS)
     s, e = datetime.fromisoformat(a["start"]), datetime.fromisoformat(a["end"])
-    fig.suptitle(f"NWS Probabilistic Precipitation Portal, {acc}-h QPF\n{s:%HZ %a %d %b} to {e:%HZ %a %d %b}"
+    fig.suptitle(f"NWS Probabilistic Precipitation Portal, {ppp_label(key, a)} QPF\n{s:%HZ %a %d %b} to {e:%HZ %a %d %b}"
                  f"  ·  cycle {datetime.fromisoformat(ppp['cycle']):%d/%HZ}", fontsize=14, fontweight="bold", y=0.97)
-    fname = f"ppp_{acc}h.png"
-    fig.savefig(os.path.join(out_dir, fname), dpi=130)
+    fname = f"ppp_{key}.png" if key.startswith("d") else f"ppp_{key}h.png"
+    fig.savefig(os.path.join(out_dir, fname), dpi=200)
+    # where each map panel sits in the image (fractions, top-left origin) so the board can put
+    # clickable site markers over it
+    panels = []
+    for ax in axes[0]:
+        b = ax.get_position()
+        x0, x1, y0, y1 = ax.get_extent(crs=ccrs.PlateCarree())
+        panels.append({"box": [round(b.x0, 5), round(1 - b.y1, 5), round(b.x1, 5), round(1 - b.y0, 5)],
+                       "extent": [round(x0, 4), round(x1, 4), round(y0, 4), round(y1, 4)]})
     plt.close(fig)
-    return fname
+    R.quantize_png(os.path.join(out_dir, fname))
+    return fname, panels
 
 
 # --------------------------------------------------------------------------- ERO
@@ -261,7 +367,8 @@ def plot_ero(ero, out_dir):
         fig.text(0.03, 0.955, f"ERO Day {day}", fontsize=15, fontweight="bold")
         fig.text(0.03, 0.915, m.get("valid_time") or "No risk areas issued", fontsize=10, color=R.MUTED)
         fname = f"ero_d{day}.png"
-        fig.savefig(os.path.join(out_dir, fname), dpi=110)
+        fig.savefig(os.path.join(out_dir, fname), dpi=160)
+        R.quantize_png(os.path.join(out_dir, fname))
         plt.close(fig)
         out[str(day)] = fname
     return out or None
@@ -383,14 +490,17 @@ def build_actions(afd, ero, ppp_sites, meta):
             add(sev, f"{verb}: WPC Day {day} {ERO_NAMES[top]} risk ({ERO_PCT[top]} chance of flash flooding within 25 mi) at {where}.",
                 "WPC Excessive Rainfall Outlook", ero["days"].get(day, {}).get("valid_time") or "")
     if ppp_sites:
-        for acc in ("24", "72"):
-            cands = [(n, v.get(acc, {})) for n, v in ppp_sites.items() if v.get(acc)]
-            if not cands:
-                continue
-            n, v = max(cands, key=lambda x: (x[1].get("high") or 0))
-            if (v.get("high") or 0) >= 2.0:
+        # one item for the wettest WPC day (highest high-end anywhere on the board) and one for the 72-h total
+        def worst(keys):
+            c = [(n, k, v[k]) for n, v in ppp_sites.items() for k in keys if (v.get(k) or {}).get("high") is not None]
+            return max(c, key=lambda x: x[2]["high"], default=None)
+        for keys in (("d1", "d2", "d3"), ("72",)):
+            w = worst(keys)
+            if w and w[2]["high"] >= 2.0:
+                n, acc, v = w
                 sev = 3 if v["high"] >= 4 else 2
-                add(sev, f"Plan for a high-end {acc}-h total of {v['high']:.1f}″ at {_short(n)} "
+                when = f"Day {acc[1]}" if acc.startswith("d") else f"{acc}-h"
+                add(sev, f"Plan for a high-end {when} total of {v['high']:.1f}″ at {_short(n)} "
                          f"(1-in-10 chance of more; expected {v.get('expected') or 0:.1f}″, low end {v.get('low') or 0:.1f}″).",
                     "NWS Probabilistic Precipitation Portal")
     for s in [x for x in meta.get("sites", []) if x["name"] not in R.BOARD_EXCLUDE]:
@@ -445,13 +555,17 @@ def build_board(out_dir, meta, wfo, afd_region="62"):
     ppp_sites = None
     if ppp:
         ppp_sites = ppp_site_values(ppp)
-        board["ppp"] = {"cycle": ppp["cycle"], "windows": {str(a): {"start": v["start"], "end": v["end"]}
-                                                         for a, v in ppp["accums"].items()}}
+        board["ppp"] = {"cycle": ppp["cycle"],
+                        "windows": {k: {"start": v["start"], "end": v["end"], "label": ppp_label(k, v)}
+                                    for k, v in ppp["accums"].items()},
+                        "order": [k for k in PPP_ORDER if k in ppp["accums"]]}
         board["ppp_sites"] = ppp_sites
-        for acc in (24, 72):
-            f = R.optional(f"ppp plot {acc}", plot_ppp, ppp, acc, out_dir)
-            if f:
-                board["images"][f"ppp_{acc}"] = f
+        for key in board["ppp"]["order"]:
+            got = R.optional(f"ppp plot {key}", plot_ppp, ppp, key, out_dir)
+            if got:
+                board["images"][f"ppp_{key}"] = got[0]
+                board.setdefault("ppp_panels", {})[key] = got[1]
+        board["site_ll"] = {n: [round(la, 4), round(lo, 4)] for n, (la, lo, _) in board_sites().items()}
     ero = R.optional("ero fetch", fetch_ero) or {}
     ero_s = R.optional("ero summary", ero_summary, ero) if ero else None
     if ero_s:

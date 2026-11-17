@@ -1111,7 +1111,7 @@ class FrameRenderer:
         self.has_cbar = False
         self.dyn = []
 
-    def frame(self, draw, title, subtitle, path, cbar_label, ticks, extend="max", dpi=105):
+    def frame(self, draw, title, subtitle, path, cbar_label, ticks, extend="max", dpi=150):
         for a in self.dyn:
             try:
                 a.remove()
@@ -1129,14 +1129,30 @@ class FrameRenderer:
         self.t1.set_text(title)
         self.t2.set_text(subtitle)
         self.fig.savefig(path, dpi=dpi)
+        quantize_png(path)
 
     def close(self):
         plt.close(self.fig)
 
 
+ZOOM_DPI = 1.4        # maps are drawn ~40% sharper than before so they hold up in the zoom viewer
+
+
+def quantize_png(path, colors=192):
+    """Palette PNG: roughly a third of the bytes, no visible change on these maps."""
+    try:
+        from PIL import Image
+        im = Image.open(path).convert("RGB")
+        im.quantize(colors=colors, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(path, optimize=True)
+    except Exception as e:
+        print(f"[warn] quantize {os.path.basename(path)}: {e}")
+
+
 def savefig(fig, name, dpi, out_dir=None):
-    fig.savefig(os.path.join(out_dir or OUT_DIR, name), dpi=dpi)
+    path = os.path.join(out_dir or OUT_DIR, name)
+    fig.savefig(path, dpi=round(dpi * ZOOM_DPI))
     plt.close(fig)
+    quantize_png(path)
 
 
 def fmt_init(t):
@@ -1234,7 +1250,8 @@ def plot_flash(raws, suptitle, out_path, times=None):
         cb.set_label(cfg["unit"] + marks, fontsize=9, color=TEXT)
         cb.outline.set_edgecolor(LINE)
     fig.suptitle(suptitle, fontsize=14, fontweight="bold", y=0.97)
-    fig.savefig(out_path, dpi=120)
+    fig.savefig(out_path, dpi=160)
+    quantize_png(out_path)
     plt.close(fig)
     return True
 
@@ -1947,7 +1964,7 @@ def publish_cases(site_dir):
     return len(index)
 
 
-EXTRA_PAGES = ["board.html"]        # standalone pages shipped next to index.html
+EXTRA_PAGES = ["board.html", "zoom.js"]        # standalone pages shipped next to index.html
 
 
 def copy_pages(out_dir):
@@ -2075,6 +2092,10 @@ def main():
     meta["diagnostics"] = DIAG
     meta["board"] = optional("board", build_board_block, meta)
     meta.setdefault("products", {})["board"] = bool(meta["board"])
+    import fcst_radar
+    prev_radar = load_json(os.path.join(SITE_CACHE, "meta.json"), {}).get("radar")
+    meta["radar"] = optional("forecast radar", fcst_radar.build_radar, OUT_DIR, prev_radar)
+    meta["products"]["radar"] = bool(meta["radar"])
     save_json(os.path.join(OUT_DIR, "meta.json"), meta, indent=1)
     if os.path.exists(INDEX_SRC):
         shutil.copy(INDEX_SRC, os.path.join(OUT_DIR, "index.html"))

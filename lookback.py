@@ -452,7 +452,8 @@ def plot_grid(panels, out, suptitle, event_pt):
     R.colorbar(fig, cs, [0.18, 0.04 if rows > 1 else 0.08, 0.64, 0.018 if rows > 1 else 0.03],
                "Precipitation (in)  ·  ○ = observed max", R.CLEVS)
     fig.suptitle(suptitle, fontsize=14, fontweight="bold", y=0.975)
-    fig.savefig(out, dpi=120)
+    fig.savefig(out, dpi=170)
+    R.quantize_png(out)
     plt.close(fig)
 
 
@@ -492,7 +493,8 @@ def plot_dprog(rows, obs_max, obs_area_max, out, title, event_thr=1.0):
     a1.set_title("Did they get the peak?", fontsize=11, fontweight="bold")
     a2.set_title(f"Did they put the ≥ {event_thr:g}\" rain in the right place?", fontsize=11, fontweight="bold")
     fig.suptitle(title, fontsize=14, fontweight="bold", y=0.97)
-    fig.savefig(out, dpi=125)
+    fig.savefig(out, dpi=150)
+    R.quantize_png(out)
     plt.close(fig)
 
 # ---------------------------------------------------------------- build

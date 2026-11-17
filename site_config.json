@@ -152,6 +152,46 @@
     "exclude_sites": [
       "Daytona (KDAB)"
     ],
-    "sat_sector": "se"
+    "sat_sector": "se",
+    "radar_extent": [
+      -88,
+      -74,
+      23,
+      33.5
+    ],
+    "radar_cities": [
+      [
+        "Orlando",
+        28.54,
+        -81.38,
+        "left"
+      ],
+      [
+        "Tampa",
+        27.95,
+        -82.46
+      ],
+      [
+        "Jacksonville",
+        30.33,
+        -81.66
+      ],
+      [
+        "Miami",
+        25.76,
+        -80.19
+      ],
+      [
+        "Tallahassee",
+        30.44,
+        -84.28
+      ],
+      [
+        "Savannah",
+        32.08,
+        -81.09
+      ]
+    ],
+    "timezone": "America/New_York"
   }
 }

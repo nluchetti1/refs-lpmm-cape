@@ -108,7 +108,37 @@
   .loopbar { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
   .loopbar input[type=range] { flex: 1; min-width: 140px; accent-color: var(--accent); }
   .loopbar .lab { font: 600 13px var(--display); color: var(--muted); min-width: 120px; text-align: right; }
-  .windy { width: 100%; aspect-ratio: 16 / 10; border: 0; border-radius: 4px; background: #000; display: block; }
+  .radar-img { width: 100%; height: auto; background: #0f1a24; cursor: zoom-in; }
+  .seg .sep { width: 1px; background: var(--rule); align-self: stretch; }
+  .pmap { position: relative; }
+  .pmap img { width: 100%; }
+  .pmark { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; padding: 0;
+           border: 2px solid transparent; background: transparent; cursor: pointer; }
+  .pmark:hover, .pmark:focus-visible, .pmark.on { border-color: #ffd84a; background: rgba(255,216,74,.18); outline: none; }
+  .site-btn { background: none; border: 0; color: var(--accent); font: inherit; padding: 0; cursor: pointer; text-align: left;
+              text-decoration: underline dotted; text-underline-offset: 3px; }
+  #pop { position: fixed; z-index: 40; width: min(360px, calc(100vw - 24px)); background: #f7f9fb; color: #17222c;
+         border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.5); padding: 14px 16px 12px; display: none; font-size: 14px; }
+  #pop.open { display: block; }
+  #pop h3 { font: 700 19px var(--display); margin: 0 26px 2px 0; }
+  #pop .when { color: #5a6b78; font-size: 12.5px; margin-bottom: 8px; }
+  #pop .x { position: absolute; top: 8px; right: 10px; background: none; border: 0; font-size: 22px; line-height: 1; color: #5a6b78; cursor: pointer; }
+  #pop .three { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 6px 0 10px; }
+  #pop .three b { display: block; font: 700 22px var(--display); }
+  #pop .three .mid b { font-size: 26px; }
+  #pop .three span { color: #5a6b78; font-size: 12.5px; }
+  #pop .pseg { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
+  #pop .pseg button { background: #e6ecf1; border: 1px solid #ccd6de; color: #2a3a47; border-radius: 4px; font: 600 12px var(--display); padding: 2px 8px; cursor: pointer; }
+  #pop .pseg button[aria-pressed="true"] { background: #17222c; color: #fff; border-color: #17222c; }
+  #pop h4 { font: 700 12.5px var(--display); color: #5a6b78; margin: 4px 0 4px; letter-spacing: .02em; }
+  #pop table { font-size: 13.5px; table-layout: fixed; }
+  #pop td { border-bottom: 1px solid #e1e7ec; padding: 4px 6px; color: #17222c; }
+  #pop td:first-child { width: 22%; }
+  #pop td.pbar { width: 58%; padding-left: 4px; }
+  #pop td:last-child { width: 20%; font-weight: 600; }
+  #pop td.pbar span { display: block; width: 100%; height: 10px; border-radius: 2px; background: #e1e7ec; overflow: hidden; }
+  #pop td.pbar i { display: block; height: 100%; background: #2f7fc1; }
+  #pop .src { color: #5a6b78; font-size: 11.5px; margin-top: 6px; }
   .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
   .empty { border: 1px dashed var(--rule); border-radius: 6px; padding: 18px; color: var(--muted); }
@@ -119,7 +149,7 @@
   @media print {
     body { background: #fff; color: #000; }
     .bar { position: static; background: #fff; }
-    .btn, .tools, details summary, .loopbar, .seg, .windy-card { display: none !important; }
+    .btn, .tools, details summary, .loopbar, .seg { display: none !important; }
     .card, .chip, .acts li, .ero-day { background: #fff; border-color: #bbb; }
     .note, .chip .k, .chip .s, .acts .src, th { color: #444; }
     .acts-wrap { max-height: none; overflow: visible; }
@@ -150,7 +180,7 @@
       <section class="card" id="c-sat"></section>
     </div>
     <div class="row row-c">
-      <section class="card windy-card" id="c-windy"></section>
+      <section class="card" id="c-radar"></section>
       <section class="card" id="c-acts"></section>
     </div>
     <div class="row row-d">
@@ -158,8 +188,10 @@
       <section class="card" id="c-ppp"></section>
     </div>
   </main>
+  <div id="pop" role="dialog" aria-label="Rainfall at a site"></div>
   <div id="lightbox" role="dialog" aria-modal="true" aria-label="Full-size image"><img alt=""></div>
 
+<script src="zoom.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -182,7 +214,7 @@
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(E)); } catch (e) {} };
   const pref = (k, d) => { try { return localStorage.getItem("board-pref:" + k) || d; } catch (e) { return d; } };
   const setPref = (k, v) => { try { localStorage.setItem("board-pref:" + k, v); } catch (e) {} };
-  let editing = false, meta = null, stamp = "", pppAcc = "24", dirty = false;
+  let editing = false, meta = null, stamp = "", dirty = false;
 
   const ed = (key, original) => {
     const v = E.text[key];
@@ -298,7 +330,6 @@
     $("c-sat").querySelectorAll("[data-band]").forEach(x => x.onclick = () => { sat.band = x.dataset.band; setPref("satBand", sat.band); stopSat(); drawSat(meta.board); });
     $("sat-play").onclick = () => sat.timer ? stopSat() : playSat();
     $("sat-slider").oninput = (e) => { stopSat(); sat.i = +e.target.value; showSat(); };
-    $("sat-img").onclick = () => { $("lightbox").querySelector("img").src = $("sat-img").src; $("lightbox").classList.add("open"); };
   }
   function showSat() {
     const f = sat.frames[sat.i]; if (!f) return;
@@ -317,34 +348,71 @@
   }
   function stopSat() { clearInterval(sat.timer); sat.timer = null; const p = $("sat-play"); if (p) p.textContent = "Play"; }
 
-  // ---------- forecast radar (Windy embed); built once, rebuilt only when the model changes
-  const MODELS = [["ecmwf", "ECMWF"], ["gfs", "GFS"], ["hrrr", "HRRR"], ["nam", "NAM"], ["icon", "ICON"]];
-  const OVERLAYS = [["rain", "Rain & thunder"], ["rainAccu", "Rain totals"], ["radar", "Live radar"]];
-  let windyKey = "";
-  function drawWindy() {
-    const s = (meta.sites || []).find(x => x.name === meta.primary_site) || (meta.sites || [])[0] || { lat: 28.4, lon: -80.6 };
-    const model = pref("windyModel", "ecmwf"), overlay = pref("windyOverlay", "rain");
-    const key = [model, overlay, s.lat, s.lon].join("|");
-    if (key === windyKey && $("windy-frame")) return;
-    windyKey = key;
-    const q = new URLSearchParams({ type: "map", location: "coordinates", metricRain: "in", metricTemp: "°F", metricWind: "mph",
-      zoom: "7", overlay, product: model, level: "surface", lat: s.lat.toFixed(2), lon: s.lon.toFixed(2),
-      detailLat: s.lat.toFixed(2), detailLon: s.lon.toFixed(2), marker: "true", message: "true", calendar: "now", pressure: "true" });
-    $("c-windy").innerHTML = `<h2>Forecast rain, next 1–5 days
-        <span class="r seg">${MODELS.map(([k, l]) => `<button aria-pressed="${k === model}" data-model="${k}">${l}</button>`).join("")}</span></h2>
-      <div class="seg" style="margin-bottom:8px">${OVERLAYS.map(([k, l]) => `<button aria-pressed="${k === overlay}" data-ov="${k}">${l}</button>`).join("")}</div>
-      <iframe class="windy" id="windy-frame" src="https://embed.windy.com/embed.html?${q}" title="Windy forecast map" loading="lazy" allowfullscreen></iframe>
-      <p class="note">Press play on the map's timeline to watch rain move across the area. Fronts and pressure are shown as lines.
-        Model maps for a general audience, from Windy.com.</p>
-      <div class="links">
+  // ---------- forecast radar: our own model frames (fcst_radar.py), redrawn only when the frames change
+  const rad = { model: pref("radarModel", "rrfs"), i: 0, timer: null, frames: [], key: "" };
+  function drawRadar() {
+    const R = meta.radar;
+    if (!R || !R.models || !Object.keys(R.models).length) {
+      rad.key = ""; stopRadar();
+      $("c-radar").innerHTML = `<h2>Forecast radar</h2>` + empty("No forecast radar frames yet. They are drawn by the main workflow.") + radarLinks();
+      return;
+    }
+    if (!R.models[rad.model]) rad.model = R.order[0];
+    const m = R.models[rad.model];
+    const key = [R.built, rad.model, m.init].join("|");
+    if (key === rad.key && $("rad-img")) return;            // keep playing through a meta refresh
+    const keepPlaying = !!rad.timer;
+    stopRadar();
+    rad.key = key; rad.frames = m.frames || []; rad.i = 0;
+    const v = encodeURIComponent(m.init);
+    $("c-radar").innerHTML = `<h2>Forecast radar, next ${Math.round(rad.frames.length ? rad.frames[rad.frames.length - 1].f : 0)} h
+        <span class="r seg">${R.order.map(k => `<button aria-pressed="${k === rad.model}" data-rmodel="${k}">${esc(R.models[k].label)}</button>`).join("")}</span></h2>
+      <img class="radar-img" id="rad-img" alt="Forecast radar">
+      <div class="loopbar">
+        <button class="btn" id="rad-prev" aria-label="Previous hour">◀</button>
+        <button class="btn" id="rad-play">Play</button>
+        <button class="btn" id="rad-next" aria-label="Next hour">▶</button>
+        <input type="range" id="rad-slider" min="0" max="${Math.max(0, rad.frames.length - 1)}" value="0" aria-label="Forecast hour">
+        <span class="lab" id="rad-lab"></span>
+      </div>
+      <p class="note">What the ${esc(m.label)} model expects radar to look like, ${esc(m.note)}, from the ${fmtUTC(m.init, { day: "2-digit", month: "short" })} run.
+        Green to red is rain (light to heavy), blue is snow, pink is ice or a wintry mix. White lines are sea-level pressure (hPa) with highs and lows.
+        It shows timing and the overall pattern; individual storms will not land exactly where drawn.</p>
+      ${radarLinks()}`;
+    rad.frames.forEach(f => { const im = new Image(); im.src = f.img + "?v=" + v; });
+    rad.v = v;
+    showRadar();
+    $("c-radar").querySelectorAll("[data-rmodel]").forEach(x => x.onclick = () => { rad.model = x.dataset.rmodel; setPref("radarModel", rad.model); drawRadar(); });
+    $("rad-play").onclick = () => rad.timer ? stopRadar() : playRadar();
+    $("rad-prev").onclick = () => { stopRadar(); rad.i = (rad.i - 1 + rad.frames.length) % rad.frames.length; showRadar(); };
+    $("rad-next").onclick = () => { stopRadar(); rad.i = (rad.i + 1) % rad.frames.length; showRadar(); };
+    $("rad-slider").oninput = (e) => { stopRadar(); rad.i = +e.target.value; showRadar(); };
+    if (keepPlaying) playRadar();
+  }
+  function radarLinks() {
+    return `<div class="links">
         <a class="btn" href="https://www.wpc.ncep.noaa.gov/NationalForecastChart/map.php" target="_blank" rel="noreferrer">NWS national forecast chart ↗</a>
         <a class="btn" href="https://www.pivotalweather.com/model.php?m=hrrr&p=refcmp" target="_blank" rel="noreferrer">HRRR forecast radar ↗</a>
         <a class="btn" href="https://www.tropicaltidbits.com/analysis/models/" target="_blank" rel="noreferrer">Tropical Tidbits models ↗</a>
-        <a class="btn" href="https://www.windy.com/?${s.lat.toFixed(2)},${s.lon.toFixed(2)},7" target="_blank" rel="noreferrer">Open in Windy ↗</a>
       </div>`;
-    $("c-windy").querySelectorAll("[data-model]").forEach(x => x.onclick = () => { setPref("windyModel", x.dataset.model); drawWindy(); });
-    $("c-windy").querySelectorAll("[data-ov]").forEach(x => x.onclick = () => { setPref("windyOverlay", x.dataset.ov); drawWindy(); });
   }
+  function showRadar() {
+    const f = rad.frames[rad.i]; if (!f) return;
+    $("rad-img").src = f.img + "?v=" + rad.v;
+    $("rad-slider").value = rad.i;
+    $("rad-lab").textContent = new Date(f.valid).toLocaleString("en-US", { weekday: "short", hour: "numeric", timeZoneName: "short" }) + ` · +${f.f} h`;
+  }
+  function playRadar() {
+    if (rad.frames.length < 2) return;
+    $("rad-play").textContent = "Pause";
+    const step = rad.frames.length > 40 ? 160 : 400;
+    rad.timer = setInterval(() => {
+      rad.i = (rad.i + 1) % rad.frames.length;
+      showRadar();
+      if (rad.i === rad.frames.length - 1) { clearInterval(rad.timer); setTimeout(() => { if (rad.timer) { rad.timer = null; playRadar(); } }, 1500); }
+    }, step);
+  }
+  function stopRadar() { clearInterval(rad.timer); rad.timer = null; const p = $("rad-play"); if (p) p.textContent = "Play"; }
 
   function drawActs(b) {
     const acts = (b.actions || []).map(a => actionItem(a, "act:" + hash(a.text), false));
@@ -356,32 +424,110 @@
       <p class="note">Generated by fixed rules from the source named on each item. ${editing ? "Click any text to change it; edits are saved in this browser." : ""}</p>`;
   }
 
+  // rainfall period shared by the table and the maps: WPC days (12Z-12Z) or totals from about now
+  let per = pref("pppPeriod", "d1");
+  const PER_NAME = { d1: "Day 1", d2: "Day 2", d3: "Day 3", "24": "24 h", "48": "48 h", "72": "72 h" };
+  function periods(b) { return ((b.ppp && b.ppp.order) || Object.keys((b.ppp && b.ppp.windows) || {})); }
+  function perTabs(b) {
+    const ks = periods(b);
+    if (!ks.includes(per)) per = ks[0] || "d1";
+    const btn = k => `<button aria-pressed="${k === per}" data-per="${k}">${PER_NAME[k] || k}</button>`;
+    const days = ks.filter(k => k[0] === "d"), tots = ks.filter(k => k[0] !== "d");
+    return `<span class="seg">${days.map(btn).join("")}${days.length && tots.length ? '<span class="sep"></span>' : ""}${tots.map(btn).join("")}</span>`;
+  }
+  function perWhen(b, k) {
+    const w = b.ppp && b.ppp.windows && b.ppp.windows[k];
+    return w ? `${fmtUTC(w.start)} to ${fmtUTC(w.end, { day: "2-digit", month: "short" })}` : "";
+  }
+  function setPer(k) { per = k; setPref("pppPeriod", k); drawTable(meta.board); drawPpp(meta.board); wire(); }
+
   function drawTable(b) {
     const es = (b.ero && b.ero.sites) || {};
     const names = Object.keys(b.ppp_sites || es);
-    const rows = names.map(n => { const v = (b.ppp_sites || {})[n] || {}; const e = es[n] || {};
-      const c = (a) => `<td>${amt((v[a] || {}).low)}</td><td><strong>${amt((v[a] || {}).expected)}</strong></td><td>${amt((v[a] || {}).high)}</td>`;
-      return `<tr><td>${esc(n)}</td>${c("24")}<td class="grp"></td>${c("72")}<td class="grp">${tpill(e["1"])}</td><td>${tpill(e["2"])}</td><td>${tpill(e["3"])}</td></tr>`; }).join("");
-    $("c-table").innerHTML = `<h2>Rainfall range by site</h2>
+    const days = periods(b).filter(k => k[0] === "d");
+    const rows = names.map(n => { const v = (b.ppp_sites || {})[n] || {}; const e = es[n] || {}; const p = v[per] || {};
+      return `<tr><td><button class="site-btn" data-site="${esc(n)}">${esc(n)}</button></td><td>${amt(p.low)}</td><td><strong>${amt(p.expected)}</strong></td><td>${amt(p.high)}</td>
+        <td class="grp">${days.map(d => amt((v[d] || {}).expected)).join("</td><td>")}</td>
+        <td class="grp">${tpill(e["1"])}</td><td>${tpill(e["2"])}</td><td>${tpill(e["3"])}</td></tr>`; }).join("");
+    $("c-table").innerHTML = `<h2>Rainfall range by site <span class="r">${perTabs(b)}</span></h2>
       <div class="table-wrap"><table>
-        <thead><tr><th></th><th colspan="3" style="text-align:center">24 h</th><th class="grp"></th><th colspan="3" style="text-align:center">72 h</th><th class="grp" colspan="3" style="text-align:center">ERO</th></tr>
-          <tr><th>Site</th><th>Low</th><th>Exp.</th><th>High</th><th class="grp"></th><th>Low</th><th>Exp.</th><th>High</th><th class="grp">D1</th><th>D2</th><th>D3</th></tr></thead>
+        <thead><tr><th></th><th colspan="3" style="text-align:center">${PER_NAME[per] || per}</th>
+            <th class="grp" colspan="${days.length || 1}" style="text-align:center">Expected by day</th><th class="grp" colspan="3" style="text-align:center">ERO</th></tr>
+          <tr><th>Site</th><th>Low</th><th>Exp.</th><th>High</th><th class="grp">${days.map(d => "D" + d[1]).join("</th><th>")}</th>
+            <th class="grp">D1</th><th>D2</th><th>D3</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
-      <p class="note">Expected is the official NWS forecast. Low end: 9 in 10 chance of more. High end: 1 in 10 chance of more.
+      <p class="note">${PER_NAME[per] || per}: ${perWhen(b, per)}. Days run 12Z to 12Z, matching the ERO.
+        Click a site name, or a site on the maps, for the chance of each amount. Expected is the official NWS forecast. Low end: 9 in 10 chance of more. High end: 1 in 10 chance of more.
         ${b.ppp ? `PPP cycle ${fmtUTC(b.ppp.cycle, { day: "2-digit", month: "short" })}.` : "PPP unavailable this run."}</p>`;
+    $("c-table").querySelectorAll("[data-per]").forEach(x => x.onclick = () => setPer(x.dataset.per));
+    $("c-table").querySelectorAll("[data-site]").forEach(x => x.onclick = () => openPop(x.dataset.site, x));
   }
 
   function drawPpp(b) {
     const v = encodeURIComponent(b.built);
-    const f = (b.images || {})["ppp_" + pppAcc];
-    const pa = b.ppp && b.ppp.windows && b.ppp.windows[pppAcc];
-    $("c-ppp").innerHTML = `<h2>Low, expected and high-end rain
-        <span class="r seg">${["24", "72"].filter(a => (b.images || {})["ppp_" + a]).map(a => `<button aria-pressed="${a === pppAcc}" data-a="${a}">${a}-h</button>`).join("")}</span></h2>
-      ${pa ? `<p class="note" style="margin:0 0 6px">${fmtUTC(pa.start)} to ${fmtUTC(pa.end, { day: "2-digit", month: "short" })}</p>` : ""}
-      ${f ? `<img src="${f}?v=${v}" alt="Low, expected and high-end QPF">` : empty("No PPP maps this run.")}
-      <p class="note"><a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS Probabilistic Precipitation Portal</a></p>`;
-    $("c-ppp").querySelectorAll("[data-a]").forEach(x => x.onclick = () => { pppAcc = x.dataset.a; drawPpp(meta.board); });
+    const tabs = perTabs(b);
+    const f = (b.images || {})["ppp_" + per];
+    $("c-ppp").innerHTML = `<h2>Low, expected and high-end rain <span class="r">${tabs}</span></h2>
+      <p class="note" style="margin:0 0 6px">${PER_NAME[per] || per}: ${perWhen(b, per)}</p>
+      ${f ? `<div class="pmap"><img src="${f}?v=${v}" alt="Low, expected and high-end QPF, ${PER_NAME[per] || per}">${pppMarks(b)}</div>` : empty("No PPP maps for this period this run.")}
+      <p class="note">Click a map to zoom in. <a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS Probabilistic Precipitation Portal</a></p>`;
+    $("c-ppp").querySelectorAll("[data-per]").forEach(x => x.onclick = () => setPer(x.dataset.per));
+    $("c-ppp").querySelectorAll("[data-site]").forEach(x => x.onclick = (e) => { e.stopPropagation(); openPop(x.dataset.site, x); });
   }
+
+  // clickable site markers over each map panel (positions written by board.py when it drew the image)
+  function pppMarks(b) {
+    const panels = (b.ppp_panels || {})[per], ll = b.site_ll || {};
+    if (!panels) return "";
+    return panels.map(pn => Object.entries(ll).map(([n, [la, lo]]) => {
+      const [w, e, so, no] = pn.extent, [x0, y0, x1, y1] = pn.box;
+      if (lo < w || lo > e || la < so || la > no) return "";
+      const x = (x0 + (lo - w) / (e - w) * (x1 - x0)) * 100, y = (y0 + (no - la) / (no - so) * (y1 - y0)) * 100;
+      return `<button class="pmark" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" data-site="${esc(n)}" title="${esc(n)}" aria-label="${esc(n)} rainfall"></button>`;
+    }).join("")).join("");
+  }
+
+  // ---------- site pop-up: low / expected / high and the chance of each amount, like the NWS portal
+  let popSite = null, popPer = null;
+  function openPop(name, anchor) {
+    popSite = name; popPer = per;
+    drawPop();
+    const pop = $("pop"), r = anchor.getBoundingClientRect();
+    pop.classList.add("open");
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    let x = r.right + 10, y = r.top - 20;
+    if (x + w > innerWidth - 12) x = Math.max(12, r.left - w - 10);
+    if (innerWidth < 640) { x = (innerWidth - w) / 2; y = 64; }          // phones: a sheet near the top
+    y = Math.min(Math.max(12, y), innerHeight - h - 12);
+    pop.style.left = x + "px"; pop.style.top = y + "px";
+    document.querySelectorAll(".pmark.on").forEach(m => m.classList.remove("on"));
+    document.querySelectorAll(`.pmark[data-site="${CSS.escape(name)}"]`).forEach(m => m.classList.add("on"));
+  }
+  function closePop() {
+    $("pop").classList.remove("open"); popSite = null;
+    document.querySelectorAll(".pmark.on").forEach(m => m.classList.remove("on"));
+  }
+  function drawPop() {
+    const b = meta.board, v = ((b.ppp_sites || {})[popSite] || {}), p = v[popPer] || {};
+    const ex = p.exceed || [];
+    const fmtThr = t => t < 1 ? t.toFixed(2) : String(+t.toFixed(2));
+    $("pop").innerHTML = `<button class="x" aria-label="Close">×</button>
+      <h3>${esc(popSite)}</h3>
+      <div class="pseg">${periods(b).map(k => `<button aria-pressed="${k === popPer}" data-pp="${k}">${PER_NAME[k] || k}</button>`).join("")}</div>
+      <div class="when">${PER_NAME[popPer] || popPer}: ${perWhen(b, popPer)}</div>
+      <div class="three"><div><b>${amt(p.low)}</b><span>Low end</span></div><div class="mid"><b>${amt(p.expected)}</b><span>Expected</span></div>
+        <div><b>${amt(p.high)}</b><span>High end</span></div></div>
+      ${ex.length ? `<h4>Chance of at least</h4><table>${ex.filter(([t]) => t <= 12).map(([t, pc]) =>
+          `<tr><td>${fmtThr(t)}″</td><td class="pbar"><span><i style="width:${pc}%"></i></span></td><td>${pc}%</td></tr>`).join("")}</table>`
+        : `<p class="when">No exceedance probabilities for this period.</p>`}
+      <div class="src">NWS Probabilistic Precipitation Portal, nearest 2.5-km grid point.</div>`;
+    $("pop").querySelector(".x").onclick = closePop;
+    $("pop").querySelectorAll("[data-pp]").forEach(x => x.onclick = (e) => { e.stopPropagation(); popPer = x.dataset.pp; drawPop(); });
+  }
+  document.addEventListener("click", e => {
+    if (popSite && !e.target.closest("#pop") && !e.target.closest("[data-site]")) closePop();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && popSite) closePop(); });
 
   function render() {
     const b = meta.board;
@@ -390,12 +536,12 @@
     [drawHeader, drawChips, drawEro, drawSummary, drawAfd, drawSat, drawActs, drawTable, drawPpp].forEach(fn => {
       try { fn(b); } catch (err) { console.error(fn.name, err); }
     });
-    try { drawWindy(); } catch (err) { console.error("drawWindy", err); }
+    try { drawRadar(); } catch (err) { console.error("drawRadar", err); }
+    try { if (popSite) drawPop(); } catch (err) { closePop(); }
     wire();
   }
 
   function wire() {
-    document.querySelectorAll("#c-ero img, #c-ppp img").forEach(i => i.onclick = () => { $("lightbox").querySelector("img").src = i.src; $("lightbox").classList.add("open"); });
     if (!editing) return;
     document.querySelectorAll("[data-edit]").forEach(el => {
       el.contentEditable = "true";
@@ -453,11 +599,16 @@
     const t = [`${(br.board_title || "SITUATIONAL AWARENESS").toUpperCase()} as of ${fmtLocal(b.built)}`, "",
       E.summary ? "SUMMARY\n" + E.summary.trim() + "\n" : "",
       "ACTION ITEMS", ...items.map(i => `- [${lab[i.sev] || ""}] ${i.text}`), "",
+      ...(() => { const v = (b.ppp_sites || {})[meta.primary_site]; if (!v) return [];
+        return [`RAIN AT ${meta.primary_site.toUpperCase()} (low / expected / high)`, ...periods(b).map(k => { const p = v[k] || {};
+          return `- ${PER_NAME[k] || k}: ${amt(p.low)} / ${amt(p.expected)} / ${amt(p.high)}`; }), ""]; })(),
       "EXCESSIVE RAINFALL OUTLOOK", ...["1", "2", "3", "4", "5"].map(k => `- Day ${k}: ${(d[k] || {}).name || "n/a"}${(d[k] || {}).valid_time ? " (" + d[k].valid_time + ")" : ""}`), "",
       b.afd ? "KEY MESSAGES (" + b.afd.office + ")\n" + b.afd.key_messages.map(k => "- " + (E.text["km:" + hash(k)] ?? k)).join("\n") : ""].filter(x => x !== "").join("\n");
     try { await navigator.clipboard.writeText(t); $("b-copy").textContent = "Copied"; } catch (e) { prompt("Copy this text:", t); }
     setTimeout(() => $("b-copy").textContent = "Copy text", 1500);
   };
+  // zoom / pan viewer (zoom.js) for every map; the loops keep playing inside it
+  if (window.ZoomViewer) ZoomViewer.attach("#c-ero img, #c-ppp img, #sat-img, #rad-img");
   $("lightbox").onclick = () => $("lightbox").classList.remove("open");
   document.addEventListener("keydown", e => { if (e.key === "Escape") $("lightbox").classList.remove("open"); });
 
@@ -468,7 +619,7 @@
       const m = await r.json();
       const sb = (m.board && m.board.sat && m.board.sat.bands) || {};
       const satKey = Object.values(sb).map(x => ((x.frames || []).slice(-1)[0] || {}).url).join(",");
-      const key = [(m.board && m.board.built) || "", m.generated_utc, satKey, (m.flash && m.flash.valid) || ""].join("|");
+      const key = [(m.board && m.board.built) || "", m.generated_utc, satKey, (m.flash && m.flash.valid) || "", (m.radar && m.radar.built) || ""].join("|");
       if (key === stamp) { if (meta && meta.board) drawHeader(meta.board); return; }
       meta = m; stamp = key;
       // don't yank text out from under someone mid-edit; redraw when they leave the field

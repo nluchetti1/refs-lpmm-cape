@@ -429,6 +429,7 @@
 
 <div id="lightbox" role="dialog" aria-modal="true" aria-label="Full-size image"><img alt=""></div>
 
+<script src="zoom.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -460,7 +461,8 @@
 
   // ---------- lightbox
   const lb = $("lightbox");
-  document.addEventListener("click", e => {
+  if (window.ZoomViewer) ZoomViewer.attach(".figure img");     // zoom / pan viewer (zoom.js); loops keep playing inside it
+  else document.addEventListener("click", e => {
     if (e.target.matches(".figure img")) { lb.querySelector("img").src = e.target.src; lb.classList.add("open"); }
   });
   lb.addEventListener("click", () => lb.classList.remove("open"));
