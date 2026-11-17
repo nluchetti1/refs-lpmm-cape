@@ -32,3 +32,10 @@ body:
       placeholder: "Brevard flooding"
     validations:
       required: false
+  - type: checkboxes
+    id: rebuild
+    attributes:
+      label: Options
+      options:
+        - label: Rebuild if this window already exists (repository owner only)
+          required: false
