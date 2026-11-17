@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Situational Awareness</title>
+<title>Flood Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
@@ -20,9 +20,11 @@
   a { color: var(--accent); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 22px;
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 22px;
          border-bottom: 1px solid var(--rule); background: #0c151d; position: sticky; top: 0; z-index: 5; }
-  .bar h1 { font: 700 24px/1.1 var(--display); margin: 0; }
+  .bar h1 { font: 700 27px/1.1 var(--display); margin: 0; letter-spacing: .005em; }
+  .bar h1 .exp { font: 700 12px var(--display); color: #111; background: var(--warn); border-radius: 3px; padding: 2px 6px;
+                 vertical-align: 5px; margin-right: 8px; letter-spacing: .06em; }
   .bar .meta { color: var(--muted); font-size: 13px; }
   .bar .spacer { flex: 1; }
   .btn { background: var(--panel); color: var(--text); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;
@@ -31,30 +33,51 @@
   .btn[aria-pressed="true"] { border-color: var(--edit); color: var(--edit); box-shadow: inset 0 -2px 0 var(--edit); }
   .stale { color: var(--warn); }
 
-  main { padding: 16px 22px 28px; }
-  .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .chip { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 9px 12px; }
+  main { padding: 14px 22px 26px; }
+  .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .chip { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px; }
   .chip .k { font: 600 11.5px var(--display); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .chip .v { font: 700 21px var(--display); margin-top: 2px; }
   .chip .s { font-size: 12px; color: var(--muted); }
 
-  .cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, .95fr); gap: 14px; align-items: start; }
-  @media (max-width: 1350px) { .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .cols > .c3 { grid-column: 1 / -1; } }
-  @media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
-  .cols > * { min-width: 0; }
-  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; margin-bottom: 14px; }
-  .card h2 { font: 700 16px var(--display); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; margin-bottom: 14px; min-width: 0; }
+  .card h2 { font: 700 17px var(--display); margin: 0 0 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
   .card h2 .r { margin-left: auto; }
   .note { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
+  .row { display: grid; gap: 14px; align-items: start; }
+  .row > * { min-width: 0; }
+  .row-b { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .row-c { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .row-d { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  @media (max-width: 1100px) { .row-b, .row-c, .row-d { grid-template-columns: minmax(0, 1fr); } }
 
-  .acts { list-style: none; margin: 0; padding: 0; }
-  .acts li { position: relative; border-left: 4px solid var(--muted); background: var(--ink); border-radius: 4px; padding: 8px 10px; margin: 0 0 8px; }
+  /* ERO strip at the top */
+  .ero-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 1300px) { .ero-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 700px) { .ero-row { grid-template-columns: minmax(0, 1fr); } }
+  .ero-day { background: var(--ink); border-radius: 5px; padding: 6px; }
+  .ero-day .cap { display: flex; align-items: center; gap: 8px; font: 700 15px var(--display); margin: 0 0 4px; }
+  .ero-day .cap .t { font: 500 12px var(--body); color: var(--muted); margin-left: auto; }
+  .ero-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; margin-top: 8px; }
+
+  /* NWS discussion: the largest text on the board */
+  .afd { font-size: 16.5px; line-height: 1.5; }
+  .afd h3 { font: 700 16px var(--display); margin: 12px 0 2px; color: var(--accent); text-transform: uppercase; letter-spacing: .03em; }
+  .afd .km { padding-left: 20px; margin: 4px 0 0; }
+  .afd .km li { margin: 7px 0; }
+  .afd .active { background: rgba(239,107,107,.12); border: 1px solid rgba(239,107,107,.45); border-radius: 5px; padding: 8px 10px; margin: 4px 0 8px; }
+
+  /* action items: compact */
+  .acts { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.35; }
+  .acts li { position: relative; border-left: 4px solid var(--muted); background: var(--ink); border-radius: 4px; padding: 5px 9px; margin: 0 0 5px; }
   .acts li.s3 { border-left-color: #e0402a; } .acts li.s2 { border-left-color: #f0b429; }
   .acts li.s1 { border-left-color: #4fb0d0; } .acts li.s0 { border-left-color: var(--good); }
-  .acts .src { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
-  .acts details { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
-  .acts summary { cursor: pointer; }
-  .tools { display: none; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .acts .src { font-size: 11.5px; color: var(--muted); margin-left: 6px; }
+  .acts details { font-size: 12px; color: var(--muted); display: inline; margin-left: 6px; }
+  .acts details[open] { display: block; margin: 3px 0 0; }
+  .acts summary { cursor: pointer; display: inline; }
+  .acts-wrap { max-height: 520px; overflow-y: auto; padding-right: 4px; }
+  .tools { display: none; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
   .editing .tools { display: flex; }
   .tools button, .tools select { background: none; border: 1px solid var(--rule); color: var(--muted); border-radius: 3px;
                                  font: 600 11.5px var(--display); padding: 2px 7px; cursor: pointer; }
@@ -64,10 +87,10 @@
   .editing [data-edit]:focus { outline: 2px solid var(--edit); background: rgba(181,156,245,.08); }
   .hidden-item { opacity: .45; }
   .hidden-item .txt { text-decoration: line-through; }
-  #summary { min-height: 3.2em; white-space: pre-wrap; font-size: 15px; }
+  #summary { min-height: 2.4em; white-space: pre-wrap; font-size: 16px; }
   #summary:empty::before { content: attr(data-placeholder); color: var(--muted); }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
   th { text-align: right; font: 600 12px var(--display); color: var(--muted); padding: 4px 6px 5px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
   th:first-child, td:first-child { text-align: left; }
   td { text-align: right; padding: 5px 6px; border-bottom: 1px solid #1d2e3d; white-space: nowrap; }
@@ -75,18 +98,18 @@
   .table-wrap { overflow-x: auto; }
   .pill { display: inline-block; min-width: 30px; text-align: center; border-radius: 3px; padding: 0 5px; font: 700 12px var(--display); color: #111; }
 
-  .km { margin: 6px 0 0; padding-left: 18px; }
-  .km li { margin: 5px 0; }
   .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
   .seg button { background: none; border: 0; color: var(--muted); font: 600 12.5px var(--display); padding: 4px 11px; cursor: pointer; }
   .seg button + button { border-left: 1px solid var(--rule); }
   .seg button[aria-pressed="true"] { background: var(--ink); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
   img { display: block; max-width: 100%; height: auto; border-radius: 4px; cursor: zoom-in; }
 
-  .ero-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-  @media (max-width: 1350px) { .ero-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 760px) { .ero-row { grid-template-columns: minmax(0, 1fr); } }
-  .ero-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; margin-top: 8px; }
+  .sat-img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #000; }
+  .loopbar { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .loopbar input[type=range] { flex: 1; min-width: 140px; accent-color: var(--accent); }
+  .loopbar .lab { font: 600 13px var(--display); color: var(--muted); min-width: 120px; text-align: right; }
+  .windy { width: 100%; aspect-ratio: 16 / 10; border: 0; border-radius: 4px; background: #000; display: block; }
+  .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
   .empty { border: 1px dashed var(--rule); border-radius: 6px; padding: 18px; color: var(--muted); }
   #lightbox { position: fixed; inset: 0; background: rgba(6,11,16,.94); display: none; align-items: center; justify-content: center; z-index: 50; cursor: zoom-out; }
@@ -96,16 +119,17 @@
   @media print {
     body { background: #fff; color: #000; }
     .bar { position: static; background: #fff; }
-    .btn, .tools, details summary { display: none !important; }
-    .card, .chip, .acts li { background: #fff; border-color: #bbb; }
+    .btn, .tools, details summary, .loopbar, .seg, .windy-card { display: none !important; }
+    .card, .chip, .acts li, .ero-day { background: #fff; border-color: #bbb; }
     .note, .chip .k, .chip .s, .acts .src, th { color: #444; }
+    .acts-wrap { max-height: none; overflow: visible; }
     .editing [data-edit] { outline: none; }
   }
 </style>
 </head>
 <body>
   <div class="bar">
-    <h1 id="title">Situational Awareness</h1>
+    <h1 id="title">Flood Dashboard</h1>
     <span class="meta" id="built"></span>
     <span class="spacer"></span>
     <button class="btn" id="b-edit" aria-pressed="false" title="Click any outlined text to change it">Edit</button>
@@ -116,7 +140,24 @@
     <button class="btn" id="b-full">Full screen</button>
     <a class="btn" id="b-back" href="./">Forecast site</a>
   </div>
-  <main id="main"><div class="empty">Loading…</div></main>
+
+  <main id="main">
+    <div class="chips" id="chips"></div>
+    <section class="card" id="c-ero"></section>
+    <section class="card" id="c-summary"></section>
+    <div class="row row-b">
+      <section class="card afd" id="c-afd"></section>
+      <section class="card" id="c-sat"></section>
+    </div>
+    <div class="row row-c">
+      <section class="card windy-card" id="c-windy"></section>
+      <section class="card" id="c-acts"></section>
+    </div>
+    <div class="row row-d">
+      <section class="card" id="c-table"></section>
+      <section class="card" id="c-ppp"></section>
+    </div>
+  </main>
   <div id="lightbox" role="dialog" aria-modal="true" aria-label="Full-size image"><img alt=""></div>
 
 <script>
@@ -125,20 +166,24 @@
   const esc = (t) => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const fmtUTC = (iso, o) => new Date(iso).toLocaleString("en-US", Object.assign({ timeZone: "UTC", weekday: "short", hour: "2-digit", hour12: false }, o || {})) + "Z";
   const fmtLocal = (iso) => new Date(iso).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  const fmtClock = (iso) => new Date(iso).toLocaleString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
   const amt = (v) => v == null ? "—" : v.toFixed(2) + "″";
   const hash = (t) => { let h = 5381; for (const c of String(t)) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return (h >>> 0).toString(36); };
   const ERO = { 0: ["None", "#2f4352"], 1: ["MRGL", "#38a800"], 2: ["SLGT", "#fffe00"], 3: ["MDT", "#f50000"], 4: ["HIGH", "#ff69c5"] };
+  const ERO_NAME = ["None", "Marginal", "Slight", "Moderate", "High"];
   const pill = (dn) => { const [n, c] = ERO[dn || 0] || ERO[0]; return `<span class="pill" style="background:${c};${dn ? "" : "color:var(--muted)"}">${n}</span>`; };
-  const tpill = (dn) => dn ? pill(dn) : `<span class="note" style="margin:0">–</span>`;   // compact form for the site table
+  const tpill = (dn) => dn ? pill(dn) : `<span class="note" style="margin:0">–</span>`;
+  const empty = (t) => `<div class="empty">${t}</div>`;
 
   // ---------- edits: saved in this browser only (keyed by the site path, so Cape and Raleigh stay separate)
   const STORE = "board-edits:" + location.pathname.replace(/board\.html$/, "");
   const load = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } };
   let E = Object.assign({ text: {}, hidden: {}, sev: {}, custom: [], summary: "" }, load());
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(E)); } catch (e) {} };
+  const pref = (k, d) => { try { return localStorage.getItem("board-pref:" + k) || d; } catch (e) { return d; } };
+  const setPref = (k, v) => { try { localStorage.setItem("board-pref:" + k, v); } catch (e) {} };
   let editing = false, meta = null, stamp = "", pppAcc = "24", dirty = false;
 
-  // text that can be overridden: key -> original
   const ed = (key, original) => {
     const v = E.text[key];
     return `<span data-edit="${key}" data-orig="${esc(original)}">${esc(v != null ? v : original)}</span>${v != null ? `<span class="tag">edited</span>` : ""}`;
@@ -148,9 +193,8 @@
     const sev = E.sev[key] != null ? E.sev[key] : a.severity;
     const hid = !!E.hidden[key];
     return `<li class="s${sev}${hid ? " hidden-item" : ""}" data-key="${key}">
-      <span class="txt">${ed(key, a.text)}</span>
-      <span class="src">${custom ? "Added by your team" : esc(a.source)}${E.sev[key] != null && !custom ? ' <span class="tag">priority changed</span>' : ""}</span>
-      ${a.why ? `<details><summary>Why</summary>${esc(a.why)}</details>` : ""}
+      <span class="txt">${ed(key, a.text)}</span><span class="src">${custom ? "added by your team" : esc(a.source)}</span>${E.sev[key] != null && !custom ? '<span class="tag">priority changed</span>' : ""}
+      ${a.why ? `<details><summary>why</summary>${esc(a.why)}</details>` : ""}
       <div class="tools">
         <select data-sev="${key}" aria-label="Priority">
           ${[[3, "Act now"], [2, "Prepare"], [1, "Monitor"], [0, "Info"]].map(([v, l]) => `<option value="${v}" ${v === sev ? "selected" : ""}>${l}</option>`).join("")}
@@ -160,96 +204,198 @@
       </div></li>`;
   }
 
-  function render() {
-    const b = meta.board;
-    if (!b) { $("main").innerHTML = `<div class="empty">The board has not been built yet. Run the main workflow once.</div>`; return; }
+  // ---------- sections
+  function drawHeader(b) {
     const br = meta.branding || {};
-    document.title = `Situational Awareness · ${br.title || "REFS QPF"}`;
-    $("title").textContent = `Situational Awareness · ${br.area || br.title || ""}`.replace(/ · $/, "");
+    const title = br.board_title || `Situational Awareness · ${br.area || br.title || ""}`;
+    const exp = /^experimental\s+/i.test(title);
+    document.title = title;
+    $("title").innerHTML = exp ? `<span class="exp">EXPERIMENTAL</span>${esc(title.replace(/^experimental\s+/i, ""))}` : esc(title);
     const ageMin = Math.round((Date.now() - Date.parse(b.built)) / 60e3);
     $("built").innerHTML = `Updated ${fmtLocal(b.built)} <span class="${ageMin > 90 ? "stale" : ""}">(${ageMin < 120 ? ageMin + " min" : Math.round(ageMin / 60) + " h"} ago)</span>`;
+  }
 
+  function drawChips(b) {
     const days = (b.ero && b.ero.days) || {};
+    const top3 = Math.max(0, ...["1", "2", "3"].map(k => (days[k] || {}).max_in_view || 0));
+    const topDay = ["1", "2", "3"].find(k => ((days[k] || {}).max_in_view || 0) === top3);
     const prim = meta.primary_site;
     const ps = ((b.ppp_sites || {})[prim]) || {};
-    const chips = [
-      ...["1", "2", "3", "4", "5"].map(d => `<div class="chip"><div class="k">ERO Day ${d}</div>
-        <div class="v">${pill((days[d] || {}).max_in_view)} <span style="font-size:15px">${esc((days[d] || {}).name || "—")}</span></div>
-        <div class="s">${esc((days[d] || {}).valid_time || "")}</div></div>`),
+    const haz = (b.afd && b.afd.hazards) || [];
+    const fl = (meta.flash && meta.flash.sites) || {};
+    const qmax = Math.max(0, ...Object.values(fl).map(v => v.CREST_MAXUNITSTREAMFLOW || 0));
+    const qtxt = qmax >= 6 ? "Significant flooding range" : qmax >= 2 ? "Flooding likely range" : "Below flooding range";
+    $("chips").innerHTML = [
+      `<div class="chip"><div class="k">Highest ERO, next 3 days</div><div class="v">${pill(top3)} <span style="font-size:15px">${ERO_NAME[top3]}</span></div>
+        <div class="s">${top3 ? "Day " + topDay : "no risk on the map"}</div></div>`,
       ...["24", "72"].map(a => `<div class="chip"><div class="k">${esc(prim)} ${a}-h rain</div>
         <div class="v">${amt((ps[a] || {}).expected)}</div><div class="s">low ${amt((ps[a] || {}).low)} · high ${amt((ps[a] || {}).high)}</div></div>`),
+      `<div class="chip"><div class="k">NWS ${esc(b.wfo)} active products</div><div class="v" style="color:${haz.length ? "var(--bad)" : "var(--text)"}">${haz.length || "None"}</div>
+        <div class="s">${esc(haz.map(h => h.text.split(" until ")[0]).slice(0, 2).join(" · ")) || "per the latest discussion"}</div></div>`,
+      `<div class="chip"><div class="k">Observed streamflow (FLASH)</div><div class="v">${qmax.toFixed(1)} <span style="font-size:13px;color:var(--muted)">m³ s⁻¹ km⁻²</span></div>
+        <div class="s">${qtxt}</div></div>`,
     ].join("");
+  }
 
+  function drawEro(b) {
+    const days = (b.ero && b.ero.days) || {};
+    const v = encodeURIComponent(b.built);
+    const maps = [1, 2, 3, 4, 5].map(d => {
+      const f = (b.images || {})["ero_d" + d]; const m = days[String(d)] || {};
+      if (!f) return "";
+      return `<div class="ero-day"><div class="cap">Day ${d} ${pill(m.max_in_view)}<span class="t">${esc(m.valid_time || "")}</span></div>
+        <img src="${f}?v=${v}" alt="ERO Day ${d}"></div>`;
+    }).filter(Boolean);
+    $("c-ero").innerHTML = `<h2>WPC Excessive Rainfall Outlook, Days 1–5
+        <span class="r note" style="margin:0"><a href="https://www.wpc.ncep.noaa.gov/qpf/excessive_rainfall_outlook_ero.php" target="_blank" rel="noreferrer">WPC ERO</a></span></h2>
+      ${maps.length ? `<div class="ero-row">${maps.join("")}</div>` : empty("No ERO maps this run.")}
+      <div class="ero-legend">${[1, 2, 3, 4].map(d => `<span>${pill(d)} ${["", "Marginal ≥5%", "Slight ≥15%", "Moderate ≥40%", "High ≥70%"][d]}</span>`).join("")}
+        <span class="note" style="margin:0">chance rainfall exceeds flash flood guidance within 25 miles of a point</span></div>`;
+  }
+
+  function drawSummary() {
+    $("c-summary").innerHTML = `<h2>Situation summary <span class="r note" style="margin:0">${editing ? "type here" : (E.summary ? "" : "press Edit to add")}</span></h2>
+      <div id="summary" ${editing ? 'contenteditable="true"' : ""} data-placeholder="Add the operational summary for this period (only shown in this browser).">${esc(E.summary || "")}</div>`;
+  }
+
+  function drawAfd(b) {
+    const afd = b.afd;
+    if (!afd) { $("c-afd").innerHTML = `<h2>NWS discussion</h2>` + empty("The forecast discussion could not be retrieved this run."); return; }
+    $("c-afd").innerHTML = `<h2 style="font-size:21px">${esc(afd.office)} <span class="r note" style="margin:0;font-size:13px">${esc(afd.issued_text || "")}</span></h2>
+      ${afd.hazards.length ? `<div class="active"><strong style="color:var(--bad)">Active:</strong> ${afd.hazards.map(h => esc(h.area + ": " + h.text)).join("<br>")}</div>` : ""}
+      <h3>Key messages</h3>
+      <ul class="km">${(afd.key_messages || []).map(k => `<li>${ed("km:" + hash(k), k)}</li>`).join("") || "<li>None listed.</li>"}</ul>
+      ${afd.hydrology ? `<h3>Hydrology</h3><p style="margin:4px 0 0">${ed("hy:" + hash(afd.hydrology), afd.hydrology)}</p>` : ""}
+      <p class="note"><a href="${afd.link}" target="_blank" rel="noreferrer">Full discussion</a> · source ${esc(afd.source)}</p>`;
+  }
+
+  // ---------- satellite loop
+  const sat = { band: pref("satBand", "GEOCOLOR"), i: 0, timer: null, frames: [] };
+  function drawSat(b) {
+    const s = b.sat;
+    if (!s || !s.bands) { $("c-sat").innerHTML = `<h2>Satellite</h2>` + empty("No satellite frames this run."); return; }
+    if (!s.bands[sat.band]) sat.band = Object.keys(s.bands)[0];
+    sat.frames = s.bands[sat.band].frames || [];
+    const playing = !!sat.timer;
+    $("c-sat").innerHTML = `<h2>GOES-East satellite
+        <span class="r seg">${Object.entries(s.bands).sort((a, b) => (b[0] === "GEOCOLOR") - (a[0] === "GEOCOLOR")).map(([k, v]) => `<button aria-pressed="${k === sat.band}" data-band="${k}" title="${esc(v.label)}">${k === "GEOCOLOR" ? "GeoColor" : "Infrared"}</button>`).join("")}</span></h2>
+      <img class="sat-img" id="sat-img" alt="GOES-East satellite loop">
+      <div class="loopbar">
+        <button class="btn" id="sat-play">${playing ? "Pause" : "Play"}</button>
+        <input type="range" id="sat-slider" min="0" max="${Math.max(0, sat.frames.length - 1)}" value="0" aria-label="Frame">
+        <span class="lab" id="sat-lab"></span>
+      </div>
+      <div class="links">
+        <a class="btn" href="https://weather.cod.edu/satrad/" target="_blank" rel="noreferrer">COD satellite &amp; radar ↗</a>
+        <a class="btn" href="${s.page}" target="_blank" rel="noreferrer">NOAA STAR sector ↗</a>
+      </div>
+      <p class="note">${esc(s.bands[sat.band].label)}. NOAA/NESDIS STAR imagery, about the last ${Math.round(sat.frames.length * 10 / 60)} h.</p>`;
+    sat.frames.forEach(f => { const im = new Image(); im.src = f.url; });   // preload
+    if (sat.i >= sat.frames.length) sat.i = sat.frames.length - 1;
+    if (!playing) sat.i = sat.frames.length - 1;
+    showSat();
+    if (!playing && sat.frames.length > 1) playSat();
+    $("c-sat").querySelectorAll("[data-band]").forEach(x => x.onclick = () => { sat.band = x.dataset.band; setPref("satBand", sat.band); stopSat(); drawSat(meta.board); });
+    $("sat-play").onclick = () => sat.timer ? stopSat() : playSat();
+    $("sat-slider").oninput = (e) => { stopSat(); sat.i = +e.target.value; showSat(); };
+    $("sat-img").onclick = () => { $("lightbox").querySelector("img").src = $("sat-img").src; $("lightbox").classList.add("open"); };
+  }
+  function showSat() {
+    const f = sat.frames[sat.i]; if (!f) return;
+    $("sat-img").src = f.url;
+    $("sat-slider").value = sat.i;
+    $("sat-lab").textContent = f.time ? fmtClock(f.time) + (sat.i === sat.frames.length - 1 ? " (latest)" : "") : "latest";
+  }
+  function playSat() {
+    if (sat.frames.length < 2) return;
+    $("sat-play").textContent = "Pause";
+    sat.timer = setInterval(() => {
+      sat.i = (sat.i + 1) % sat.frames.length;
+      showSat();
+      if (sat.i === sat.frames.length - 1) { clearInterval(sat.timer); setTimeout(() => { if (sat.timer) { sat.timer = null; playSat(); } }, 1500); }
+    }, 220);
+  }
+  function stopSat() { clearInterval(sat.timer); sat.timer = null; const p = $("sat-play"); if (p) p.textContent = "Play"; }
+
+  // ---------- forecast radar (Windy embed); built once, rebuilt only when the model changes
+  const MODELS = [["ecmwf", "ECMWF"], ["gfs", "GFS"], ["hrrr", "HRRR"], ["nam", "NAM"], ["icon", "ICON"]];
+  const OVERLAYS = [["rain", "Rain & thunder"], ["rainAccu", "Rain totals"], ["radar", "Live radar"]];
+  let windyKey = "";
+  function drawWindy() {
+    const s = (meta.sites || []).find(x => x.name === meta.primary_site) || (meta.sites || [])[0] || { lat: 28.4, lon: -80.6 };
+    const model = pref("windyModel", "ecmwf"), overlay = pref("windyOverlay", "rain");
+    const key = [model, overlay, s.lat, s.lon].join("|");
+    if (key === windyKey && $("windy-frame")) return;
+    windyKey = key;
+    const q = new URLSearchParams({ type: "map", location: "coordinates", metricRain: "in", metricTemp: "°F", metricWind: "mph",
+      zoom: "7", overlay, product: model, level: "surface", lat: s.lat.toFixed(2), lon: s.lon.toFixed(2),
+      detailLat: s.lat.toFixed(2), detailLon: s.lon.toFixed(2), marker: "true", message: "true", calendar: "now", pressure: "true" });
+    $("c-windy").innerHTML = `<h2>Forecast rain, next 1–5 days
+        <span class="r seg">${MODELS.map(([k, l]) => `<button aria-pressed="${k === model}" data-model="${k}">${l}</button>`).join("")}</span></h2>
+      <div class="seg" style="margin-bottom:8px">${OVERLAYS.map(([k, l]) => `<button aria-pressed="${k === overlay}" data-ov="${k}">${l}</button>`).join("")}</div>
+      <iframe class="windy" id="windy-frame" src="https://embed.windy.com/embed.html?${q}" title="Windy forecast map" loading="lazy" allowfullscreen></iframe>
+      <p class="note">Press play on the map's timeline to watch rain move across the area. Fronts and pressure are shown as lines.
+        Model maps for a general audience, from Windy.com.</p>
+      <div class="links">
+        <a class="btn" href="https://www.wpc.ncep.noaa.gov/NationalForecastChart/map.php" target="_blank" rel="noreferrer">NWS national forecast chart ↗</a>
+        <a class="btn" href="https://www.pivotalweather.com/model.php?m=hrrr&p=refcmp" target="_blank" rel="noreferrer">HRRR forecast radar ↗</a>
+        <a class="btn" href="https://www.tropicaltidbits.com/analysis/models/" target="_blank" rel="noreferrer">Tropical Tidbits models ↗</a>
+        <a class="btn" href="https://www.windy.com/?${s.lat.toFixed(2)},${s.lon.toFixed(2)},7" target="_blank" rel="noreferrer">Open in Windy ↗</a>
+      </div>`;
+    $("c-windy").querySelectorAll("[data-model]").forEach(x => x.onclick = () => { setPref("windyModel", x.dataset.model); drawWindy(); });
+    $("c-windy").querySelectorAll("[data-ov]").forEach(x => x.onclick = () => { setPref("windyOverlay", x.dataset.ov); drawWindy(); });
+  }
+
+  function drawActs(b) {
     const acts = (b.actions || []).map(a => actionItem(a, "act:" + hash(a.text), false));
     const custom = (E.custom || []).map(c => actionItem({ text: c.text, severity: c.severity }, c.key, true));
-    const order = (html) => html;   // keep source order; custom items go first so they're seen
-    const ai = b.ai_actions ? `<h2 style="margin-top:14px">AI-drafted summary <span class="note" style="margin:0;font-weight:500">from the AFD; verify before acting</span></h2>
-        <ul class="km">${b.ai_actions.items.map((x, i) => `<li>${ed("ai:" + hash(x), x)}</li>`).join("")}</ul>` : "";
+    const ai = b.ai_actions ? `<h2 style="margin-top:12px;font-size:15px">AI-drafted summary <span class="note" style="margin:0;font-weight:500">from the AFD; verify before acting</span></h2>
+        <ul class="acts">${b.ai_actions.items.map(x => `<li class="s0">${ed("ai:" + hash(x), x)}</li>`).join("")}</ul>` : "";
+    $("c-acts").innerHTML = `<h2>Action items <span class="r note" style="margin:0">red act now · amber prepare · blue monitor</span></h2>
+      <div class="acts-wrap"><ul class="acts">${custom.join("")}${acts.join("")}</ul>${ai}</div>
+      <p class="note">Generated by fixed rules from the source named on each item. ${editing ? "Click any text to change it; edits are saved in this browser." : ""}</p>`;
+  }
 
+  function drawTable(b) {
     const es = (b.ero && b.ero.sites) || {};
     const names = Object.keys(b.ppp_sites || es);
     const rows = names.map(n => { const v = (b.ppp_sites || {})[n] || {}; const e = es[n] || {};
       const c = (a) => `<td>${amt((v[a] || {}).low)}</td><td><strong>${amt((v[a] || {}).expected)}</strong></td><td>${amt((v[a] || {}).high)}</td>`;
       return `<tr><td>${esc(n)}</td>${c("24")}<td class="grp"></td>${c("72")}<td class="grp">${tpill(e["1"])}</td><td>${tpill(e["2"])}</td><td>${tpill(e["3"])}</td></tr>`; }).join("");
+    $("c-table").innerHTML = `<h2>Rainfall range by site</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th colspan="3" style="text-align:center">24 h</th><th class="grp"></th><th colspan="3" style="text-align:center">72 h</th><th class="grp" colspan="3" style="text-align:center">ERO</th></tr>
+          <tr><th>Site</th><th>Low</th><th>Exp.</th><th>High</th><th class="grp"></th><th>Low</th><th>Exp.</th><th>High</th><th class="grp">D1</th><th>D2</th><th>D3</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <p class="note">Expected is the official NWS forecast. Low end: 9 in 10 chance of more. High end: 1 in 10 chance of more.
+        ${b.ppp ? `PPP cycle ${fmtUTC(b.ppp.cycle, { day: "2-digit", month: "short" })}.` : "PPP unavailable this run."}</p>`;
+  }
 
-    const afd = b.afd;
-    const afdBlock = afd ? `<h2>${esc(afd.office)} <span class="r note" style="margin:0">${esc(afd.issued_text || "")}</span></h2>
-        ${afd.hazards.length ? `<p style="margin:4px 0 8px"><strong style="color:var(--bad)">Active:</strong> ${afd.hazards.map(h => esc(h.area + ": " + h.text)).join(" · ")}</p>` : ""}
-        <h3 style="font:600 14px var(--display);margin:6px 0 0">Key messages</h3>
-        <ul class="km">${(afd.key_messages || []).map(k => `<li>${ed("km:" + hash(k), k)}</li>`).join("") || "<li>None listed.</li>"}</ul>
-        ${afd.hydrology ? `<h3 style="font:600 14px var(--display);margin:10px 0 0">Hydrology</h3><p style="margin:4px 0 0;font-size:13.5px">${ed("hy:" + hash(afd.hydrology), afd.hydrology)}</p>` : ""}
-        <p class="note"><a href="${afd.link}" target="_blank" rel="noreferrer">Full discussion</a> · source ${esc(afd.source)}</p>`
-      : `<div class="empty">The forecast discussion could not be retrieved this run.</div>`;
-
+  function drawPpp(b) {
     const v = encodeURIComponent(b.built);
-    const im = (k, alt) => (b.images || {})[k] ? `<img src="${b.images[k]}?v=${v}" alt="${alt}">` : "";
+    const f = (b.images || {})["ppp_" + pppAcc];
     const pa = b.ppp && b.ppp.windows && b.ppp.windows[pppAcc];
-    const eroMaps = [1, 2, 3, 4, 5].map(d => im("ero_d" + d, `ERO Day ${d}`) || (im("ero", "") && d === 1 ? im("ero", "ERO") : "")).filter(Boolean);
+    $("c-ppp").innerHTML = `<h2>Low, expected and high-end rain
+        <span class="r seg">${["24", "72"].filter(a => (b.images || {})["ppp_" + a]).map(a => `<button aria-pressed="${a === pppAcc}" data-a="${a}">${a}-h</button>`).join("")}</span></h2>
+      ${pa ? `<p class="note" style="margin:0 0 6px">${fmtUTC(pa.start)} to ${fmtUTC(pa.end, { day: "2-digit", month: "short" })}</p>` : ""}
+      ${f ? `<img src="${f}?v=${v}" alt="Low, expected and high-end QPF">` : empty("No PPP maps this run.")}
+      <p class="note"><a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS Probabilistic Precipitation Portal</a></p>`;
+    $("c-ppp").querySelectorAll("[data-a]").forEach(x => x.onclick = () => { pppAcc = x.dataset.a; drawPpp(meta.board); });
+  }
 
+  function render() {
+    const b = meta.board;
+    if (!b) { $("main").innerHTML = empty("The board has not been built yet. Run the main workflow once."); return; }
     $("main").className = editing ? "editing" : "";
-    $("main").innerHTML = `
-      <div class="chips">${chips}</div>
-      <section class="card"><h2>Situation summary <span class="r note" style="margin:0">${editing ? "type here" : (E.summary ? "" : "click Edit to add")}</span></h2>
-        <div id="summary" ${editing ? 'contenteditable="true"' : ""} data-placeholder="Add the operational summary for this period (only shown in this browser).">${esc(E.summary || "")}</div>
-      </section>
-      <div class="cols">
-        <div class="c1">
-          <section class="card"><h2>Action items <span class="r note" style="margin:0">red act now · amber prepare · blue monitor</span></h2>
-            <ul class="acts">${custom.join("")}${order(acts.join(""))}</ul>
-            <p class="note">Generated by fixed rules from the sources under each item. ${editing ? "Click any text to change it; edits are saved in this browser." : ""}</p>
-            ${ai}
-          </section>
-        </div>
-        <div class="c2">
-          <section class="card"><h2>Rainfall range by site</h2>
-            <div class="table-wrap"><table>
-              <thead><tr><th></th><th colspan="3" style="text-align:center">24 h</th><th class="grp"></th><th colspan="3" style="text-align:center">72 h</th><th class="grp" colspan="3" style="text-align:center">ERO</th></tr>
-                <tr><th>Site</th><th>Low</th><th>Exp.</th><th>High</th><th class="grp"></th><th>Low</th><th>Exp.</th><th>High</th><th class="grp">D1</th><th>D2</th><th>D3</th></tr></thead>
-              <tbody>${rows}</tbody></table></div>
-            <p class="note">Expected is the official NWS forecast. Low end: 9 in 10 chance of more. High end: 1 in 10 chance of more.
-              ${b.ppp ? `PPP cycle ${fmtUTC(b.ppp.cycle, { day: "2-digit", month: "short" })}.` : "PPP unavailable this run."}</p>
-          </section>
-          <section class="card"><h2>Low, expected and high end
-              <span class="r seg">${["24", "72"].filter(a => (b.images || {})["ppp_" + a]).map(a => `<button aria-pressed="${a === pppAcc}" data-a="${a}">${a}-h</button>`).join("")}</span></h2>
-            ${pa ? `<p class="note" style="margin:0 0 6px">${fmtUTC(pa.start)} to ${fmtUTC(pa.end, { day: "2-digit", month: "short" })}</p>` : ""}
-            ${im("ppp_" + pppAcc, "Low, expected and high-end QPF") || '<div class="empty">No PPP maps this run.</div>'}
-          </section>
-        </div>
-        <div class="c3"><section class="card">${afdBlock}</section></div>
-      </div>
-      <section class="card"><h2>WPC Excessive Rainfall Outlook, Days 1–5
-          <span class="r note" style="margin:0"><a href="https://www.wpc.ncep.noaa.gov/qpf/excessive_rainfall_outlook_ero.php" target="_blank" rel="noreferrer">WPC ERO</a> ·
-          <a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">Probabilistic Precipitation Portal</a></span></h2>
-        ${eroMaps.length ? `<div class="ero-row">${eroMaps.join("")}</div>` : '<div class="empty">No ERO maps this run.</div>'}
-        <div class="ero-legend">${[1, 2, 3, 4].map(d => `<span>${pill(d)} ${["", "Marginal ≥5%", "Slight ≥15%", "Moderate ≥40%", "High ≥70%"][d]}</span>`).join("")}
-          <span class="note" style="margin:0">chance rainfall exceeds flash flood guidance within 25 mi</span></div>
-      </section>`;
+    [drawHeader, drawChips, drawEro, drawSummary, drawAfd, drawSat, drawActs, drawTable, drawPpp].forEach(fn => {
+      try { fn(b); } catch (err) { console.error(fn.name, err); }
+    });
+    try { drawWindy(); } catch (err) { console.error("drawWindy", err); }
     wire();
   }
 
   function wire() {
-    document.querySelectorAll("[data-a]").forEach(x => x.onclick = () => { pppAcc = x.dataset.a; render(); });
-    document.querySelectorAll("main img").forEach(i => i.onclick = () => { $("lightbox").querySelector("img").src = i.src; $("lightbox").classList.add("open"); });
+    document.querySelectorAll("#c-ero img, #c-ppp img").forEach(i => i.onclick = () => { $("lightbox").querySelector("img").src = i.src; $("lightbox").classList.add("open"); });
     if (!editing) return;
     document.querySelectorAll("[data-edit]").forEach(el => {
       el.contentEditable = "true";
@@ -303,7 +449,8 @@
     const items = [...(E.custom || []).map(c => ({ sev: c.severity, text: c.text })),
       ...(b.actions || []).map(a => { const k = "act:" + hash(a.text); return E.hidden[k] ? null : { sev: E.sev[k] ?? a.severity, text: E.text[k] ?? a.text }; }).filter(Boolean)];
     const d = (b.ero && b.ero.days) || {};
-    const t = [`SITUATIONAL AWARENESS (${(meta.branding || {}).area || ""}) as of ${fmtLocal(b.built)}`, "",
+    const br = meta.branding || {};
+    const t = [`${(br.board_title || "SITUATIONAL AWARENESS").toUpperCase()} as of ${fmtLocal(b.built)}`, "",
       E.summary ? "SUMMARY\n" + E.summary.trim() + "\n" : "",
       "ACTION ITEMS", ...items.map(i => `- [${lab[i.sev] || ""}] ${i.text}`), "",
       "EXCESSIVE RAINFALL OUTLOOK", ...["1", "2", "3", "4", "5"].map(k => `- Day ${k}: ${(d[k] || {}).name || "n/a"}${(d[k] || {}).valid_time ? " (" + d[k].valid_time + ")" : ""}`), "",
@@ -319,14 +466,16 @@
       const r = await fetch("meta.json?t=" + Date.now(), { cache: "no-store" });
       if (!r.ok) throw new Error(r.status);
       const m = await r.json();
-      const key = ((m.board && m.board.built) || "") + "|" + m.generated_utc;
-      if (key === stamp) { if (meta) $("built").innerHTML = $("built").innerHTML; return; }
+      const sb = (m.board && m.board.sat && m.board.sat.bands) || {};
+      const satKey = Object.values(sb).map(x => ((x.frames || []).slice(-1)[0] || {}).url).join(",");
+      const key = [(m.board && m.board.built) || "", m.generated_utc, satKey, (m.flash && m.flash.valid) || ""].join("|");
+      if (key === stamp) { if (meta && meta.board) drawHeader(meta.board); return; }
       meta = m; stamp = key;
       // don't yank text out from under someone mid-edit; redraw when they leave the field
       if (editing && document.activeElement && document.activeElement.isContentEditable) dirty = true;
       else render();
     } catch (e) {
-      if (!meta) $("main").innerHTML = `<div class="empty">meta.json could not be loaded (${esc(e.message)}).</div>`;
+      if (!meta) $("main").innerHTML = empty(`meta.json could not be loaded (${esc(e.message)}).`);
     }
   }
   refresh();

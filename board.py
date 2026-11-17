@@ -53,6 +53,11 @@ AFD_RULES = [
 ]
 
 
+def board_sites():
+    """Sites shown on the board: every site except those listed in board.exclude_sites."""
+    return {n: v for n, v in R.SITES.items() if n not in R.BOARD_EXCLUDE}
+
+
 def _get(url, **kw):
     return R.SESSION.get(url, timeout=kw.pop("timeout", 30), **kw)
 
@@ -151,7 +156,7 @@ def fetch_ppp():
 
 def ppp_site_values(ppp):
     sites = {}
-    for name, (la, lo, _) in R.SITES.items():
+    for name, (la, lo, _) in board_sites().items():
         per = {}
         for acc, a in ppp["accums"].items():
             v = {}
@@ -215,7 +220,7 @@ def _ero_meta(feats):
 def ero_summary(ero):
     from shapely.geometry import Point, box, shape
     view = box(R.EXTENT[0], R.EXTENT[2], R.EXTENT[1], R.EXTENT[3])
-    days, sites = {}, {n: {} for n in R.SITES}
+    days, sites = {}, {n: {} for n in board_sites()}
     for day, feats in ero.items():
         polys = []
         for f in feats:
@@ -225,7 +230,7 @@ def ero_summary(ero):
                 continue
         top = max([dn for dn, g in polys if g.intersects(view)], default=0)
         days[str(day)] = {"max_in_view": top, "name": ERO_NAMES.get(top, str(top)), **_ero_meta(feats)}
-        for name, (la, lo, _) in R.SITES.items():
+        for name, (la, lo, _) in board_sites().items():
             pt = Point(lo, la)
             sites[name][str(day)] = max([dn for dn, g in polys if g.contains(pt)], default=0)
     return {"days": days, "sites": sites}
@@ -260,6 +265,40 @@ def plot_ero(ero, out_dir):
         plt.close(fig)
         out[str(day)] = fname
     return out or None
+
+
+# --------------------------------------------------------------------------- satellite
+SAT_ROOT = "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/{sector}/{band}/"
+SAT_BANDS = {"GEOCOLOR": "GeoColor (visible by day, IR at night)", "13": "Infrared (band 13)"}
+SAT_FRAMES = 24                     # newest frames kept per band
+SAT_STEP = 2                        # keep every 2nd scan (sector scans are ~5 min, so ~10 min per frame, ~4 h loop)
+SAT_SIZE = "1200x1200"
+
+
+def satellite_block(sector):
+    """Frame URLs for a GOES-East loop, read from the NOAA STAR CDN directory listing.
+
+    The browser hot-links the JPEGs, so nothing is downloaded here except two small index pages.
+    If a listing can't be read, the band falls back to STAR's latest.jpg (a still image)."""
+    out = {"sector": sector, "bands": {}, "page": f"https://www.star.nesdis.noaa.gov/GOES/sector.php?sat=G19&sector={sector}"}
+    for band, label in SAT_BANDS.items():
+        root = SAT_ROOT.format(sector=sector, band=band)
+        frames = []
+        try:
+            r = _get(root)
+            r.raise_for_status()
+            pat = rf'href="((\d{{11}})_GOES19-ABI-{sector}-{band}-{SAT_SIZE}\.jpg)"'
+            files = sorted(set(re.findall(pat, r.text)), key=lambda x: x[1])
+            for fname, stamp in files[::-1][::SAT_STEP][:SAT_FRAMES][::-1]:
+                t = datetime.strptime(stamp, "%Y%j%H%M").replace(tzinfo=timezone.utc)
+                frames.append({"url": root + fname, "time": t.isoformat()})
+        except Exception as e:
+            print(f"[sat] {band} listing failed: {e}")
+        if not frames:
+            frames = [{"url": root + "latest.jpg", "time": None}]
+        out["bands"][band] = {"label": label, "frames": frames}
+        print(f"[sat] {sector} {band}: {len(frames)} frame(s)")
+    return out
 
 
 # --------------------------------------------------------------------------- AFD
@@ -354,13 +393,13 @@ def build_actions(afd, ero, ppp_sites, meta):
                 add(sev, f"Plan for a high-end {acc}-h total of {v['high']:.1f}″ at {_short(n)} "
                          f"(1-in-10 chance of more; expected {v.get('expected') or 0:.1f}″, low end {v.get('low') or 0:.1f}″).",
                     "NWS Probabilistic Precipitation Portal")
-    for s in meta.get("sites", []):
+    for s in [x for x in meta.get("sites", []) if x["name"] not in R.BOARD_EXCLUDE]:
         f = s.get("ffg") or {}
         w = max(f.items(), key=lambda kv: kv[1]["ratio"], default=None)
         if w and w[1]["ratio"] >= 1.0:
             add(2, f"REFS LPMM reaches {round(w[1]['ratio'] * 100)}% of {w[0]}-h flash flood guidance at {_short(s['name'])}.",
                 "REFS LPMM vs FFG", f"window ending {w[1]['ends']}")
-    fl = (meta.get("flash") or {}).get("sites") or {}
+    fl = {n: v for n, v in ((meta.get("flash") or {}).get("sites") or {}).items() if n not in R.BOARD_EXCLUDE}
     for n, v in fl.items():
         q, r = v.get("CREST_MAXUNITSTREAMFLOW") or 0, v.get("QPE_FFGMAX") or 0
         if q >= 2 or r >= 100:
@@ -426,6 +465,7 @@ def build_board(out_dir, meta, wfo, afd_region="62"):
         board["afd"] = dict(afd, source=afd_raw["source"], issued=afd_raw.get("issued"),
                             link=f"https://forecast.weather.gov/product.php?site={wfo}&issuedby={wfo}&product=AFD")
     board["actions"] = build_actions(afd, ero_s, ppp_sites, meta)
+    board["sat"] = R.optional("satellite", satellite_block, R.BOARD_SAT_SECTOR)
     prim = meta.get("primary_site") or next(iter(R.SITES))
     board["ppp_sites_primary"] = (ppp_sites or {}).get(prim)
     ai = ai_summary(afd_raw["text"] if afd_raw else None, board)

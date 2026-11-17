@@ -2,7 +2,8 @@
   "branding": {
     "title": "Space Coast REFS QPF",
     "subtitle": "48-h ensemble QPF for Cape Canaveral and Kennedy Space Center",
-    "area": "Cape Canaveral and KSC"
+    "area": "Cape Canaveral and KSC",
+    "board_title": "Experimental 45 WS Flood Dashboard"
   },
   "extent": [
     -83.0,
@@ -147,6 +148,10 @@
   },
   "board": {
     "wfo": "MLB",
-    "afd_region": "62"
+    "afd_region": "62",
+    "exclude_sites": [
+      "Daytona (KDAB)"
+    ],
+    "sat_sector": "se"
   }
 }

@@ -49,6 +49,11 @@ def main():
             R.save_json(cmeta_p, cmeta, indent=1)
             for f in b.get("images", {}).values():
                 shutil.copy(os.path.join(R.OUT_DIR, f), os.path.join(R.SITE_CACHE, f))
+    if meta.get("board"):                       # satellite frames are cheap, so refresh them every run
+        import board as B
+        sat = R.optional("satellite", B.satellite_block, R.BOARD_SAT_SECTOR)
+        if sat:
+            meta["board"]["sat"] = sat
     meta["products"]["cases"] = R.publish_cases(R.OUT_DIR) > 0
     R.save_json(meta_p, meta, indent=1)
     print(f"[flash] site refreshed, FLASH valid {fl['valid']}")
