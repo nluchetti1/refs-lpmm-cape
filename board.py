@@ -103,7 +103,7 @@ def _pick(files, acc, tag):
     return hits[min(hits, key=lambda f: (abs(f - acc), f))] if hits else None
 
 
-def _day_hours(files, cyc, end72=None):
+def _day_hours(files, cyc, end72=None, end48=None):
     """Forecast hours ending Days 1-3: three back-to-back 24-h periods. The portal's 24-h windows end
     every 6 h; when the 72-h total's end hour is known (end72) the days are chosen to end with it
     (end72-48, end72-24, end72), so Days 1-3 add up to the 72-h total. Otherwise the earliest chain
@@ -111,6 +111,8 @@ def _day_hours(files, cyc, end72=None):
     have = sorted(set(_hours(files, 24, "expected")))
     if end72 is not None and all(end72 - 24 * k in have for k in range(3)):
         return [end72 - 48, end72 - 24, end72]
+    if end48 is not None and all(end48 - 24 * k in have for k in range(2)):     # no 72-h total this cycle:
+        return [end48 - 24, end48]                                             # Days 1-2 still match 48 h
     starts = [f for f in have if f >= 18]
     for n in (3, 2, 1):
         for f in starts:
@@ -121,6 +123,11 @@ def _day_hours(files, cyc, end72=None):
 
 def _end72(L):
     h = sorted(_hours(L[72][1], 72, "expected")) if 72 in L else []
+    return h[0] if h else None
+
+
+def _end48(L):
+    h = sorted(_hours(L[48][1], 48, "expected")) if 48 in L else []
     return h[0] if h else None
 
 
@@ -256,8 +263,15 @@ def _complete_cycle(latest, root):
                 print(f"[ppp] latest cycle {latest:%d/%HZ} is missing Day 3 / 72 h; using {cyc:%d/%HZ}")
             break
     else:
-        print(f"[ppp] no complete cycle in the last {PPP_LOOKBACK_H} h; using {latest:%d/%HZ} as is")
-        cyc, L = first
+        # no cycle with Day 3: use the latest as is. Its first listing stopped at the missing 72-h
+        # folder, so list the 24 h and 48 h folders properly now.
+        print(f"[ppp] no complete cycle in the last {PPP_LOOKBACK_H} h; using {latest:%d/%HZ} as is (no Day 3)")
+        cyc, L = latest, {}
+        for acc in PPP_ACCUMS:
+            try:
+                L[acc] = _ppp_listing(root, acc, cyc)
+            except Exception as e:
+                print(f"[ppp] {cyc:%d/%HZ} {acc} h listing failed: {e}")
     for acc in PPP_ACCUMS:
         if acc in L:
             print(f"[ppp] {cyc:%d/%HZ} {acc} h directory: {len(L[acc][1])} files, expected-amount hours "
@@ -281,7 +295,7 @@ def fetch_ppp():
         picks.update({k: _hours(files, acc, code).get(fh) for k, code in PPP_PRODUCTS.items()})
         return _ppp_window(url, files, acc, picks, cyc, label)
 
-    days = _day_hours(listings[24][1], cyc, _end72(listings)) if 24 in listings else []
+    days = _day_hours(listings[24][1], cyc, _end72(listings), _end48(listings)) if 24 in listings else []
     print(f"[ppp] day-ending hours {days}")
     for d, fh in enumerate(days, 1):
         w = window(24, fh, f"Day {d} (f{fh:03d})")
