@@ -193,6 +193,8 @@
       ]
     ],
     "timezone": "America/New_York",
-    "nexrad": "KMLB"
+    "nexrad": "KMLB",
+    "live_radar_url": "https://weather.sfwmd.gov/sfwmd/common/images/weather/webplots/radlooper.html?region=KMLB",
+    "live_radar_name": "SFWMD"
   }
 }

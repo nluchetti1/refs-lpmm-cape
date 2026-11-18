@@ -377,27 +377,53 @@
 
   // ---------- radar: live NWS radar loop, or our HRRR / RRFS simulated-radar frames (fcst_radar.py)
   const radL = Loop("rad", () => radL.frames.length > 30 ? 180 : 400);
-  let radTab = pref("radarTab", "live"), radKey = "", liveTimer = null;
+  let radTab = pref("radarTab", "live"), radKey = "", liveTimer = null, qpeH = pref("qpeHours", "24"), liveSrc = pref("liveSrc", "page");
   radL.label = (f) => new Date(f.valid).toLocaleString("en-US", { weekday: "short", hour: "numeric", timeZoneName: "short" }) + ` · +${f.f} h`;
   function drawRadar() {
     const R = meta.radar || {}, models = R.models || {}, order = (R.order || []).filter(k => models[k]);
     const site = (meta.board && meta.board.nexrad) || ("K" + ((meta.board && meta.board.wfo) || "MLB"));
-    if (radTab !== "live" && !models[radTab]) radTab = "live";
+    const qpe = meta.board && meta.board.qpe && meta.board.qpe.accums && meta.board.qpe.order.length ? meta.board.qpe : null;
+    if (radTab === "qpe" ? !qpe : (radTab !== "live" && !models[radTab])) radTab = "live";
+    if (qpe && !qpe.accums[qpeH]) qpeH = qpe.order[qpe.order.length - 1];
+    const qa = qpe && qpe.accums[qpeH];
     const m = models[radTab];
-    const key = [radTab, site, R.built, m && m.init].join("|");
+    const key = [radTab, site, liveSrc, meta.board.live_url, R.built, m && m.init, radTab === "qpe" && qpeH, radTab === "qpe" && qa.valid].join("|");
     if (key === radKey && $("rad-img")) return;
     const keepPlaying = !!radL.timer || !radKey;
     radL.stop(); clearInterval(liveTimer); radKey = key;
     const tabs = `<span class="r seg"><button aria-pressed="${radTab === "live"}" data-rt="live">${esc(site)} live</button>${
+      qpe ? `<button aria-pressed="${radTab === "qpe"}" data-rt="qpe">MRMS rain totals</button>` : ""}${
       order.map(k => `<button aria-pressed="${k === radTab}" data-rt="${k}">${esc(models[k].label)} forecast</button>`).join("")}</span>`;
-    if (radTab === "live") {
+    if (radTab === "qpe") {
+      const hits = Object.entries(qa.sites || {}).filter(([, v]) => v != null && v >= 0.01).sort((a, b) => b[1] - a[1]);
+      const end = qa.valid ? new Date(qa.valid) : null;
+      const start = end ? new Date(end - qpeH * 3600e3) : null;
+      $("c-radar").innerHTML = `<h2>Radar ${tabs}</h2>
+        <div class="seg" style="margin:0 0 6px">${qpe.order.map(h => `<button aria-pressed="${h === qpeH}" data-qh="${h}">Last ${h} h</button>`).join("")}</div>
+        <img class="media" id="rad-img" alt="MRMS ${qpeH}-hour rainfall" src="${qa.img}?v=${encodeURIComponent(qa.valid || "")}">
+        <p class="note">MRMS multi-sensor rainfall (Pass 1, radar + gauges), ${qpeH} h ending
+          ${end ? fmtLocal(qa.valid) + " (" + fmtUTC(start.toISOString()).replace(/^\w+,? /, "") + "–" + fmtUTC(qa.valid).replace(/^\w+,? /, "") + ")" : "latest"}; WPC color scale, refreshed every 30 min.
+          ${hits.length ? "Sites: " + hits.slice(0, 6).map(([n, v]) => `${esc(n)} ${v.toFixed(2)}″`).join(" · ") : "No measurable rain at the board sites."}</p>`;
+      $("c-radar").querySelectorAll("[data-qh]").forEach(x => x.onclick = () => { qpeH = x.dataset.qh; setPref("qpeHours", qpeH); drawRadar(); });
+    } else if (radTab === "live" && meta.board.live_url && liveSrc === "page") {
+      const url = meta.board.live_url, name = meta.board.live_name || new URL(url).hostname;
+      $("c-radar").innerHTML = `<h2>Radar ${tabs}</h2>
+        <iframe class="media" id="rad-frame" src="${esc(url)}" title="${esc(name)} ${esc(site)} radar loop" style="border:0;display:block"></iframe>
+        <p class="note">Live ${esc(site)} radar loop from ${esc(name)}, reloaded every 10 minutes.
+          <a href="${esc(url)}" target="_blank" rel="noreferrer">Open full page</a> ·
+          <a href="#" id="live-nws">Show the NWS loop instead</a></p>`;
+      liveTimer = setInterval(() => { const f = $("rad-frame"); if (f && radTab === "live") f.src = url; }, 600000);
+      $("live-nws").onclick = (e) => { e.preventDefault(); liveSrc = "nws"; setPref("liveSrc", "nws"); radKey = ""; drawRadar(); };
+    } else if (radTab === "live") {
       const base = `https://radar.weather.gov/ridge/standard/${site}`;
       const stamp = () => Math.floor(Date.now() / 120000);
       $("c-radar").innerHTML = `<h2>Radar ${tabs}</h2>
         <img class="media" id="rad-img" alt="${esc(site)} radar loop" src="${base}_loop.gif?t=${stamp()}">
         <p class="note">Live ${esc(site)} base reflectivity loop from the NWS, refreshed every 2 minutes.
           <a href="https://radar.weather.gov/station/${site.toLowerCase()}/standard" target="_blank" rel="noreferrer">NWS radar page</a> ·
-          <a href="https://weather.cod.edu/satrad/nexrad/?parms=${site.slice(1)}-N0B-0-24-100-usa-rad" target="_blank" rel="noreferrer">COD NEXRAD</a></p>`;
+          <a href="https://weather.cod.edu/satrad/nexrad/?parms=${site.slice(1)}-N0B-0-24-100-usa-rad" target="_blank" rel="noreferrer">COD NEXRAD</a>${
+          meta.board.live_url ? ` · <a href="#" id="live-page">Show the ${esc(meta.board.live_name || "embedded")} loop</a>` : ""}</p>`;
+      if ($("live-page")) $("live-page").onclick = (e) => { e.preventDefault(); liveSrc = "page"; setPref("liveSrc", "page"); radKey = ""; drawRadar(); };
       const im = $("rad-img");
       im.onerror = () => { if (!im.dataset.fallback) { im.dataset.fallback = 1; im.src = `${base}_0.gif?t=${stamp()}`; } };
       liveTimer = setInterval(() => { const i = $("rad-img"); if (i && radTab === "live") { delete i.dataset.fallback; i.src = `${base}_loop.gif?t=${stamp()}`; } }, 120000);
@@ -627,7 +653,7 @@
       const m = await r.json();
       const sb = (m.board && m.board.sat && m.board.sat.bands) || {};
       const sk = Object.values(sb).map(x => ((x.frames || []).slice(-1)[0] || {}).url).join(",");
-      const key = [(m.board && m.board.built) || "", m.generated_utc, sk, (m.flash && m.flash.valid) || "", (m.radar && m.radar.built) || ""].join("|");
+      const key = [(m.board && m.board.built) || "", m.generated_utc, sk, (m.flash && m.flash.valid) || "", (m.radar && m.radar.built) || "", JSON.stringify(((m.board && m.board.qpe) || {}).order || []) + (((((m.board || {}).qpe || {}).accums || {})["1"] || {}).valid || "")].join("|");
       if (key === stamp) { if (meta && meta.board) drawHeader(meta.board); return; }
       meta = m; stamp = key;
       // don't yank text out from under someone mid-edit; redraw when they leave the field

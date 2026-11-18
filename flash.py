@@ -54,6 +54,9 @@ def main():
         sat = R.optional("satellite", B.satellite_block, R.BOARD_SAT_SECTOR)
         if sat:
             meta["board"]["sat"] = sat
+        qpe = R.optional("mrms qpe", B.mrms_qpe_block, R.OUT_DIR)     # new Pass 1 hour every run
+        if qpe:
+            meta["board"]["qpe"] = qpe
     meta["products"]["cases"] = R.publish_cases(R.OUT_DIR) > 0
     R.save_json(meta_p, meta, indent=1)
     print(f"[flash] site refreshed, FLASH valid {fl['valid']}")

@@ -104,15 +104,17 @@ def _pick(files, acc, tag):
 
 
 def _day_hours(files, cyc):
-    """Forecast hours ending Days 1-3: three back-to-back 24-h periods starting at the forecast time.
-    The portal's 24-h windows end 23-71 h after the cycle (f023, f029 ... f071), so only windows
-    measured from the cycle give a full Day 3 every run; 12Z-12Z days fit just 2 days from most
-    cycles. Day 1 ends at the first 24-h window ending >= 23 h out, then +24 h and +48 h."""
-    have = set(_hours(files, 24, "expected"))
-    first = min((f for f in have if f >= 23), default=None)
-    if first is None:
-        return []
-    return [f for f in (first, first + 24, first + 48) if f in have]
+    """Forecast hours ending Days 1-3: three back-to-back 24-h periods starting at about the forecast
+    time. The portal's 24-h windows end every 6 h (e.g. f021 or f023 onward), so Day 1 is the earliest
+    window ending >= 18 h out that has windows 24 and 48 h later; with fewer hours (some cycles stop
+    at f063) the earliest chain of two, or one, is returned."""
+    have = sorted(set(_hours(files, 24, "expected")))
+    starts = [f for f in have if f >= 18]
+    for n in (3, 2, 1):
+        for f in starts:
+            if all(f + 24 * k in have for k in range(n)):
+                return [f + 24 * k for k in range(n)]
+    return []
 
 
 def _decode_ppp(path):
@@ -214,22 +216,57 @@ def _exceedance(url, files, acc, fh, label):
     return res
 
 
+PPP_LOOKBACK_H = 12       # how far back to look for a cycle with all of Days 1-3, 48 h and 72 h
+
+
+def _cycle_listings(root, cyc):
+    listings = {}
+    for acc in (72, 48, 24):                      # 72 first: it's the one that goes missing
+        try:
+            listings[acc] = _ppp_listing(root, acc, cyc)
+        except Exception as e:
+            print(f"[ppp] {cyc:%d/%HZ} {acc} h listing failed: {e}")
+            if acc == 72:
+                return listings
+    return listings
+
+
+def _complete_cycle(latest, root):
+    """The newest cycle that has a full Day 1-3 chain plus matching 48 h and 72 h windows. The portal
+    updates hourly but not every cycle carries the 72-h products (e.g. the 09Z one stopped at f063
+    with no 72-h directory), so step back an hour at a time; fall back to the latest if none do."""
+    first = None
+    for k in range(PPP_LOOKBACK_H + 1):
+        cyc = latest - timedelta(hours=k)
+        L = _cycle_listings(root, cyc)
+        if first is None:
+            first = (cyc, L)
+        if 24 not in L or 48 not in L or 72 not in L:
+            continue
+        days = _day_hours(L[24][1], cyc)
+        if len(days) == 3 and days[1] in _hours(L[48][1], 48, "expected") and days[2] in _hours(L[72][1], 72, "expected"):
+            if k:
+                print(f"[ppp] latest cycle {latest:%d/%HZ} is missing Day 3 / 72 h; using {cyc:%d/%HZ}")
+            break
+    else:
+        print(f"[ppp] no complete cycle in the last {PPP_LOOKBACK_H} h; using {latest:%d/%HZ} as is")
+        cyc, L = first
+    for acc in PPP_ACCUMS:
+        if acc in L:
+            print(f"[ppp] {cyc:%d/%HZ} {acc} h directory: {len(L[acc][1])} files, expected-amount hours "
+                  f"{sorted(_hours(L[acc][1], acc, 'expected'))}")
+    return cyc, L
+
+
 def fetch_ppp():
     """Windows 'd1'..'d3' (consecutive 24-h days from the forecast time) and '48' / '72', which start when Day 1 starts and
     end when Day 2 / Day 3 end, so Day 1 + Day 2 covers exactly the 48-h window. (Only the
     expected amounts add up that way; 10th/90th percentiles of a sum are not sums of percentiles.)"""
-    cyc, root = ppp_latest_cycle()
-    if not cyc:
+    latest, root = ppp_latest_cycle()
+    if not latest:
         return None
+    cyc, listings = _complete_cycle(latest, root)
     out = {"cycle": cyc.isoformat(), "accums": {}}
-    listings = {}
-    for acc in PPP_ACCUMS:
-        try:
-            listings[acc] = _ppp_listing(root, acc, cyc)
-            print(f"[ppp] {acc} h directory: {len(listings[acc][1])} files, expected-amount hours "
-                  f"{sorted(_hours(listings[acc][1], acc, 'expected'))}")
-        except Exception as e:
-            print(f"[ppp] {acc} h listing failed: {e}")
 
     def window(acc, fh, label):
         url, files = listings[acc]
@@ -352,6 +389,71 @@ def plot_ppp(ppp, key, out_dir):
     plt.close(fig)
     R.quantize_png(os.path.join(out_dir, fname))
     return fname, panels
+
+
+# --------------------------------------------------------------------------- MRMS accumulated QPE (Pass 1)
+QPE_HOURS = [1, 3, 6, 12, 24]
+QPE_LATEST = "https://mrms.ncep.noaa.gov/2D/MultiSensor_QPE_{h:02d}H_Pass1/MRMS_MultiSensor_QPE_{h:02d}H_Pass1.latest.grib2.gz"
+QPE_NAME = "MRMS_MultiSensor_QPE_{h:02d}H_Pass1_00.00_{t:%Y%m%d-%H}0000.grib2.gz"
+QPE_URLS = ["https://mrms.ncep.noaa.gov/2D/MultiSensor_QPE_{h:02d}H_Pass1/" + QPE_NAME,
+            "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MultiSensor_QPE_{h:02d}H_Pass1_00.00/{t:%Y%m%d}/" + QPE_NAME]
+
+
+def _qpe_raw(h):
+    try:
+        return R.decode_mrms_grid(R.download_any([QPE_LATEST.format(h=h)], gunzip=True))
+    except Exception as e:
+        print(f"[qpe] {h} h latest file: {e}")
+    t = R.utcnow().replace(minute=0, second=0, microsecond=0)
+    for k in range(4):                                        # explicit names for the last few hours
+        try:
+            raw = R.decode_mrms_grid(R.download_any([u.format(h=h, t=t - timedelta(hours=k)) for u in QPE_URLS], gunzip=True))
+            raw["valid"] = raw.get("valid") or t - timedelta(hours=k)
+            return raw
+        except Exception:
+            continue
+    return None
+
+
+def _qpe_one(h, out_dir):
+    raw = _qpe_raw(h)
+    if raw is None:
+        return None
+    vals, lats, lons = R.raw_native(raw)
+    inch = vals * R.MM_TO_IN
+    valid = raw.get("valid")
+    sites = {}
+    for n, (la, lo, _) in board_sites().items():
+        v = R.raw_near_max(inch, raw, la, lo, 0.6)
+        sites[n] = R.r2(v) if v is not None else None
+    fig, ax = plt.subplots(figsize=(6.4, 6.6), subplot_kw={"projection": ccrs.PlateCarree()})
+    fig.subplots_adjust(left=0.02, right=0.98, bottom=0.17, top=0.9)
+    R.add_basemap(ax, labels=True)
+    cs = R.shade(ax, inch, kind="wpc", lats=lats, lons=lons)
+    _outline(ax, inch, {"lats": lats, "lons": lons})
+    R.annotate_max(ax, np.nan_to_num(inch), lats=lats, lons=lons)
+    R.colorbar(fig, cs, [0.06, 0.09, 0.88, 0.028], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
+    span = f"{valid - timedelta(hours=h):%HZ %a} to {valid:%HZ %a %d %b}" if valid else "latest"
+    fig.suptitle(f"MRMS {h}-h multi-sensor rainfall (Pass 1)\n{span}", fontsize=12.5, fontweight="bold", y=0.975)
+    fname = f"mrms_qpe{h:02d}h.png"
+    fig.savefig(os.path.join(out_dir, fname), dpi=170)
+    plt.close(fig)
+    R.quantize_png(os.path.join(out_dir, fname))
+    view = np.where(R.in_view(lats, lons), inch, np.nan)
+    mx = float(np.nanmax(view)) if np.isfinite(view).any() else 0.0
+    print(f"[qpe] {h} h: valid {valid}, max in view {mx:.2f} in")
+    return {"img": fname, "valid": valid.isoformat() if valid else None, "max_in": round(mx, 2), "sites": sites}
+
+
+def mrms_qpe_block(out_dir):
+    """Latest MRMS MultiSensor Pass 1 accumulations (1, 3, 6, 12, 24 h), each ending at the newest
+    top of the hour: {'order': ['1', ...], 'accums': {'1': {'img', 'valid', 'max_in', 'sites'}, ...}}."""
+    acc = {}
+    for h in QPE_HOURS:
+        a = R.optional(f"mrms qpe {h} h", _qpe_one, h, out_dir)
+        if a:
+            acc[str(h)] = a
+    return {"order": [str(h) for h in QPE_HOURS if str(h) in acc], "accums": acc} if acc else None
 
 
 # --------------------------------------------------------------------------- ERO
@@ -603,7 +705,8 @@ def ai_summary(afd_text, board):
 # --------------------------------------------------------------------------- build
 def build_board(out_dir, meta, wfo, afd_region="62"):
     """Fetch everything, draw ero.png / ppp_*.png, return the meta['board'] block."""
-    board = {"built": R.utcnow().isoformat(timespec="seconds"), "wfo": wfo, "images": {}, "nexrad": R.BOARD_NEXRAD}
+    board = {"built": R.utcnow().isoformat(timespec="seconds"), "wfo": wfo, "images": {}, "nexrad": R.BOARD_NEXRAD,
+             "live_url": R.BOARD_LIVE_URL, "live_name": R.BOARD_LIVE_NAME}
     ppp = R.optional("ppp fetch", fetch_ppp)
     ppp_sites = None
     if ppp:
@@ -634,6 +737,7 @@ def build_board(out_dir, meta, wfo, afd_region="62"):
                             link=f"https://forecast.weather.gov/product.php?site={wfo}&issuedby={wfo}&product=AFD")
     board["actions"] = build_actions(afd, ero_s, ppp_sites, meta)
     board["sat"] = R.optional("satellite", satellite_block, R.BOARD_SAT_SECTOR)
+    board["qpe"] = R.optional("mrms qpe", mrms_qpe_block, out_dir)
     prim = meta.get("primary_site") or next(iter(R.SITES))
     board["ppp_sites_primary"] = (ppp_sites or {}).get(prim)
     ai = ai_summary(afd_raw["text"] if afd_raw else None, board)
