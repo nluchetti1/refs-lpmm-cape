@@ -104,10 +104,11 @@ def _pick(files, acc, tag):
 
 
 def _day_hours(files, cyc):
-    """Forecast hours ending the Day 1-3 24-h periods. WPC days run 12Z to 12Z; Day 1 is the first
-    window ending at 12Z at least 12 h after the cycle (so it is mostly still ahead). Falls back to
-    00Z-ending windows if the directory has no 12Z ends."""
-    fh = sorted(f for f in _hours(files, 24, "expected") if f >= 12)
+    """Forecast hours ending the WPC Day 1-3 periods (12Z to 12Z, the same days as the ERO).
+    Day 1 is the window ending at the next 12Z, so in the evening it already started that
+    morning (the portal publishes windows that begin before the cycle). Up to three are
+    returned; falls back to 00Z-ending windows if the directory has no 12Z ends."""
+    fh = sorted(f for f in _hours(files, 24, "expected") if f >= 1)
     for hh in (12, 0):
         ends = [f for f in fh if (cyc + timedelta(hours=f)).hour == hh]
         if ends:
@@ -162,7 +163,9 @@ def _ppp_window(url, files, acc, picks, cyc, label):
     end = cyc + timedelta(hours=fh)
     for k, (v, _, u) in fields.items():
         print(f"[ppp]   {label} {k}: units {u!r} -> {unit}, domain max {np.nanmax(v):.2f} in")
-    w = {"fields": fields, "hours": acc, "start": (end - timedelta(hours=acc)).isoformat(), "end": end.isoformat()}
+    start = end - timedelta(hours=acc)
+    w = {"fields": fields, "hours": acc, "start": start.isoformat(), "end": end.isoformat(),
+         "past_h": max(0, int((cyc - start).total_seconds() // 3600))}
     w["exceed"] = R.optional(f"ppp exceedance {label}", _exceedance, url, files, acc, fh, label) or {}
     return w
 
@@ -213,33 +216,69 @@ def _exceedance(url, files, acc, fh, label):
 
 
 def fetch_ppp():
-    """Windows keyed '24', '48', '72' (accumulated from about now) and 'd1'..'d3' (WPC 12Z-12Z days)."""
+    """Windows 'd1'..'d3' (WPC 12Z-12Z days) and '48' / '72', which start when Day 1 starts and
+    end when Day 2 / Day 3 end, so Day 1 + Day 2 covers exactly the 48-h window. (Only the
+    expected amounts add up that way; 10th/90th percentiles of a sum are not sums of percentiles.)"""
     cyc, root = ppp_latest_cycle()
     if not cyc:
         return None
     out = {"cycle": cyc.isoformat(), "accums": {}}
+    listings = {}
     for acc in PPP_ACCUMS:
         try:
-            url, files = _ppp_listing(root, acc, cyc)
+            listings[acc] = _ppp_listing(root, acc, cyc)
+            print(f"[ppp] {acc} h directory: {len(listings[acc][1])} files, expected-amount hours "
+                  f"{sorted(_hours(listings[acc][1], acc, 'expected'))}")
         except Exception as e:
             print(f"[ppp] {acc} h listing failed: {e}")
+
+    def window(acc, fh, label):
+        url, files = listings[acc]
+        picks = {"expected": _hours(files, acc, "expected").get(fh)}
+        picks.update({k: _hours(files, acc, code).get(fh) for k, code in PPP_PRODUCTS.items()})
+        return _ppp_window(url, files, acc, picks, cyc, label)
+
+    days = _day_hours(listings[24][1], cyc) if 24 in listings else []
+    print(f"[ppp] day-ending hours {days}")
+    for d, fh in enumerate(days, 1):
+        w = window(24, fh, f"Day {d} (f{fh:03d})")
+        if w:
+            w["day"] = d
+            out["accums"][f"d{d}"] = w
+    for acc, nd in ((48, 2), (72, 3)):
+        if acc not in listings:
             continue
-        print(f"[ppp] {acc} h directory: {len(files)} files, expected-amount hours "
-              f"{sorted(_hours(files, acc, 'expected'))}")
-        picks = {"expected": _pick(files, acc, "expected")}
-        picks.update({k: _pick(files, acc, code) for k, code in PPP_PRODUCTS.items()})
-        w = _ppp_window(url, files, acc, picks, cyc, f"{acc} h")
+        have = _hours(listings[acc][1], acc, "expected")
+        target = days[nd - 1] if len(days) >= nd else None
+        if target in have:
+            w = window(acc, target, f"{acc} h = Days 1-{nd} (f{target:03d})")
+            if w:
+                w["days"] = nd
+        else:                                   # can't line up with the days: nearest window, flagged
+            fh = min(have, key=lambda f: (abs(f - acc), f)) if have else None
+            print(f"[ppp] {acc} h: no window ending with Day {nd} (f{target}); using f{fh}")
+            w = window(acc, fh, f"{acc} h (f{fh:03d})") if fh is not None else None
         if w:
             out["accums"][str(acc)] = w
-        if acc == 24:
-            for d, fh in enumerate(_day_hours(files, cyc), 1):
-                picks = {"expected": _hours(files, 24, "expected").get(fh)}
-                picks.update({k: _hours(files, 24, code).get(fh) for k, code in PPP_PRODUCTS.items()})
-                w = _ppp_window(url, files, 24, picks, cyc, f"Day {d} (f{fh:03d})")
-                if w:
-                    w["day"] = d
-                    out["accums"][f"d{d}"] = w
+    _check_sums(out["accums"])
     return out if out["accums"] else None
+
+
+def _check_sums(acc):
+    """Log how well Day 1 + Day 2 (+ Day 3) match the 48 / 72-h expected maps over the domain."""
+    for tot, parts in (("48", ["d1", "d2"]), ("72", ["d1", "d2", "d3"])):
+        if tot not in acc or not all(p in acc for p in parts) or not acc[tot].get("days"):
+            continue
+        try:
+            t = acc[tot]["fields"]["expected"][0]
+            s = sum(acc[p]["fields"]["expected"][0] for p in parts)
+            if t.shape != s.shape:
+                continue
+            d = np.abs(np.nan_to_num(t) - np.nan_to_num(s))
+            print(f"[ppp] check {tot} h vs {'+'.join(parts)} expected: max diff {np.nanmax(d):.2f} in, "
+                  f"mean {np.nanmean(d):.3f} in")
+        except Exception as e:
+            print(f"[ppp] check {tot}: {e}")
 
 
 def ppp_site_values(ppp):
@@ -259,11 +298,25 @@ def ppp_site_values(ppp):
     return sites
 
 
-PPP_ORDER = ["d1", "d2", "d3", "24", "48", "72"]
+PPP_ORDER = ["d1", "d2", "d3", "48", "72"]
+OUTLINE_LEVS = [7, 10, 15, 20]      # where WPC's orange / gold / yellow steps look alike on screen
+
+
+def _outline(ax, vals, crop):
+    """Thin labeled lines at the 7, 10, 15 and 20-inch steps so neighbouring colours are easy to tell apart."""
+    v = np.nan_to_num(vals)
+    levs = [l for l in OUTLINE_LEVS if np.nanmax(v) >= l]
+    if not levs:
+        return
+    cs = ax.contour(crop["lons"], crop["lats"], v, levels=levs, colors="#111111", linewidths=0.8,
+                    transform=ccrs.PlateCarree(), zorder=3)
+    ax.clabel(cs, fmt=lambda x: f'{x:g}"', fontsize=8, inline=True, inline_spacing=1, colors="#111111")
 
 
 def ppp_label(key, a):
-    return f"Day {a['day']} (24-h)" if a.get("day") else f"{a['hours']}-h total"
+    if a.get("day"):
+        return f"Day {a['day']} (24-h)"
+    return f"{a['hours']}-h total (Days 1-{a['days']})" if a.get("days") else f"{a['hours']}-h total"
 
 
 def plot_ppp(ppp, key, out_dir):
@@ -280,6 +333,7 @@ def plot_ppp(ppp, key, out_dir):
         vals, crop, _ = a["fields"][fk]
         R.add_basemap(ax, labels=(k == 0))
         cs = R.shade(ax, vals, kind="wpc", lats=crop["lats"], lons=crop["lons"])
+        _outline(ax, vals, crop)
         R.annotate_max(ax, np.nan_to_num(vals), lats=crop["lats"], lons=crop["lons"])
         ax.set_title(titles[fk], fontsize=12, fontweight="bold")
     R.colorbar(fig, cs, [0.1, 0.1, 0.8, 0.03], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
@@ -556,7 +610,8 @@ def build_board(out_dir, meta, wfo, afd_region="62"):
     if ppp:
         ppp_sites = ppp_site_values(ppp)
         board["ppp"] = {"cycle": ppp["cycle"],
-                        "windows": {k: {"start": v["start"], "end": v["end"], "label": ppp_label(k, v)}
+                        "windows": {k: {"start": v["start"], "end": v["end"], "label": ppp_label(k, v),
+                                        "past_h": v.get("past_h", 0), "aligned": bool(v.get("day") or v.get("days"))}
                                     for k, v in ppp["accums"].items()},
                         "order": [k for k in PPP_ORDER if k in ppp["accums"]]}
         board["ppp_sites"] = ppp_sites
