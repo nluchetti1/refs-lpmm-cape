@@ -366,7 +366,7 @@ def _tag(ax, text):
     """Bold, underlined period label in the panel's upper-right corner (e.g. "Day 2", "72 h total")."""
     t = text.replace(" ", "\\ ").replace("-", "\\text{-}")
     ax.text(0.975, 0.975, rf"$\underline{{\mathbf{{{t}}}}}$", transform=ax.transAxes, ha="right", va="top",
-            fontsize=15, color="#111111", zorder=20,
+            fontsize=13 if len(text) > 14 else 15, color="#111111", zorder=20,
             bbox=dict(boxstyle="round,pad=0.3", facecolor="#ffffff", edgecolor="#111111", linewidth=1.2, alpha=0.92))
 
 
@@ -382,8 +382,29 @@ def _panel_geo(axes):
     return out
 
 
+def _local_tz():
+    from zoneinfo import ZoneInfo
+    cfg = R.load_json(R.CONFIG_FILE, {}) if os.path.exists(R.CONFIG_FILE) else {}
+    return ZoneInfo(cfg.get("board", {}).get("timezone", "America/New_York"))
+
+
+def _part(t):
+    h = t.hour
+    return "morning" if 4 <= h < 11 else "afternoon" if 11 <= h < 16 else "evening" if 16 <= h < 21 else "night"
+
+
 def _period_tag(key, a):
-    return f"Day {a['day']}" if a.get("day") else f"{a['hours']} h total"
+    """Plain-language label from the window's local start/end, e.g. "Wednesday" for a 12Z-12Z day
+    (7 AM to 7 AM EST), "Fri evening to Sat evening" for a 00Z-00Z day, "Wednesday to Friday" or
+    "Wed evening to Sat evening" for the 72-h total."""
+    tz = _local_tz()
+    s = datetime.fromisoformat(a["start"]).astimezone(tz)
+    e = datetime.fromisoformat(a["end"]).astimezone(tz)
+    morning_start = _part(s) == "morning" and _part(e) == "morning"
+    if a.get("hours", 24) <= 24:
+        return f"{s:%A}" if morning_start else f"{s:%a} {_part(s)} to {e:%a} {_part(e)}"
+    last = e - timedelta(hours=12)                     # the last day the window covers
+    return f"{s:%A} to {last:%A}" if morning_start else f"{s:%a} {_part(s)} to {e:%a} {_part(e)}"
 
 
 def _draw_panel(ax, vals, crop, first, title, tag):
