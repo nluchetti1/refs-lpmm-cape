@@ -104,16 +104,15 @@ def _pick(files, acc, tag):
 
 
 def _day_hours(files, cyc):
-    """Forecast hours ending the WPC Day 1-3 periods (12Z to 12Z, the same days as the ERO).
-    Day 1 is the window ending at the next 12Z, so in the evening it already started that
-    morning (the portal publishes windows that begin before the cycle). Up to three are
-    returned; falls back to 00Z-ending windows if the directory has no 12Z ends."""
-    fh = sorted(f for f in _hours(files, 24, "expected") if f >= 1)
-    for hh in (12, 0):
-        ends = [f for f in fh if (cyc + timedelta(hours=f)).hour == hh]
-        if ends:
-            return ends[:3]
-    return []
+    """Forecast hours ending Days 1-3: three back-to-back 24-h periods starting at the forecast time.
+    The portal's 24-h windows end 23-71 h after the cycle (f023, f029 ... f071), so only windows
+    measured from the cycle give a full Day 3 every run; 12Z-12Z days fit just 2 days from most
+    cycles. Day 1 ends at the first 24-h window ending >= 23 h out, then +24 h and +48 h."""
+    have = set(_hours(files, 24, "expected"))
+    first = min((f for f in have if f >= 23), default=None)
+    if first is None:
+        return []
+    return [f for f in (first, first + 24, first + 48) if f in have]
 
 
 def _decode_ppp(path):
@@ -216,7 +215,7 @@ def _exceedance(url, files, acc, fh, label):
 
 
 def fetch_ppp():
-    """Windows 'd1'..'d3' (WPC 12Z-12Z days) and '48' / '72', which start when Day 1 starts and
+    """Windows 'd1'..'d3' (consecutive 24-h days from the forecast time) and '48' / '72', which start when Day 1 starts and
     end when Day 2 / Day 3 end, so Day 1 + Day 2 covers exactly the 48-h window. (Only the
     expected amounts add up that way; 10th/90th percentiles of a sum are not sums of percentiles.)"""
     cyc, root = ppp_latest_cycle()

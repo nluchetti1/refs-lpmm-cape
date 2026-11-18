@@ -445,7 +445,7 @@
   function perWhen(b, k) {
     const w = b.ppp && b.ppp.windows && b.ppp.windows[k];
     return w ? `${fmtUTC(w.start)} to ${fmtUTC(w.end, { day: "2-digit", month: "short" })}` +
-      (w.past_h ? ` (began ${w.past_h} h before this forecast)` : "") : "";
+      (w.past_h >= 3 ? ` (began ${w.past_h} h before this forecast)` : "") : "";
   }
   function setPer(k) { per = k; setPref("pppPeriod", k); drawTable(meta.board); drawPpp(meta.board); wire(); }
 
@@ -464,7 +464,7 @@
           <tr><th>Site</th><th>Low</th><th>Exp.</th><th>High</th><th class="grp">${days.map(d => "D" + d[1]).join("</th><th>")}</th>
             <th class="grp">D1</th><th>D2</th><th>D3</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
-      <p class="note">${PER_NAME[per] || per}: ${perWhen(b, per)}. Days run 12Z–12Z like the ERO${(((b.ppp && b.ppp.windows) || {})["48"] || {}).aligned ? "; 48 h and 72 h cover Days 1–2 and 1–3, so expected amounts add up" : ""}.
+      <p class="note">${PER_NAME[per] || per}: ${perWhen(b, per)}. Days are back-to-back 24-h periods from the forecast time (times above), not the ERO's 12Z–12Z days${(((b.ppp && b.ppp.windows) || {})["48"] || {}).aligned ? "; 48 h and 72 h cover Days 1–2 and 1–3, so expected amounts add up" : ""}.
         Low end: 9 in 10 chance of more; high end: 1 in 10 (these don't add across days).
         Click a site for the chance of each amount.
         ${b.ppp ? `PPP cycle ${fmtUTC(b.ppp.cycle, { day: "2-digit", month: "short" })}.` : "PPP unavailable this run."}</p>`;

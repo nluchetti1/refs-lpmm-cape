@@ -91,13 +91,33 @@ def find_init(model):
     return None, None
 
 
+# GRIB2 (discipline, category, number): composite reflectivity is NCEP-local 0/16/196 in HRRR but
+# may be the WMO code 0/16/5 in RRFS, which older ecCodes tables don't name "refc"
+_CODES = {(0, 16, 196): "refc", (0, 16, 5): "refc", (0, 3, 198): "mslp", (0, 3, 1): "mslp", (0, 3, 192): "mslp"}
+_seen_logged = set()
+
+
+def _field_key(msg):
+    k = {"refc": "refc", "mslma": "mslp", "prmsl": "mslp", "mslet": "mslp"}.get(msg.shortName.lower())
+    if k:
+        return k
+    try:
+        return _CODES.get((msg.discipline, msg.parameterCategory, msg.parameterNumber))
+    except Exception:
+        return None
+
+
 def read_frame(model, init, f):
     path = R.download_subset(_urls(model, init, f), lambda l: bool(_KEEP.search(l)))
-    out, crop = {}, None
+    out, crop, seen = {}, None, []
     try:
         with pygrib.open(path) as g:
             for msg in g:
-                key = {"refc": "refc", "mslma": "mslp", "prmsl": "mslp", "mslet": "mslp"}.get(msg.shortName.lower())
+                try:
+                    seen.append(f"{msg.shortName} {msg.discipline}/{msg.parameterCategory}/{msg.parameterNumber} {msg.typeOfLevel}")
+                except Exception:
+                    seen.append(str(msg)[:60])
+                key = _field_key(msg)
                 if key is None or key in out:
                     continue
                 if crop is None:
@@ -107,7 +127,7 @@ def read_frame(model, init, f):
     finally:
         os.remove(path)
     if "refc" not in out:
-        raise ValueError(f"{model} f{f:03d}: no REFC record")
+        raise ValueError(f"{model} f{f:03d}: no REFC record (decoded: {seen})")
     return out, crop
 
 
