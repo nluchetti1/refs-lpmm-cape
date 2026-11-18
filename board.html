@@ -498,33 +498,52 @@
     $("c-table").querySelectorAll("[data-site]").forEach(x => x.onclick = () => openPop(x.dataset.site, x));
   }
 
+  // two views: low / expected / high for one period, or the expected amount for Days 1-3 + 72 h side by side
+  let pppView = pref("pppView", "range");
   function drawPpp(b) {
     const v = encodeURIComponent(b.built);
-    const f = (b.images || {})["ppp_" + per];
-    $("c-ppp").innerHTML = `<h2>Low / expected / high-end rain <span class="r">${perTabs(b)}</span></h2>
-      ${f ? `<div class="pmap"><img src="${f}?v=${v}" alt="Low, expected and high-end QPF, ${PER_NAME[per] || per}">${pppMarks(b)}</div>` : empty("No PPP maps for this period this run.")}
-      <p class="note">${PER_NAME[per] || per}: ${perWhen(b, per)}. Click a site marker for its odds, or the map to zoom.
-        <a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS PPP</a></p>`;
-    $("c-ppp").querySelectorAll("[data-per]").forEach(x => x.onclick = () => setPer(x.dataset.per));
-    $("c-ppp").querySelectorAll("[data-site]").forEach(x => x.onclick = (e) => { e.stopPropagation(); openPop(x.dataset.site, x); });
+    const hasDays = !!(b.images || {}).ppp_days;
+    if (!hasDays) pppView = "range";
+    const views = hasDays ? `<span class="seg"><button aria-pressed="${pppView === "range"}" data-pv="range">Low / exp. / high</button><button aria-pressed="${pppView === "days"}" data-pv="days">Expected by day</button></span>` : "";
+    const card = $("c-ppp");
+    card.style.gridColumn = pppView === "days" ? "1 / -1" : "";          // 4 panels need the full width
+    if (pppView === "days") {
+      const keys = (b.ppp && b.ppp.days_keys) || [];
+      card.innerHTML = `<h2>Expected rain by day <span class="r">${views}</span></h2>
+        <div class="pmap"><img src="${b.images.ppp_days}?v=${v}" alt="Expected QPF for Days 1-3 and the 72-hour total">${pppMarks(b, "days", keys)}</div>
+        <p class="note">Official NWS expected amounts: ${keys.map(k => `${PER_NAME[k] || k} ${perWhen(b, k)}`).join("; ")}.
+          Click a site marker for its odds in that period, or the map to zoom.
+          <a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS PPP</a></p>`;
+    } else {
+      const f = (b.images || {})["ppp_" + per];
+      card.innerHTML = `<h2>Low / expected / high-end rain <span class="r">${views} ${perTabs(b)}</span></h2>
+        ${f ? `<div class="pmap"><img src="${f}?v=${v}" alt="Low, expected and high-end QPF, ${PER_NAME[per] || per}">${pppMarks(b, per)}</div>` : empty("No PPP maps for this period this run.")}
+        <p class="note">${PER_NAME[per] || per}: ${perWhen(b, per)}. Click a site marker for its odds, or the map to zoom.
+          <a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS PPP</a></p>`;
+    }
+    card.querySelectorAll("[data-per]").forEach(x => x.onclick = () => setPer(x.dataset.per));
+    card.querySelectorAll("[data-pv]").forEach(x => x.onclick = () => { pppView = x.dataset.pv; setPref("pppView", pppView); drawPpp(meta.board); });
+    card.querySelectorAll("[data-site]").forEach(x => x.onclick = (e) => { e.stopPropagation(); openPop(x.dataset.site, x, x.dataset.pper); });
   }
 
-  // clickable site markers over each map panel (positions written by board.py when it drew the image)
-  function pppMarks(b) {
-    const panels = (b.ppp_panels || {})[per], ll = b.site_ll || {};
+  // clickable site markers over each map panel (positions written by board.py when it drew the image);
+  // panelKeys gives each panel's period when the panels differ (the by-day view)
+  function pppMarks(b, key, panelKeys) {
+    const panels = (b.ppp_panels || {})[key], ll = b.site_ll || {};
     if (!panels) return "";
-    return panels.map(pn => Object.entries(ll).map(([n, [la, lo]]) => {
+    return panels.map((pn, i) => Object.entries(ll).map(([n, [la, lo]]) => {
       const [w, e, so, no] = pn.extent, [x0, y0, x1, y1] = pn.box;
       if (lo < w || lo > e || la < so || la > no) return "";
       const x = (x0 + (lo - w) / (e - w) * (x1 - x0)) * 100, y = (y0 + (no - la) / (no - so) * (y1 - y0)) * 100;
-      return `<button class="pmark" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" data-site="${esc(n)}" title="${esc(n)}" aria-label="${esc(n)} rainfall"></button>`;
+      const pp = panelKeys ? panelKeys[i] : key;
+      return `<button class="pmark" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" data-site="${esc(n)}" data-pper="${pp}" title="${esc(n)}" aria-label="${esc(n)} rainfall"></button>`;
     }).join("")).join("");
   }
 
   // ---------- site pop-up: low / expected / high and the chance of each amount, like the NWS portal
   let popSite = null, popPer = null;
-  function openPop(name, anchor) {
-    popSite = name; popPer = per;
+  function openPop(name, anchor, period) {
+    popSite = name; popPer = period || per;
     drawPop();
     const pop = $("pop"), r = anchor.getBoundingClientRect();
     pop.classList.add("open");

@@ -362,6 +362,40 @@ def ppp_label(key, a):
     return f"{a['hours']}-h total (Days 1-{a['days']})" if a.get("days") else f"{a['hours']}-h total"
 
 
+def _tag(ax, text):
+    """Bold, underlined period label in the panel's upper-right corner (e.g. "Day 2", "72 h total")."""
+    t = text.replace(" ", "\\ ").replace("-", "\\text{-}")
+    ax.text(0.975, 0.975, rf"$\underline{{\mathbf{{{t}}}}}$", transform=ax.transAxes, ha="right", va="top",
+            fontsize=15, color="#111111", zorder=20,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="#ffffff", edgecolor="#111111", linewidth=1.2, alpha=0.92))
+
+
+def _panel_geo(axes):
+    """Where each map panel sits in the saved image (fractions, top-left origin) so the board can put
+    clickable site markers over it."""
+    out = []
+    for ax in axes:
+        b = ax.get_position()
+        x0, x1, y0, y1 = ax.get_extent(crs=ccrs.PlateCarree())
+        out.append({"box": [round(b.x0, 5), round(1 - b.y1, 5), round(b.x1, 5), round(1 - b.y0, 5)],
+                    "extent": [round(x0, 4), round(x1, 4), round(y0, 4), round(y1, 4)]})
+    return out
+
+
+def _period_tag(key, a):
+    return f"Day {a['day']}" if a.get("day") else f"{a['hours']} h total"
+
+
+def _draw_panel(ax, vals, crop, first, title, tag):
+    R.add_basemap(ax, labels=first)
+    cs = R.shade(ax, vals, kind="wpc", lats=crop["lats"], lons=crop["lons"])
+    _outline(ax, vals, crop)
+    R.annotate_max(ax, np.nan_to_num(vals), lats=crop["lats"], lons=crop["lons"])
+    ax.set_title(title, fontsize=12, fontweight="bold")
+    _tag(ax, tag)
+    return cs
+
+
 def plot_ppp(ppp, key, out_dir):
     a = ppp["accums"].get(key)
     if not a:
@@ -374,28 +408,42 @@ def plot_ppp(ppp, key, out_dir):
     cs = None
     for k, (fk, ax) in enumerate(zip(order, axes[0])):
         vals, crop, _ = a["fields"][fk]
-        R.add_basemap(ax, labels=(k == 0))
-        cs = R.shade(ax, vals, kind="wpc", lats=crop["lats"], lons=crop["lons"])
-        _outline(ax, vals, crop)
-        R.annotate_max(ax, np.nan_to_num(vals), lats=crop["lats"], lons=crop["lons"])
-        ax.set_title(titles[fk], fontsize=12, fontweight="bold")
+        cs = _draw_panel(ax, vals, crop, k == 0, titles[fk], _period_tag(key, a))
     R.colorbar(fig, cs, [0.1, 0.1, 0.8, 0.03], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
     s, e = datetime.fromisoformat(a["start"]), datetime.fromisoformat(a["end"])
     fig.suptitle(f"NWS Probabilistic Precipitation Portal, {ppp_label(key, a)} QPF\n{s:%HZ %a %d %b} to {e:%HZ %a %d %b}"
                  f"  ·  cycle {datetime.fromisoformat(ppp['cycle']):%d/%HZ}", fontsize=14, fontweight="bold", y=0.97)
     fname = f"ppp_{key}.png" if key.startswith("d") else f"ppp_{key}h.png"
     fig.savefig(os.path.join(out_dir, fname), dpi=200)
-    # where each map panel sits in the image (fractions, top-left origin) so the board can put
-    # clickable site markers over it
-    panels = []
-    for ax in axes[0]:
-        b = ax.get_position()
-        x0, x1, y0, y1 = ax.get_extent(crs=ccrs.PlateCarree())
-        panels.append({"box": [round(b.x0, 5), round(1 - b.y1, 5), round(b.x1, 5), round(1 - b.y0, 5)],
-                       "extent": [round(x0, 4), round(x1, 4), round(y0, 4), round(y1, 4)]})
+    panels = _panel_geo(axes[0])
     plt.close(fig)
     R.quantize_png(os.path.join(out_dir, fname))
     return fname, panels
+
+
+def plot_ppp_days(ppp, out_dir):
+    """Expected (official NWS) amount for Day 1, Day 2, Day 3 and the 72-h total, side by side."""
+    keys = [k for k in ("d1", "d2", "d3", "72") if "expected" in ppp["accums"].get(k, {}).get("fields", {})]
+    if len(keys) < 2:
+        return None
+    fig, axes = plt.subplots(1, len(keys), figsize=(5.0 * len(keys), 6.6), subplot_kw={"projection": ccrs.PlateCarree()},
+                             squeeze=False)
+    fig.subplots_adjust(left=0.015, right=0.985, bottom=0.2, top=0.84, wspace=0.04)
+    cs = None
+    for k, (key, ax) in enumerate(zip(keys, axes[0])):
+        a = ppp["accums"][key]
+        vals, crop, _ = a["fields"]["expected"]
+        s, e = datetime.fromisoformat(a["start"]), datetime.fromisoformat(a["end"])
+        cs = _draw_panel(ax, vals, crop, k == 0, f"{s:%HZ %a} to {e:%HZ %a %d %b}", _period_tag(key, a))
+    R.colorbar(fig, cs, [0.1, 0.1, 0.8, 0.03], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
+    fig.suptitle(f"NWS Probabilistic Precipitation Portal, expected (official NWS) QPF by day\n"
+                 f"cycle {datetime.fromisoformat(ppp['cycle']):%d/%HZ}", fontsize=14, fontweight="bold", y=0.97)
+    fname = "ppp_days_expected.png"
+    fig.savefig(os.path.join(out_dir, fname), dpi=190)
+    panels = _panel_geo(axes[0])
+    plt.close(fig)
+    R.quantize_png(os.path.join(out_dir, fname))
+    return fname, panels, keys
 
 
 # --------------------------------------------------------------------------- MRMS accumulated QPE (Pass 1)
@@ -729,6 +777,11 @@ def build_board(out_dir, meta, wfo, afd_region="62"):
             if got:
                 board["images"][f"ppp_{key}"] = got[0]
                 board.setdefault("ppp_panels", {})[key] = got[1]
+        got = R.optional("ppp days plot", plot_ppp_days, ppp, out_dir)
+        if got:
+            board["images"]["ppp_days"] = got[0]
+            board.setdefault("ppp_panels", {})["days"] = got[1]
+            board["ppp"]["days_keys"] = got[2]
         board["site_ll"] = {n: [round(la, 4), round(lo, 4)] for n, (la, lo, _) in board_sites().items()}
     ero = R.optional("ero fetch", fetch_ero) or {}
     ero_s = R.optional("ero summary", ero_summary, ero) if ero else None
