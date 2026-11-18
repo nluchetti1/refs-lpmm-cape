@@ -195,6 +195,85 @@
     "timezone": "America/New_York",
     "nexrad": "KMLB",
     "live_radar_url": "https://weather.sfwmd.gov/sfwmd/common/images/weather/webplots/radlooper.html?region=KMLB",
-    "live_radar_name": "SFWMD"
+    "live_radar_name": "SFWMD",
+    "map_places": [
+      [
+        "KSC (NASA)",
+        28.585,
+        -80.651,
+        0.32,
+        0.28
+      ],
+      [
+        "CCSFS",
+        28.49,
+        -80.575,
+        0.02,
+        0.42
+      ],
+      [
+        "Patrick SFB",
+        28.235,
+        -80.61,
+        -0.12,
+        0.4
+      ],
+      [
+        "Titusville",
+        28.612,
+        -80.808,
+        0.0,
+        -0.05
+      ],
+      [
+        "Cocoa",
+        28.386,
+        -80.742,
+        0.0,
+        -0.05
+      ],
+      [
+        "Melbourne",
+        28.084,
+        -80.608,
+        0.05,
+        -0.06
+      ],
+      [
+        "Palm Bay",
+        27.998,
+        -80.672,
+        -0.08,
+        -0.06
+      ],
+      [
+        "Vero Beach",
+        27.639,
+        -80.398,
+        0.0,
+        -0.05
+      ],
+      [
+        "Orlando",
+        28.538,
+        -81.379,
+        0.0,
+        -0.05
+      ],
+      [
+        "Daytona Beach",
+        29.211,
+        -81.023,
+        0.0,
+        -0.05
+      ],
+      [
+        "Sanford",
+        28.8,
+        -81.27,
+        0.0,
+        -0.05
+      ]
+    ]
   }
 }
