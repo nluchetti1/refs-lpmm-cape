@@ -279,10 +279,10 @@ def plot_ppp(ppp, key, out_dir):
     for k, (fk, ax) in enumerate(zip(order, axes[0])):
         vals, crop, _ = a["fields"][fk]
         R.add_basemap(ax, labels=(k == 0))
-        cs = R.shade(ax, vals, lats=crop["lats"], lons=crop["lons"])
+        cs = R.shade(ax, vals, kind="wpc", lats=crop["lats"], lons=crop["lons"])
         R.annotate_max(ax, np.nan_to_num(vals), lats=crop["lats"], lons=crop["lons"])
         ax.set_title(titles[fk], fontsize=12, fontweight="bold")
-    R.colorbar(fig, cs, [0.18, 0.1, 0.64, 0.03], "Precipitation (in)", R.CLEVS)
+    R.colorbar(fig, cs, [0.1, 0.1, 0.8, 0.03], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
     s, e = datetime.fromisoformat(a["start"]), datetime.fromisoformat(a["end"])
     fig.suptitle(f"NWS Probabilistic Precipitation Portal, {ppp_label(key, a)} QPF\n{s:%HZ %a %d %b} to {e:%HZ %a %d %b}"
                  f"  ·  cycle {datetime.fromisoformat(ppp['cycle']):%d/%HZ}", fontsize=14, fontweight="bold", y=0.97)

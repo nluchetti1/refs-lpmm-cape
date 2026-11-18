@@ -316,6 +316,14 @@ CMAP = mcolors.ListedColormap(CMAP_COLORS, "precip")
 CMAP.set_over((0.85, 0.65, 0.47))
 NORM = mcolors.BoundaryNorm(CLEVS, CMAP.N)
 
+# WPC QPF scale (colors sampled from WPC's own QPF graphics), used for the NWS PPP maps
+WPC_CLEVS = [0.01, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0]
+WPC_CMAP = mcolors.ListedColormap(["#7fff00", "#00cd00", "#008b00", "#104e8b", "#1e90ff", "#00b2ee", "#00eeee",
+                                   "#8968cd", "#912cee", "#8b008b", "#8b0000", "#cd0000", "#ee4000", "#ff7f00",
+                                   "#cd8500", "#ffd700", "#ffff00"], "wpc_qpf")
+WPC_CMAP.set_over("#ffaeb9")
+WPC_NORM = mcolors.BoundaryNorm(WPC_CLEVS, WPC_CMAP.N)
+
 PLEVS = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 PCMAP = mcolors.ListedColormap(plt.get_cmap("plasma")(np.linspace(0.12, 1.0, len(PLEVS) - 1)), "prob")
 PNORM = mcolors.BoundaryNorm(PLEVS, PCMAP.N)
@@ -1073,12 +1081,14 @@ def shade(ax, field, kind="qpf", lats=None, lons=None):
     field = np.nan_to_num(field)
     if kind == "qpf":
         data, lev, cm, nm, ext = np.ma.masked_less(field, CLEVS[0]), CLEVS, CMAP, NORM, "max"
+    elif kind == "wpc":
+        data, lev, cm, nm, ext = np.ma.masked_less(field, WPC_CLEVS[0]), WPC_CLEVS, WPC_CMAP, WPC_NORM, "max"
     elif kind == "prob":
         data, lev, cm, nm, ext = np.ma.masked_less(field, PLEVS[0]), PLEVS, PCMAP, PNORM, "neither"
     else:
         data, lev, cm, nm, ext = np.ma.masked_inside(field, -0.1, 0.1), DLEVS, DCMAP, DNORM, "both"
     return ax.contourf(lons, lats, data, lev, cmap=cm, norm=nm, extend=ext,
-                       alpha=0.92, transform=ccrs.PlateCarree(), zorder=2)
+                       alpha=1.0 if kind == "wpc" else 0.92, transform=ccrs.PlateCarree(), zorder=2)
 
 
 def colorbar(fig, cs, rect, label, ticks):
