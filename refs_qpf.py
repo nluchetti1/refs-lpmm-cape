@@ -1496,14 +1496,20 @@ def plot_ffg_frames(hourly, ffg_grid, init):
 # =============================================================================
 # 9. FORECAST PRODUCTS
 # =============================================================================
-def plot_trend(runs, valid_txt):
+def plot_trend(runs, valid_txt, part=None, fname="trend_48h.png"):
+    """Run-to-run trend of the same valid window. part=None: the full 48 h; part=(a, b): forecast
+    hours a-b of the latest run's window (e.g. (0, 24) or (24, 48)), the same valid hours in every run."""
+    n = runs[0]["data"].shape[0]
+    step = ACCUM_HOURS / n                                    # hours per stored slice (1 for hourly)
+    sl = slice(None) if part is None else slice(int(round(part[0] / step)), int(round(part[1] / step)))
+    hours = ACCUM_HOURS if part is None else part[1] - part[0]
     fig, axes = plt.subplots(1, 3, figsize=(16, 6.6), subplot_kw={"projection": ccrs.PlateCarree()})
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.2, top=0.84, wspace=0.04)
     cs = None
     for k, ax in enumerate(axes):
         add_basemap(ax, labels=(k == 0))
         if k < len(runs):
-            tot = runs[k]["data"].sum(axis=0)
+            tot = runs[k]["data"][sl].sum(axis=0)
             cs = shade(ax, tot)
             annotate_max(ax, tot)
             ax.set_title(f"{RUN_LABELS[k]}  ·  {fmt_init(runs[k]['init'])} init", fontsize=11,
@@ -1511,8 +1517,8 @@ def plot_trend(runs, valid_txt):
         else:
             ax.set_title(f"{RUN_LABELS[k]}  ·  unavailable", fontsize=11, color=MUTED, pad=6)
     colorbar(fig, cs, [0.18, 0.1, 0.64, 0.03], "Precipitation (in)", CLEVS)
-    fig.suptitle(f"REFS LPMM 48-h QPF, run-to-run trend\n{valid_txt}", fontsize=14, fontweight="bold", y=0.97)
-    savefig(fig, "trend_48h.png", 170)
+    fig.suptitle(f"REFS LPMM {hours}-h QPF, run-to-run trend\n{valid_txt}", fontsize=14, fontweight="bold", y=0.97)
+    savefig(fig, fname, 170)
 
 
 def plot_thresholds(runs, valid_txt):
@@ -2058,6 +2064,10 @@ def main():
     scores = optional("verification", verify_pending, regime_log) or load_json(SCORES_FILE, [])
 
     plot_trend(runs, valid_txt)
+    for a, b in ((0, 24), (24, 48)):                          # 24-h trends: first and second day of the window
+        t0, t1 = valid_start + timedelta(hours=a), valid_start + timedelta(hours=b)
+        optional(f"24-h trend {a}-{b}", plot_trend, runs, f"Valid {t0:%HZ %a %d %b} to {t1:%HZ %a %d %b %Y}",
+                 (a, b), f"trend_24h_{a:02d}.png")
     plot_thresholds(runs, valid_txt)
     frames = plot_loop(runs[0])
     eas_frames = optional("eas loop", plot_eas_loop, latest, eas) or {}

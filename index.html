@@ -245,6 +245,7 @@
         <button role="tab" aria-selected="true"  aria-controls="v-loop"   id="t-loop">6-h loop</button>
         <button role="tab" aria-selected="false" aria-controls="v-prob"   id="t-prob" data-needs="eas">Probability</button>
         <button role="tab" aria-selected="false" aria-controls="v-trend"  id="t-trend">48-h trend</button>
+        <button role="tab" aria-selected="false" aria-controls="v-trend24" id="t-trend24">24-h trend</button>
         <button role="tab" aria-selected="false" aria-controls="v-thresh" id="t-thresh">Thresholds</button>
         <button role="tab" aria-selected="false" aria-controls="v-avrg"   id="t-avrg" data-needs="avrg">LPMM vs AVRG</button>
         <button role="tab" aria-selected="false" aria-controls="v-ffri"   id="t-ffri" data-needs="ffri">Flash flood</button>
@@ -284,6 +285,13 @@
         </div>
       </section>
 
+      <section class="view" id="v-trend24" role="tabpanel" aria-labelledby="t-trend24" hidden>
+        <p class="note">Same 24-h valid window from the latest run and the two previous 6-hourly cycles. A
+          wetter or drier trend across panels is the signal; × marks each panel’s maximum.</p>
+        <div class="seg" id="trend24-seg"><button aria-pressed="true" data-t24="00">First 24 h</button><button aria-pressed="false" data-t24="24">Second 24 h</button></div>
+        <div class="figure"><img id="trend24-img" data-src="trend_24h_00.png" alt="24-hour LPMM, latest vs previous runs"></div>
+        <div class="fig-actions"><a id="trend24-dl" data-dl="trend_24h_00.png" download>Download PNG</a></div>
+      </section>
       <section class="view" id="v-trend" role="tabpanel" aria-labelledby="t-trend" hidden>
         <p class="note">Same 48-h valid window from the latest run and the two previous 6-hourly cycles. A wetter or drier trend across panels is the signal; × marks each panel’s maximum.</p>
         <div class="figure"><img data-src="trend_48h.png" alt="48-hour LPMM, latest vs previous runs"></div>
@@ -1032,6 +1040,11 @@
 
   function drawImages() {
     document.querySelectorAll("img[data-src]").forEach(img => img.src = img.dataset.src + "?v=" + stamp);
+    document.querySelectorAll("#trend24-seg [data-t24]").forEach(b => b.onclick = () => {
+      const f = `trend_24h_${b.dataset.t24}.png`, img = document.getElementById("trend24-img"), dl = document.getElementById("trend24-dl");
+      img.dataset.src = dl.dataset.dl = f; img.src = dl.href = f + "?v=" + stamp;
+      document.querySelectorAll("#trend24-seg [data-t24]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    });
     document.querySelectorAll("a[data-dl]").forEach(a => a.href = a.dataset.dl + "?v=" + stamp);
     lpmmLoop.set(meta.frames);
     drawEasSeg(); drawFfgrSeg(); drawFlashSeg();
