@@ -103,18 +103,25 @@ def _pick(files, acc, tag):
     return hits[min(hits, key=lambda f: (abs(f - acc), f))] if hits else None
 
 
-def _day_hours(files, cyc):
-    """Forecast hours ending Days 1-3: three back-to-back 24-h periods starting at about the forecast
-    time. The portal's 24-h windows end every 6 h (e.g. f021 or f023 onward), so Day 1 is the earliest
-    window ending >= 18 h out that has windows 24 and 48 h later; with fewer hours (some cycles stop
-    at f063) the earliest chain of two, or one, is returned."""
+def _day_hours(files, cyc, end72=None):
+    """Forecast hours ending Days 1-3: three back-to-back 24-h periods. The portal's 24-h windows end
+    every 6 h; when the 72-h total's end hour is known (end72) the days are chosen to end with it
+    (end72-48, end72-24, end72), so Days 1-3 add up to the 72-h total. Otherwise the earliest chain
+    starting >= 18 h out; fewer than three when the hours run out."""
     have = sorted(set(_hours(files, 24, "expected")))
+    if end72 is not None and all(end72 - 24 * k in have for k in range(3)):
+        return [end72 - 48, end72 - 24, end72]
     starts = [f for f in have if f >= 18]
     for n in (3, 2, 1):
         for f in starts:
             if all(f + 24 * k in have for k in range(n)):
                 return [f + 24 * k for k in range(n)]
     return []
+
+
+def _end72(L):
+    h = sorted(_hours(L[72][1], 72, "expected")) if 72 in L else []
+    return h[0] if h else None
 
 
 def _decode_ppp(path):
@@ -243,7 +250,7 @@ def _complete_cycle(latest, root):
             first = (cyc, L)
         if 24 not in L or 48 not in L or 72 not in L:
             continue
-        days = _day_hours(L[24][1], cyc)
+        days = _day_hours(L[24][1], cyc, _end72(L))
         if len(days) == 3 and days[1] in _hours(L[48][1], 48, "expected") and days[2] in _hours(L[72][1], 72, "expected"):
             if k:
                 print(f"[ppp] latest cycle {latest:%d/%HZ} is missing Day 3 / 72 h; using {cyc:%d/%HZ}")
@@ -274,7 +281,7 @@ def fetch_ppp():
         picks.update({k: _hours(files, acc, code).get(fh) for k, code in PPP_PRODUCTS.items()})
         return _ppp_window(url, files, acc, picks, cyc, label)
 
-    days = _day_hours(listings[24][1], cyc) if 24 in listings else []
+    days = _day_hours(listings[24][1], cyc, _end72(listings)) if 24 in listings else []
     print(f"[ppp] day-ending hours {days}")
     for d, fh in enumerate(days, 1):
         w = window(24, fh, f"Day {d} (f{fh:03d})")

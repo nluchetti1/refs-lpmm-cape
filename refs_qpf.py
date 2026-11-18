@@ -2128,4 +2128,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # board.py, fcst_radar.py and lookback.py do "import refs_qpf as R". Run as a script, this file is
+    # "__main__", so without this alias they would load a second, unconfigured copy (default sites,
+    # no board settings from site_config.json) instead of sharing this one.
+    sys.modules.setdefault("refs_qpf", sys.modules[__name__])
     main()
