@@ -358,8 +358,8 @@ def _outline(ax, vals, crop):
 
 def ppp_label(key, a):
     if a.get("day"):
-        return f"Day {a['day']} (24-h)"
-    return f"{a['hours']}-h total (Days 1-{a['days']})" if a.get("days") else f"{a['hours']}-h total"
+        return f"Day {a['day']} (24 hr)"
+    return f"{a['hours']} hr total (Days 1-{a['days']})" if a.get("days") else f"{a['hours']} hr total"
 
 
 def _tag(ax, text):
@@ -395,7 +395,7 @@ def _part(t):
 
 def _period_tag(key, a):
     """Plain-language label from the window's local start/end, e.g. "Wednesday" for a 12Z-12Z day
-    (7 AM to 7 AM EST), "Fri evening to Sat evening" for a 00Z-00Z day, "Wednesday to Friday" or
+    (7 AM to 7 AM EST), "Fri evening to Sat evening" for a 00Z-00Z day, "Wednesday through Saturday morning" or
     "Wed evening to Sat evening" for the 72-h total."""
     tz = _local_tz()
     s = datetime.fromisoformat(a["start"]).astimezone(tz)
@@ -403,16 +403,44 @@ def _period_tag(key, a):
     morning_start = _part(s) == "morning" and _part(e) == "morning"
     if a.get("hours", 24) <= 24:
         return f"{s:%A}" if morning_start else f"{s:%a} {_part(s)} to {e:%a} {_part(e)}"
-    last = e - timedelta(hours=12)                     # the last day the window covers
-    return f"{s:%A} to {last:%A}" if morning_start else f"{s:%a} {_part(s)} to {e:%a} {_part(e)}"
+    return f"{s:%A} through {e:%A} morning" if morning_start else f"{s:%a} {_part(s)} to {e:%a} {_part(e)}"
+
+
+def _places():
+    cfg = R.load_json(R.CONFIG_FILE, {}) if os.path.exists(R.CONFIG_FILE) else {}
+    return cfg.get("board", {}).get("map_places", [])
+
+
+def draw_places(ax):
+    """Named places from board.map_places: [name, lat, lon, dlat, dlon]. The label sits at
+    (lat + dlat, lon + dlon); offsets bigger than ~0.15 deg get a thin leader line to the point, which
+    keeps the base labels clear of the tightly packed pad markers."""
+    import matplotlib.patheffects as pe
+    pc = ccrs.PlateCarree()
+    line_fx = [pe.withStroke(linewidth=2.2, foreground="#000000")]
+    for p in _places():
+        name, la, lo = p[:3]
+        dla, dlo = (p[3], p[4]) if len(p) >= 5 else (0.04, 0.06)
+        left = dlo < 0
+        lead = abs(dla) + abs(dlo) > 0.15
+        # white on a dark box: readable over every colour on the WPC scale, yellow and gold included
+        ax.plot(lo, la, marker="o", ms=3.4, mfc="#ffffff", mec="#000000", mew=0.8, transform=pc, zorder=8)
+        ann = ax.annotate(name, xy=(lo, la), xytext=(lo + dlo, la + dla), xycoords=pc._as_mpl_transform(ax),
+                          textcoords=pc._as_mpl_transform(ax), fontsize=7.5, fontweight="bold" if lead else "normal",
+                          color="#ffffff", ha="right" if left else "left", va="center", zorder=8,
+                          bbox=dict(boxstyle="round,pad=0.18", fc="#0f1a24", ec="none", alpha=0.78),
+                          arrowprops=dict(arrowstyle="-", color="#ffffff", lw=0.8, shrinkA=0, shrinkB=2) if lead else None)
+        if lead and ann.arrow_patch is not None:
+            ann.arrow_patch.set_path_effects(line_fx)
 
 
 def _draw_panel(ax, vals, crop, first, title, tag):
-    R.add_basemap(ax, labels=first)
+    R.add_basemap(ax, labels=not _places() and first)
     cs = R.shade(ax, vals, kind="wpc", lats=crop["lats"], lons=crop["lons"])
     _outline(ax, vals, crop)
     R.annotate_max(ax, np.nan_to_num(vals), lats=crop["lats"], lons=crop["lons"])
     ax.set_title(title, fontsize=12, fontweight="bold")
+    draw_places(ax)
     _tag(ax, tag)
     return cs
 
@@ -432,7 +460,7 @@ def plot_ppp(ppp, key, out_dir):
         cs = _draw_panel(ax, vals, crop, k == 0, titles[fk], _period_tag(key, a))
     R.colorbar(fig, cs, [0.1, 0.1, 0.8, 0.03], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
     s, e = datetime.fromisoformat(a["start"]), datetime.fromisoformat(a["end"])
-    fig.suptitle(f"NWS Probabilistic Precipitation Portal, {ppp_label(key, a)} QPF\n{s:%HZ %a %d %b} to {e:%HZ %a %d %b}"
+    fig.suptitle(f"NWS Derived Probabilistic Precipitation, {ppp_label(key, a)} QPF\n{s:%HZ %a %d %b} to {e:%HZ %a %d %b}"
                  f"  ·  cycle {datetime.fromisoformat(ppp['cycle']):%d/%HZ}", fontsize=14, fontweight="bold", y=0.97)
     fname = f"ppp_{key}.png" if key.startswith("d") else f"ppp_{key}h.png"
     fig.savefig(os.path.join(out_dir, fname), dpi=200)
@@ -457,8 +485,7 @@ def plot_ppp_days(ppp, out_dir):
         s, e = datetime.fromisoformat(a["start"]), datetime.fromisoformat(a["end"])
         cs = _draw_panel(ax, vals, crop, k == 0, f"{s:%HZ %a} to {e:%HZ %a %d %b}", _period_tag(key, a))
     R.colorbar(fig, cs, [0.1, 0.1, 0.8, 0.03], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
-    fig.suptitle(f"NWS Probabilistic Precipitation Portal, expected (official NWS) QPF by day\n"
-                 f"cycle {datetime.fromisoformat(ppp['cycle']):%d/%HZ}", fontsize=14, fontweight="bold", y=0.97)
+    fig.suptitle("NWS Derived Expected Precipitation by Day", fontsize=15, fontweight="bold", y=0.95)
     fname = "ppp_days_expected.png"
     fig.savefig(os.path.join(out_dir, fname), dpi=190)
     panels = _panel_geo(axes[0])
@@ -504,8 +531,9 @@ def _qpe_one(h, out_dir):
         sites[n] = R.r2(v) if v is not None else None
     fig, ax = plt.subplots(figsize=(6.4, 6.6), subplot_kw={"projection": ccrs.PlateCarree()})
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.17, top=0.9)
-    R.add_basemap(ax, labels=True)
+    R.add_basemap(ax, labels=not _places())
     cs = R.shade(ax, inch, kind="wpc", lats=lats, lons=lons)
+    draw_places(ax)
     _outline(ax, inch, {"lats": lats, "lons": lons})
     R.annotate_max(ax, np.nan_to_num(inch), lats=lats, lons=lons)
     R.colorbar(fig, cs, [0.06, 0.09, 0.88, 0.028], "Precipitation (in), WPC color scale", R.WPC_CLEVS)
