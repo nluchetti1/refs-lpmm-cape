@@ -509,7 +509,7 @@ def plot_ppp_days(ppp, out_dir):
 
 
 # --------------------------------------------------------------------------- MRMS accumulated QPE (Pass 1)
-QPE_HOURS = [1, 3, 6, 12, 24]
+QPE_HOURS = [1, 3, 6, 12, 24, 48, 72]
 QPE_LATEST = "https://mrms.ncep.noaa.gov/2D/MultiSensor_QPE_{h:02d}H_Pass1/MRMS_MultiSensor_QPE_{h:02d}H_Pass1.latest.grib2.gz"
 QPE_NAME = "MRMS_MultiSensor_QPE_{h:02d}H_Pass1_00.00_{t:%Y%m%d-%H}0000.grib2.gz"
 QPE_URLS = ["https://mrms.ncep.noaa.gov/2D/MultiSensor_QPE_{h:02d}H_Pass1/" + QPE_NAME,
@@ -564,7 +564,7 @@ def _qpe_one(h, out_dir):
 
 
 def mrms_qpe_block(out_dir):
-    """Latest MRMS MultiSensor Pass 1 accumulations (1, 3, 6, 12, 24 h), each ending at the newest
+    """Latest MRMS MultiSensor Pass 1 accumulations (1, 3, 6, 12, 24, 48, 72 h), each ending at the newest
     top of the hour: {'order': ['1', ...], 'accums': {'1': {'img', 'valid', 'max_in', 'sites'}, ...}}."""
     acc = {}
     for h in QPE_HOURS:
