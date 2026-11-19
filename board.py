@@ -230,7 +230,9 @@ def _exceedance(url, files, acc, fh, label):
     return res
 
 
-PPP_LOOKBACK_H = 12       # how far back to look for a cycle with all of Days 1-3, 48 h and 72 h
+PPP_LOOKBACK_H = 3        # staleness limit: use a cycle with Days 1-3 / 72 h only if it is at most this many
+                          # hours older than the latest; otherwise use the latest without Day 3
+                          # (board.ppp_max_age_h in site_config.json overrides)
 
 
 def _cycle_listings(root, cyc):
@@ -249,8 +251,10 @@ def _complete_cycle(latest, root):
     """The newest cycle that has a full Day 1-3 chain plus matching 48 h and 72 h windows. The portal
     updates hourly but not every cycle carries the 72-h products (e.g. the 09Z one stopped at f063
     with no 72-h directory), so step back an hour at a time; fall back to the latest if none do."""
+    cfg = R.load_json(R.CONFIG_FILE, {}) if os.path.exists(R.CONFIG_FILE) else {}
+    lookback = int(cfg.get("board", {}).get("ppp_max_age_h", PPP_LOOKBACK_H))
     first = None
-    for k in range(PPP_LOOKBACK_H + 1):
+    for k in range(lookback + 1):
         cyc = latest - timedelta(hours=k)
         L = _cycle_listings(root, cyc)
         if first is None:
@@ -265,7 +269,7 @@ def _complete_cycle(latest, root):
     else:
         # no cycle with Day 3: use the latest as is. Its first listing stopped at the missing 72-h
         # folder, so list the 24 h and 48 h folders properly now.
-        print(f"[ppp] no complete cycle in the last {PPP_LOOKBACK_H} h; using {latest:%d/%HZ} as is (no Day 3)")
+        print(f"[ppp] no cycle with Day 3 / 72 h within {lookback} h of {latest:%d/%HZ}; using {latest:%d/%HZ} without Day 3")
         cyc, L = latest, {}
         for acc in PPP_ACCUMS:
             try:
