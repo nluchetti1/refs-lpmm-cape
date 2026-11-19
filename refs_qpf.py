@@ -186,6 +186,7 @@ BOARD_SAT_SECTOR = "se"             # NOAA STAR GOES-East sector for the board's
 BOARD_NEXRAD = "KMLB"               # NWS radar whose live loop the board shows
 BOARD_LIVE_URL = None               # optional web page embedded instead of the NWS loop (board.live_radar_url)
 BOARD_LIVE_NAME = None
+BOARD_GAUGE = None                  # optional rain-gauge site shown on the board (board.gauge_site)
 IEM_STATIONS = None                 # {"network": "NC_ASOS", "wfo": "RAH", "major": [...]}
 CONFIG_FILE = "site_config.json"
 STATIONS_CACHE = os.path.join("data", "stations.json")
@@ -255,7 +256,7 @@ def init_sites():
     """Apply site_config.json (once). Safe to call from lookback and request scripts."""
     global SITES, EXTENT, PRIMARY_SITE, TIMELINE_SITES, MAP_LABELS, THRESHOLDS, BRANDING
     global REGIME_POINT, REGIME_POINT_NAME, RAOB_STATIONS, RAOB_HOURS, IEM_STATIONS, _SITES_READY
-    global BOARD_WFO, BOARD_AFD_REGION, BOARD_EXCLUDE, BOARD_SAT_SECTOR, BOARD_NEXRAD, BOARD_LIVE_URL, BOARD_LIVE_NAME
+    global BOARD_WFO, BOARD_AFD_REGION, BOARD_EXCLUDE, BOARD_SAT_SECTOR, BOARD_NEXRAD, BOARD_LIVE_URL, BOARD_LIVE_NAME, BOARD_GAUGE
     if _SITES_READY:
         return
     _SITES_READY = True
@@ -281,6 +282,7 @@ def init_sites():
     BOARD_NEXRAD = cfg.get("board", {}).get("nexrad", BOARD_NEXRAD)
     BOARD_LIVE_URL = cfg.get("board", {}).get("live_radar_url")
     BOARD_LIVE_NAME = cfg.get("board", {}).get("live_radar_name")
+    BOARD_GAUGE = cfg.get("board", {}).get("gauge_site")
 
     SITES = {}
     SITE_LABELS.clear()

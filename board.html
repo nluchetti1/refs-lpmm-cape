@@ -121,6 +121,19 @@
   .loopbar .lab { font: 600 12px var(--display); color: var(--muted); min-width: 110px; text-align: right; white-space: nowrap; }
   .loopbar .btn { padding: 3px 8px; }
 
+  /* rain gauges (KSC/CCSFS tipping buckets) + the gauge site embedded beside them */
+  .gauge-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--gap); align-items: stretch; }
+  @media (max-width: 1100px) { .gauge-grid { grid-template-columns: minmax(0, 1fr); } }
+  .gstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 6px; }
+  .gstat { background: var(--ink); border-radius: 4px; padding: 5px 8px; }
+  .gstat b { display: block; font: 700 19px/1.15 var(--display); }
+  .gstat span { font-size: 11px; color: var(--muted); }
+  .glist { max-height: 470px; overflow-y: auto; padding-right: 4px; }
+  .glist table td { padding: 3px 5px; }
+  .glist .gbar { height: 5px; border-radius: 2px; margin-top: 2px; }
+  .glist .near { color: var(--muted); font-size: 11.5px; }
+  .glist .part { font: 600 10.5px var(--display); color: var(--warn); border: 1px solid var(--warn); border-radius: 3px; padding: 0 3px; margin-left: 4px; }
+  .gframe { width: 100%; height: 100%; min-height: 560px; border: 0; border-radius: 4px; background: #0b141c; display: block; }
   .pmap { position: relative; }
   .pmap img { width: 100%; }
   .pmark { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; padding: 0;
@@ -190,6 +203,7 @@
       <section class="card" id="c-radar"></section>
       <section class="card" id="c-sat"></section>
     </div>
+    <section class="card" id="c-gauge" hidden></section>
     <div class="row row-3">
       <section class="card" id="c-acts"></section>
       <section class="card" id="c-table"></section>
@@ -446,6 +460,86 @@
     $("c-radar").querySelectorAll("[data-rt]").forEach(x => x.onclick = () => { radTab = x.dataset.rt; setPref("radarTab", radTab); radKey = ""; drawRadar(); });
   }
 
+  // ---------- observed rain gauges: KSC/CCSFS tipping buckets from the gauge site's collector file
+  // (hourly inches, key = hour start UTC), totalled here; the site itself is embedded alongside
+  const KSC_RG = {1:[28.70363,-80.66857],2:[28.68755,-80.71951],4:[28.66433,-80.63913],5:[28.65818,-80.69936],6:[28.64397,-80.66639],7:[28.64238,-80.74762],8:[28.63888,-80.62254],9:[28.62142,-80.60797],10:[28.62412,-80.70151],11:[28.60576,-80.67387],12:[28.60226,-80.64094],13:[28.60205,-80.58942],14:[28.57852,-80.60859],15:[28.57676,-80.64310],16:[28.57530,-80.57311],17:[28.56205,-80.67003],18:[28.55518,-80.70212],19:[28.54948,-80.62039],20:[28.54170,-80.64443],21:[28.52575,-80.62210],22:[28.50693,-80.69359],24:[28.47859,-80.67487],25:[28.42474,-80.66380],26:[28.54938,-80.56699],27:[28.50308,-80.55812],28:[28.46024,-80.52722],29:[28.46256,-80.58356],30:[28.47511,-80.55842],31:[28.42033,-80.59116],32:[28.43688,-80.58010],33:[28.41532,-80.60582],34:[28.44982,-80.56350],35:[28.60205,-80.58942]};
+  const LANDMARKS = [["LC-39A",28.6083,-80.6041],["LC-39B",28.6272,-80.6208],["SLC-41",28.5833,-80.5829],["SLC-40",28.562,-80.5772],["SLC-37",28.5316,-80.565],
+    ["LC-36",28.4716,-80.5378],["SLC-46",28.4585,-80.5284],["Skid Strip",28.4676,-80.5666],["SLF",28.615,-80.6945],["VAB / LCC",28.5861,-80.6513],
+    ["Morrell Ops Ctr",28.4887,-80.5775],["KSC HQ",28.5244,-80.6508],["Banana River",28.43,-80.64],["Port Canaveral",28.41,-80.62]];
+  const WPC_L = [0.01, 0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 7, 10, 15, 20];
+  const WPC_C = ["#7fff00", "#00cd00", "#008b00", "#104e8b", "#1e90ff", "#00b2ee", "#00eeee", "#8968cd", "#912cee", "#8b008b", "#8b0000", "#cd0000", "#ee4000", "#ff7f00", "#cd8500", "#ffd700", "#ffff00", "#ffaeb9"];
+  const wpcColor = v => { let k = -1; WPC_L.forEach((l, i) => { if (v >= l) k = i; }); return k < 0 ? null : WPC_C[k]; };
+  const kmBetween = (a, b, c, d) => Math.hypot((d - b) * Math.cos((a + c) * Math.PI / 360) * 111.2, (c - a) * 111.2);
+  const nearest = (la, lo) => LANDMARKS.map(([n, a, b]) => [n, kmBetween(la, lo, a, b)]).sort((x, y) => x[1] - y[1])[0];
+  let gData = null, gErr = "", gHours = +pref("gaugeHours", "24"), gFrameUrl = "";
+  async function loadGauges() {
+    const gs = meta && meta.board && meta.board.gauge_site;
+    if (!gs) return;
+    try {
+      const r = await fetch(new URL(gs.json || "data/ksc_rain.json", gs.url).href + "?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      gData = await r.json(); gErr = "";
+    } catch (e) { gErr = e.message || String(e); }
+    drawGauges();
+  }
+  function gaugeTotals(hours) {
+    const H = (gData && gData.hourly) || {}, keys = Object.keys(H).sort();
+    if (!keys.length) return null;
+    const lastKey = keys[keys.length - 1], end = Date.parse(lastKey.replace("Z", ":00Z")) + 3600e3;
+    const start = end - hours * 3600e3;
+    const inWin = keys.filter(k => { const t = Date.parse(k.replace("Z", ":00Z")); return t >= start && t < end; });
+    const tot = {}, n = {};
+    inWin.forEach(k => Object.entries(H[k]).forEach(([g, v]) => { if (v == null) return; tot[g] = (tot[g] || 0) + v; n[g] = (n[g] || 0) + 1; }));
+    const rows = Object.keys(tot).map(g => ({ id: g, total: tot[g], hours: n[g], partial: n[g] < hours - 1, ll: KSC_RG[g] }))
+      .sort((a, b) => b.total - a.total);
+    // like the gauge site: a gauge reading 0.00" while a gauge within 5 km has 0.75"+ is suspect
+    rows.forEach(r => { r.suspect = r.total < 0.005 && !!r.ll && rows.some(o => o !== r && o.ll && o.total >= 0.75 &&
+      kmBetween(r.ll[0], r.ll[1], o.ll[0], o.ll[1]) <= 5); });
+    return { rows, start, end, have: inWin.length };
+  }
+  function drawGauges() {
+    const card = $("c-gauge"), gs = meta && meta.board && meta.board.gauge_site;
+    card.hidden = !gs;
+    if (!gs) return;
+    const frame = gs.url;
+    let left;
+    if (!gData) left = gErr ? empty(`Couldn't read the gauge file (${esc(gErr)}). The full site on the right still works.`) : empty("Loading gauges…");
+    else {
+      const t = gaugeTotals(gHours);
+      if (!t || !t.rows.length) left = empty("No gauge hours in the file yet.");
+      else {
+        const full = t.rows.filter(r => !r.partial && !r.suspect), top = full[0];
+        const ge = x => full.filter(r => r.total >= x).length;
+        const near = r => { if (!r.ll) return ""; const [n, d] = nearest(r.ll[0], r.ll[1]); return d < 1.5 ? `at ${n}` : `${d.toFixed(0)} km from ${n}`; };
+        const max = Math.max(0.01, ...t.rows.map(r => r.total));
+        const asOf = gData.updated ? fmtLocal(gData.updated) : "unknown";
+        left = `<div class="seg" style="margin:0 0 6px">${[6, 12, 24, 48, 72].map(h => `<button aria-pressed="${h === gHours}" data-gh="${h}">Last ${h} h</button>`).join("")}</div>
+          <div class="gstats">
+            <div class="gstat"><b>${top ? top.total.toFixed(2) + "″" : "—"}</b><span>Wettest: ${top ? "RG " + esc(top.id) + " " + esc(near(top)) : "n/a"}</span></div>
+            <div class="gstat"><b>${ge(2)}</b><span>gauges ≥ 2″ of ${full.length}</span></div>
+            <div class="gstat"><b>${ge(4)}</b><span>gauges ≥ 4″</span></div>
+          </div>
+          <div class="glist"><table><thead><tr><th>Gauge</th><th>Near</th><th>Total</th></tr></thead><tbody>
+          ${t.rows.map(r => { const c = wpcColor(r.total);
+            return `<tr><td>RG ${esc(r.id)}${r.partial ? '<span class="part" title="Missing hours in this period">partial</span>' : ""}${r.suspect ? '<span class="part" title="Reads zero while a gauge within 5 km has 0.75 in or more">check gauge</span>' : ""}</td>
+              <td class="near" style="text-align:left">${esc(near(r))}</td>
+              <td><strong>${r.total.toFixed(2)}″</strong><div class="gbar" style="width:${Math.round(r.total / max * 100)}%;background:${c || "var(--rule)"};margin-left:auto"></div></td></tr>`; }).join("")}
+          </tbody></table></div>
+          <p class="note">KSC / CCSFS tipping-bucket gauges, ${gHours} h ending ${fmtLocal(new Date(t.end).toISOString())}; collector file updated ${esc(asOf)}.
+            Bars use the WPC scale. "Partial" gauges are missing hours; "check gauge" reads zero while a gauge within 5 km has 0.75″+. Both are left out of the counts.</p>`;
+      }
+    }
+    if (!$("g-frame") || gFrameUrl !== frame) {
+      gFrameUrl = frame;
+      card.innerHTML = `<h2>Observed rain gauges <span class="r note" style="margin:0">
+          <a href="${esc(frame)}" target="_blank" rel="noreferrer">Open ${esc(gs.name || "gauge site")} ↗</a></span></h2>
+        <div class="gauge-grid"><div id="g-left"></div>
+          <iframe class="gframe" id="g-frame" src="${esc(frame)}" title="${esc(gs.name || "Rain gauge")} map" loading="lazy"></iframe></div>`;
+    }
+    $("g-left").innerHTML = left;
+    card.querySelectorAll("[data-gh]").forEach(x => x.onclick = () => { gHours = +x.dataset.gh; setPref("gaugeHours", gHours); drawGauges(); });
+  }
+
   // ---------- action items
   function drawActs(b) {
     const acts = (b.actions || []).map(a => actionItem(a, "act:" + hash(a.text), false));
@@ -590,6 +684,7 @@
       try { fn(b); } catch (err) { console.error(fn.name, err); }
     });
     try { drawRadar(); } catch (err) { console.error("drawRadar", err); }
+    try { drawGauges(); if (!gData && !gErr) loadGauges(); } catch (err) { console.error("drawGauges", err); }
     try { if (popSite) drawPop(); } catch (err) { closePop(); }
     wire();
   }
@@ -684,6 +779,7 @@
   }
   refresh();
   setInterval(refresh, 2 * 60 * 1000);
+  setInterval(() => { if (meta) loadGauges(); }, 10 * 60 * 1000);      // the collector updates every ~20 min
 })();
 </script>
 </body>

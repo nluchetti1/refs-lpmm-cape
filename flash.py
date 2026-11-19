@@ -57,6 +57,8 @@ def main():
         qpe = R.optional("mrms qpe", B.mrms_qpe_block, R.OUT_DIR)     # new Pass 1 hour every run
         if qpe:
             meta["board"]["qpe"] = qpe
+        # settings from site_config.json, so a config change shows up without a full board rebuild
+        meta["board"].update({"live_url": R.BOARD_LIVE_URL, "live_name": R.BOARD_LIVE_NAME, "gauge_site": R.BOARD_GAUGE})
     meta["products"]["cases"] = R.publish_cases(R.OUT_DIR) > 0
     R.save_json(meta_p, meta, indent=1)
     print(f"[flash] site refreshed, FLASH valid {fl['valid']}")

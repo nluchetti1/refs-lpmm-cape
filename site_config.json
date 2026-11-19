@@ -274,6 +274,11 @@
         0.0,
         -0.05
       ]
-    ]
+    ],
+    "gauge_site": {
+      "url": "https://cyclonecizek.github.io/SpaceCoast-Rainfall/",
+      "json": "data/ksc_rain.json",
+      "name": "Space Coast Rainfall"
+    }
   }
 }
