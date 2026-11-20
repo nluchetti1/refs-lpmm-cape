@@ -60,7 +60,7 @@ MIN_HOURS, MAX_HOURS = 3, 72
 EVENT_RADIUS_KM = 20.0
 CASE_THRESHOLDS = [1.0, 2.0, 4.0, 8.0]
 EVENT_COVERAGE = 0.05            # event threshold = highest one MRMS exceeds over >= 5% of the domain
-SUMMARY_VERSION = 4
+SUMMARY_VERSION = 5
 ECMWF_READER_VERSION = 3          # 2 = step-range aware; 3 = correct ECMWF longitudes (crop-cache fix)
 WORKERS = 8
 
@@ -75,6 +75,9 @@ MODELS = {
     "AIFS": dict(label="ECMWF AIFS", color="#f78fb3", every=6, fmax=360, step=lambda f: 6, leads=range(0, 121, 12)),
     "GEFS": dict(label="GEFS", color="#e0607e", every=6, fmax=240, step=lambda f: 3, leads=[0, 24, 48, 72]),
     "ENS":  dict(label="ECMWF ENS", color="#9fe0c8", every=12, fmax=360, step=lambda f: 3 if f <= 144 else 6, leads=[0, 24, 48, 72]),
+    # official NWS forecast and its archived high end; read by nws_rows(), not plan_inits()
+    "NWS":  dict(label="NWS official QPF", color="#ffffff", custom=True),
+    "NBM":  dict(label="NBM", color="#ffb86b", custom=True),
 }
 ENSEMBLES = ("GEFS", "ENS")
 STATS = ("mean", "p75", "max")
@@ -390,6 +393,117 @@ def gefs_ens(init, f0, f1):
     return np.clip(stack, 0, None), crop["lats"], crop["lons"]
 
 
+# ---------------------------------------------------------------- NWS official QPF + NBM high end
+# Both verified against the live AWS buckets (Nov 2026):
+#  * NDFD (the official NWS gridded forecast) is archived hourly back to 2020 at
+#    noaa-ndfd-pds/wmo/qpf/YYYY/MM/DD/. Header YIUZ98 = CONUS 2.5-km 6-h QPF, Days 1-3: 12 six-hour
+#    periods ending 00/06/12/18Z out to ~72 h, one file per hourly update (~4.5 MB, no .idx).
+#  * The NWS Probabilistic Precipitation Portal's own 10th/90th percentiles are not archived (WPC keeps
+#    ~4 h). The closest archived official percentile is the National Blend of Models: its qmd files
+#    (noaa-nbm-grib2-pds, back to at least 2024) carry APCP "90% level" for 6-h, 12-h and 24-h windows
+#    ending at each 6-h step, plus 0-2 day and 0-3 day totals.
+NDFD_BUCKET = "https://noaa-ndfd-pds.s3.amazonaws.com"
+NDFD_HEADER = "YIUZ98"
+NBM_URL = "https://noaa-nbm-grib2-pds.s3.amazonaws.com/blend.{d:%Y%m%d}/{d:%H}/qmd/blend.t{d:%H}z.qmd.f{f:03d}.co.grib2"
+NWS_LEADS = [0, 6, 12, 24, 36, 48]
+_NBM_ACC = re.compile(r":APCP:surface:(\d+)-(\d+) (hour|day) acc fcst:90% level")
+
+
+def _s3_keys(bucket, prefix):
+    keys, token = [], None
+    while True:
+        q = {"list-type": "2", "prefix": prefix}
+        if token:
+            q["continuation-token"] = token
+        r = R.SESSION.get(bucket + "/", params=q, timeout=60)
+        r.raise_for_status()
+        keys += re.findall(r"<Key>([^<]+)</Key>", r.text)
+        m = re.search(r"<NextContinuationToken>([^<]+)</NextContinuationToken>", r.text)
+        if not m:
+            return keys
+        token = m.group(1)
+
+
+_NDFD_LIST = {}
+
+
+def ndfd_issues(day):
+    """[(issue time, url)] of CONUS Days 1-3 QPF files for one UTC day, oldest first."""
+    if day not in _NDFD_LIST:
+        out = []
+        for k in _s3_keys(NDFD_BUCKET, f"wmo/qpf/{day:%Y/%m/%d}/"):
+            m = re.search(rf"/{NDFD_HEADER}_KWBN_(\d{{12}})$", k)
+            if m:
+                out.append((datetime.strptime(m.group(1), "%Y%m%d%H%M").replace(tzinfo=timezone.utc), f"{NDFD_BUCKET}/{k}"))
+        _NDFD_LIST[day] = sorted(out)
+    return _NDFD_LIST[day]
+
+
+def ndfd_window(start, end, lead):
+    """NWS official expected QPF for [start, end] from the last NDFD update at least `lead` h before
+    start: sum of its 6-h periods. Returns (inches, lats, lons, issue) with NaN where NDFD has no data."""
+    if (end - start).total_seconds() % (6 * 3600) or start.hour % 6:
+        raise ValueError("NDFD QPF is in 6-h periods ending 00/06/12/18Z; the window must start and end on them")
+    target = start - timedelta(hours=lead)
+    cands = [x for d in (target - timedelta(days=1), target) for x in ndfd_issues(d.replace(hour=0, minute=0))
+             if x[0] <= target]
+    if not cands:
+        raise FileNotFoundError(f"no NDFD QPF issued by {target:%d/%H%MZ}")
+    issue, url = max(cands)
+    path = R.download_any([url])
+    try:
+        tot, n, crop = None, 0, None
+        with pygrib.open(path) as g:
+            for m in g:
+                if not R._is_apcp(m):
+                    continue
+                # read the period's end and length from Section 4 directly: NDFD's first period starts
+                # before the issue time, which step-based keys (start/endStep) don't represent correctly
+                pend = datetime(m.yearOfEndOfOverallTimeInterval, m.monthOfEndOfOverallTimeInterval,
+                                m.dayOfEndOfOverallTimeInterval, m.hourOfEndOfOverallTimeInterval, tzinfo=timezone.utc)
+                if int(m.lengthOfTimeRange) != 6 or not (start < pend <= end):
+                    continue
+                if crop is None:
+                    crop = R.make_crop(m)
+                v = np.ma.filled(m.values.astype(np.float32), np.nan)[crop["rows"], crop["cols"]]
+                tot = v if tot is None else tot + v
+                n += 1
+    finally:
+        os.remove(path)
+    need = hours_between(start, end) // 6
+    if n != need:
+        raise ValueError(f"NDFD {issue:%d/%H%MZ} has {n} of the {need} six-hour periods")
+    return tot * R.MM_TO_IN, crop["lats"], crop["lons"], issue
+
+
+def nbm_p90_window(start, end, lead):
+    """NBM 90th-percentile QPF for exactly [start, end] from the 6-hourly run at least `lead` h before
+    start, when the run has that window as one product (6/12/24 h, or 0-2 / 0-3 day)."""
+    init = (start - timedelta(hours=lead)).replace(minute=0, second=0, microsecond=0)
+    init = init.replace(hour=init.hour // 6 * 6)
+    f0, f1 = hours_between(init, start), hours_between(init, end)
+    url = NBM_URL.format(d=init, f=f1)
+
+    def want(line):
+        m = _NBM_ACC.search(line)
+        if not m:
+            return False
+        k = 24 if m.group(3) == "day" else 1
+        return (int(m.group(1)) * k, int(m.group(2)) * k) == (f0, f1)
+    path = R.download_subset([url], want)
+    try:
+        with pygrib.open(path) as g:
+            msgs = [m for m in g if R._is_apcp(m)]
+        if not msgs:
+            raise ValueError(f"NBM {init:%d/%HZ} has no {f0}-{f1} h 90th percentile")
+        m = msgs[0]
+        crop = R.make_crop(m)
+        v = np.ma.filled(m.values.astype(np.float32), np.nan)[crop["rows"], crop["cols"]]
+    finally:
+        os.remove(path)
+    return v * R.MM_TO_IN, crop["lats"], crop["lons"], init
+
+
 def _safe(fn, *a):
     try:
         return fn(*a)
@@ -405,13 +519,14 @@ def ens_stats(stack):
 # ---------------------------------------------------------------- scoring
 def evaluate(field, lats, lons, raw, event_pt):
     obs = R.sample_mrms(raw, lats, lons)
-    mask = R.in_view(lats, lons) & np.isfinite(obs)
+    mask = R.in_view(lats, lons) & np.isfinite(obs) & np.isfinite(field)   # NDFD: no data far offshore
     f, o = field[mask], obs[mask]
     dx = R.grid_spacing_km(lats, lons)
     near = R.dist_km(lats, lons, *event_pt) <= max(EVENT_RADIUS_KM, 0.75 * dx)
     on = np.where(near & np.isfinite(obs), obs, np.nan)
-    row = {"domain_max": R.r2(np.where(R.in_view(lats, lons), field, -1).max()),
-           "near_event_max": R.r2(field[near].max()) if near.any() else None,
+    fin = np.where(np.isfinite(field), field, -1)
+    row = {"domain_max": R.r2(np.where(R.in_view(lats, lons), fin, -1).max()),
+           "near_event_max": R.r2(fin[near].max()) if near.any() and (fin[near] >= 0).any() else None,
            "obs_near_max": R.r2(np.nanmax(on)) if np.isfinite(on).any() else None,
            "bias_ratio": R.r2(f.sum() / o.sum()) if o.size and o.sum() > 0.01 * o.size else None,
            "grid_km": round(dx, 1)}
@@ -436,9 +551,9 @@ def _panel(ax, field, lats, lons, title, color, event_pt, labels=False):
     return cs
 
 
-def plot_grid(panels, out, suptitle, event_pt):
+def plot_grid(panels, out, suptitle, event_pt, cols=None):
     n = len(panels)
-    cols = 4 if n > 6 else 3
+    cols = cols or (4 if n > 6 else 3)
     rows = int(np.ceil(n / cols))
     fig, axes = plt.subplots(rows, cols, figsize=(4.6 * cols, 5.0 * rows + 0.9),
                              subplot_kw={"projection": ccrs.PlateCarree()}, squeeze=False)
@@ -462,16 +577,17 @@ def plot_dprog(rows, obs_max, obs_area_max, out, title, event_thr=1.0):
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(14, 5.6))
     fig.subplots_adjust(left=0.06, right=0.98, top=0.84, bottom=0.13, wspace=0.2)
     for key, m in MODELS.items():
-        variants = [("", "-")] if key not in ENSEMBLES else [(" mean", "-"), (" p75", "--"), (" max", ":")]
+        variants = ([(" p90", "--")] if key == "NBM" else [("", "-")]) if key not in ENSEMBLES \
+            else [(" mean", "-"), (" p75", "--"), (" max", ":")]
         for suffix, ls in variants:
             name = key + suffix.replace(" ", "_") if suffix else key
             rr = sorted([r for r in rows if r["model"] == name], key=lambda r: r["lead"])
             if not rr or key == "AVRG":
                 continue
             x = [r["lead"] for r in rr]
-            lab = m["label"] + suffix.replace("p75", "P75")
+            lab = m["label"] + suffix.replace("p75", "P75").replace("p90", "90th pct")
             a1.plot(x, [r["near_event_max"] for r in rr], ls, marker="o", ms=3.5, color=m["color"], label=lab)
-            if suffix in ("", " mean"):
+            if suffix in ("", " mean"):     # the high-end lines (max, p90) aren't placement forecasts
                 a2.plot(x, [r.get(ek) for r in rr], ls, marker="o", ms=3.5, color=m["color"], label=m["label"] + suffix)
     a1.axhline(obs_max, color=R.TEXT, ls="--", lw=1, label=f"MRMS max {obs_max:.2f}\"")
     a1.axhline(obs_area_max, color=R.MUTED, ls=":", lw=1, label=f"MRMS 25-km-mean max {obs_area_max:.2f}\"")
@@ -564,6 +680,8 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
             shortest[name] = (fld, la, lo, lead, init)
 
     for key in MODELS:
+        if MODELS[key].get("custom"):
+            continue
         for lead, init in plan_inits(key, start, end):
             f0, f1 = hours_between(init, start), hours_between(init, end)
             try:
@@ -595,6 +713,35 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
                     refs_panels.append((fld, la, lo, f"REFS LPMM  ·  {lead} h lead ({init:%d/%HZ})", MODELS[key]["color"]))
         if not any(r["model"].startswith(key) for r in rows) and not plan_inits(key, start, end):
             notes.append(f"{MODELS[key]['label']} ({skip_reason(key, start, end)})")
+
+    nws_rows = []                       # [(lead label, expected panel or None, p90 panel or None)]
+    seen_issue, seen_nbm = set(), set()
+    for want in NWS_LEADS:
+        exp = p90 = None
+        try:
+            fld, la, lo, issue = ndfd_window(start, end, want)
+            if issue not in seen_issue:
+                seen_issue.add(issue)
+                lead = int((start - issue).total_seconds() // 3600)
+                add("NWS", fld, la, lo, lead, issue)
+                exp = (fld, la, lo, f"NWS expected  ·  {lead} h lead ({issue:%d/%H%MZ})", MODELS["NWS"]["color"])
+        except Exception as e:
+            print(f"  ! NWS {want} h: {e}")
+        try:
+            fld, la, lo, init = nbm_p90_window(start, end, want)
+            if init not in seen_nbm:
+                seen_nbm.add(init)
+                lead = hours_between(init, start)
+                add("NBM_p90", fld, la, lo, lead, init)
+                p90 = (fld, la, lo, f"NBM 90th percentile  ·  {lead} h lead ({init:%d/%HZ})", MODELS["NBM"]["color"])
+        except Exception as e:
+            print(f"  ! NBM p90 {want} h: {e}")
+        if exp or p90:
+            nws_rows.append((want, exp, p90))
+    if not any(r["model"] == "NWS" for r in rows):
+        notes.append("NWS official QPF (window must start and end on 00/06/12/18Z, within ~72 h of an NDFD update)")
+    if not any(r["model"] == "NBM_p90" for r in rows):
+        notes.append("NBM 90th percentile (only for 6/12/24-h windows ending on a 6-h step, or 48/72 h from a run time)")
 
     flash = None
     try:
@@ -629,6 +776,13 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
                                  for k in ens_names],
                   os.path.join(out_dir, "ens.png"),
                   f"{title}\nGlobal ensembles (member mean, 75th percentile, max) vs MRMS, {win_txt}", event_pt)
+    if nws_rows:
+        blank = lambda t: (np.full_like(obs, np.nan), olat, olon, t, R.MUTED)
+        panels = []
+        for want, exp, p90 in nws_rows:
+            panels += [obs_panel, exp or blank("NWS expected: not available"), p90 or blank("NBM 90th pct: not available")]
+        plot_grid(panels, os.path.join(out_dir, "nws.png"),
+                  f"{title}\nNWS official expected QPF and NBM 90th-percentile high end vs MRMS, {win_txt}", event_pt, cols=3)
     if rows:
         plot_dprog(rows, obs_max, obs_area_max, os.path.join(out_dir, "dprog.png"),
                    f"{title}: forecast trend as the event approached", event_thr)
@@ -648,7 +802,7 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
         "rows": rows, "notes": notes, "flash": flash,
         "flash_products": {p: {"label": c["label"], "unit": c["unit"], "short": c["short"], "marks": c["marks"]}
                            for p, c in R.FLASH_PRODUCTS.items()},
-        "images": [f for f in ("dprog.png", "flash.png", "models.png", "ens.png", "refs.png") if os.path.exists(os.path.join(out_dir, f))],
+        "images": [f for f in ("dprog.png", "flash.png", "nws.png", "models.png", "ens.png", "refs.png") if os.path.exists(os.path.join(out_dir, f))],
     }
     case["ecmwf_reader"] = ECMWF_READER_VERSION
     case["summary"] = summarize(case)
@@ -715,7 +869,7 @@ def summarize(case):
     labels = {k: v["label"] for k, v in case.get("models", {}).items()}
     def label(name):
         k, _, st = name.partition("_")
-        return labels.get(k, k) + ({"mean": " mean", "p75": " P75", "max": " max"}.get(st, ""))
+        return labels.get(k, k) + ({"mean": " mean", "p75": " P75", "max": " max", "p90": " 90th pct"}.get(st, ""))
     def obs_peak(r):
         if r.get("obs_near_max") is not None:
             return r["obs_near_max"]
@@ -731,7 +885,7 @@ def summarize(case):
             if r.get("near_event_max") is not None and op:
                 if r["near_event_max"] / op >= 0.5:
                     signals.append((r["lead"], name)); break
-        if name.endswith("_max"):
+        if name.endswith("_max") or name.endswith("_p90"):     # high-end envelopes, not forecasts to rank
             continue
         r0 = rr[0]
         op = obs_peak(r0)
