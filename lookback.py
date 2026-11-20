@@ -1049,8 +1049,27 @@ if __name__ == "__main__":
         raise SystemExit(0)
     if not a.end:
         ap.error("--end is required unless --rebuild-stale")
-    end = parse_time(a.end)
-    start = parse_time(a.start) if a.start else end - timedelta(hours=a.hours or 24)
-    build_case(start=start, end=end, title=a.title or None, rebuild=a.rebuild)
+    # several windows in one run: comma-separated starts and ends, paired in order (one queue slot,
+    # so GitHub can't cancel the later ones while they wait); titles optional, also comma-separated
+    ends = [x.strip() for x in a.end.split(",") if x.strip()]
+    starts = [x.strip() for x in (a.start or "").split(",") if x.strip()]
+    titles = [x.strip() for x in a.title.split(",")] if "," in (a.title or "") else [a.title] * len(ends)
+    if starts and len(starts) != len(ends):
+        ap.error(f"{len(starts)} starts but {len(ends)} ends; give one end per start")
+    failed = []
+    for k, e in enumerate(ends):
+        end = parse_time(e)
+        start = parse_time(starts[k]) if starts else end - timedelta(hours=a.hours or 24)
+        title = titles[k] if k < len(titles) else ""
+        try:
+            build_case(start=start, end=end, title=title or None, rebuild=a.rebuild)
+        except Exception as ex:                        # keep going; one bad window shouldn't sink the rest
+            failed.append(f"{start:%Y%m%d%H}-{end:%Y%m%d%H}: {ex}")
+            print(f"[case] FAILED {failed[-1]}")
     if not a.no_publish:
         republish()
+    if failed:
+        # report but exit 0 when some cases did build, so the workflow still saves and publishes them
+        print("[case] some windows failed:\n  " + "\n  ".join(failed))
+        if len(failed) == len(ends):
+            raise SystemExit(1)
