@@ -753,6 +753,7 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
                 seen_issue.add(issue)
                 lead = int((start - issue).total_seconds() // 3600)
                 add("NWS", fld, la, lo, lead, issue)
+                print(f"  NWS {want} h: NDFD {issue:%d/%H%MZ} ok, max {np.nanmax(fld):.2f}\"")
                 exp = (fld, la, lo, f"NWS expected  ·  {lead} h lead ({issue:%d/%H%MZ})", MODELS["NWS"]["color"])
         except Exception as e:
             print(f"  ! NWS {want} h: {e}")
@@ -762,6 +763,7 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
                 seen_nbm.add(init)
                 lead = hours_between(init, start)
                 add("NBM_p90", fld, la, lo, lead, init)
+                print(f"  NBM p90 {want} h: {init:%d/%HZ} ok, max {np.nanmax(fld):.2f}\"")
                 p90 = (fld, la, lo, f"NBM 90th percentile  ·  {lead} h lead ({init:%d/%HZ})", MODELS["NBM"]["color"])
         except Exception as e:
             print(f"  ! NBM p90 {want} h: {e}")
