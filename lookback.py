@@ -118,6 +118,35 @@ def skip_reason(key, start, end):
     return f"no run reaches f{m['fmax']} with the window inside it; try 00/06/12/18Z edges"
 
 
+# ---------------------------------------------------------------- diagnostics
+def _mem_gb():
+    """(this process's resident memory, memory still available on the machine), GB."""
+    rss = avail = None
+    try:
+        with open("/proc/self/status") as f:
+            rss = next(int(l.split()[1]) for l in f if l.startswith("VmRSS:")) / 1e6
+        with open("/proc/meminfo") as f:
+            avail = next(int(l.split()[1]) for l in f if l.startswith("MemAvailable:")) / 1e6
+    except Exception:
+        pass
+    return rss, avail
+
+
+def start_memory_log(every_s=30):
+    """Print memory use every 30 s, so a run killed for running out of memory shows it in the log."""
+    import threading
+
+    def loop():
+        peak = 0.0
+        while True:
+            rss, avail = _mem_gb()
+            if rss is not None:
+                peak = max(peak, rss)
+                print(f"[mem] using {rss:.1f} GB (peak {peak:.1f}), {avail:.1f} GB free", flush=True)
+            time.sleep(every_s)
+    threading.Thread(target=loop, daemon=True).start()
+
+
 # ---------------------------------------------------------------- readers
 def refs_window(init, ptype, f0, f1):
     if init < REFS_AWS_START and R.utcnow() - init > timedelta(hours=40):
@@ -998,6 +1027,12 @@ def parse_time(s):
 
 
 if __name__ == "__main__":
+    import sys
+    sys.stdout.reconfigure(line_buffering=True)        # show progress live in the Actions log
+    sys.stderr.reconfigure(line_buffering=True)
+    sys.modules.setdefault("lookback" if __file__.endswith("lookback.py") else "request_case", sys.modules[__name__])
+    import lookback as _lb
+    _lb.start_memory_log()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--start", help="window start, YYYYMMDDHH UTC")
     ap.add_argument("--end", help="window end, YYYYMMDDHH UTC")
