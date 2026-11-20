@@ -864,7 +864,7 @@
       showCase(caseIndex.find(c => c.id === want) ? want : visible[0].id, !!want);
     }
   }
-  const STAT = { mean: "mean", p75: "P75", max: "max" };
+  const STAT = { mean: "mean", p75: "P75", max: "max", p90: "90th pct" };
   function modelInfo(c, name) {
     const [k, st] = name.split("_");
     const m = (c.models || {})[k] || { label: k, color: "var(--text)" };
@@ -942,6 +942,7 @@
       ${flashCard(c)}
       ${img("dprog.png", "Forecast trend by lead time")}
       ${img("flash.png", "MRMS FLASH maxima during the window")}
+      ${img("nws.png", "NWS official expected QPF and NBM 90th-percentile high end vs MRMS, by lead")}
       ${img("models.png", "Shortest-lead forecasts vs MRMS")}
       ${img("ens.png", "Global ensembles vs MRMS")}
       ${img("refs.png", "REFS LPMM at each lead vs MRMS")}
