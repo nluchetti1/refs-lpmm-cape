@@ -792,13 +792,18 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
     if refs_panels:
         plot_grid([obs_panel] + refs_panels, os.path.join(out_dir, "refs.png"),
                   f"{title}\nREFS LPMM by lead time vs MRMS, {win_txt}", event_pt)
-    det_names = [k for k in ("REFS", "AVRG", "HRRR", "RRFS", "GFS", "IFS", "AIFS") if k in shortest]
+    # NWS official expected and the NBM 90th-percentile high end go on the end of the same grid
+    det_names = [k for k in ("REFS", "AVRG", "HRRR", "RRFS", "GFS", "IFS", "AIFS", "NWS", "NBM_p90") if k in shortest]
+    def det_title(k):
+        lab = "NBM 90th pct" if k == "NBM_p90" else MODELS[k]["label"]
+        when = f"{shortest[k][4]:%d/%H%MZ}" if k == "NWS" else f"{shortest[k][4]:%d/%HZ}"
+        return f"{lab}  ·  {shortest[k][3]} h ({when})"
     if det_names:
-        plot_grid([obs_panel] + [(shortest[k][0], shortest[k][1], shortest[k][2],
-                                  f"{MODELS[k]['label']}  ·  {shortest[k][3]} h ({shortest[k][4]:%d/%HZ})", MODELS[k]["color"])
+        plot_grid([obs_panel] + [(shortest[k][0], shortest[k][1], shortest[k][2], det_title(k),
+                                  MODELS[k.split("_")[0]]["color"])
                                  for k in det_names],
                   os.path.join(out_dir, "models.png"),
-                  f"{title}\nShortest-lead deterministic and REFS forecasts vs MRMS, {win_txt}", event_pt)
+                  f"{title}\nShortest-lead forecasts, NWS official QPF and NBM 90th percentile vs MRMS, {win_txt}", event_pt)
     ens_names = [f"{e}_{s}" for e in ENSEMBLES for s in STATS if f"{e}_{s}" in shortest]
     if ens_names:
         plot_grid([obs_panel] + [(shortest[k][0], shortest[k][1], shortest[k][2],
@@ -807,13 +812,6 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
                                  for k in ens_names],
                   os.path.join(out_dir, "ens.png"),
                   f"{title}\nGlobal ensembles (member mean, 75th percentile, max) vs MRMS, {win_txt}", event_pt)
-    if nws_rows:
-        blank = lambda t: (np.full_like(obs, np.nan), olat, olon, t, R.MUTED)
-        panels = []
-        for want, exp, p90 in nws_rows:
-            panels += [obs_panel, exp or blank("NWS expected: not available"), p90 or blank("NBM 90th pct: not available")]
-        plot_grid(panels, os.path.join(out_dir, "nws.png"),
-                  f"{title}\nNWS official expected QPF and NBM 90th-percentile high end vs MRMS, {win_txt}", event_pt, cols=3)
     if rows:
         plot_dprog(rows, obs_max, obs_area_max, os.path.join(out_dir, "dprog.png"),
                    f"{title}: forecast trend as the event approached", event_thr)
@@ -833,7 +831,7 @@ def build_case(start=None, end=None, hours=None, title=None, auto=False, request
         "rows": rows, "notes": notes, "flash": flash,
         "flash_products": {p: {"label": c["label"], "unit": c["unit"], "short": c["short"], "marks": c["marks"]}
                            for p, c in R.FLASH_PRODUCTS.items()},
-        "images": [f for f in ("dprog.png", "flash.png", "nws.png", "models.png", "ens.png", "refs.png") if os.path.exists(os.path.join(out_dir, f))],
+        "images": [f for f in ("dprog.png", "flash.png", "models.png", "ens.png", "refs.png") if os.path.exists(os.path.join(out_dir, f))],
     }
     case["ecmwf_reader"] = ECMWF_READER_VERSION
     case["summary"] = summarize(case)
