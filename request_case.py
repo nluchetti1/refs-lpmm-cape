@@ -111,4 +111,10 @@ def main():
 
 
 if __name__ == "__main__":
+    import sys
+    sys.stdout.reconfigure(line_buffering=True)        # show progress live in the Actions log
+    sys.stderr.reconfigure(line_buffering=True)
+    sys.modules.setdefault("lookback" if __file__.endswith("lookback.py") else "request_case", sys.modules[__name__])
+    import lookback as _lb
+    _lb.start_memory_log()
     main()
