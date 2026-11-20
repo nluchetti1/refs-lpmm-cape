@@ -753,7 +753,10 @@ def decode_mrms_grid(path, extent=None, pad=1.0):
     c0, c1 = int((w - pad - lon0) / di), int(math.ceil((e + pad - lon0) / di))
     r0, r1 = max(r0, 0), min(r1, vals.shape[0] - 1)
     c0, c1 = max(c0, 0), min(c1, vals.shape[1] - 1)
-    sub = vals[r0:r1 + 1, c0:c1 + 1]
+    # .copy(): a slice is a view that keeps the whole ~100 MB CONUS grid alive; a 72-h look-back
+    # holds ~190 FLASH grids, which ran a 16 GB runner out of memory
+    sub = vals[r0:r1 + 1, c0:c1 + 1].copy()
+    del vals
     lat0c = lat0 + r0 * dj if jpos else lat0 - r0 * dj
     lon0c = lon0 + c0 * di
     return dict(vals=sub, lat0=lat0c, lon0=lon0c, dj=dj, di=di, jpos=jpos, valid=valid)
