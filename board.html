@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flood Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f1a24; --panel: #152331; --rule: #263848; --text: #e6edf2; --muted: #8ea3b3;
+    --accent: #4fd1e8; --good: #5fd38d; --warn: #f0b429; --bad: #ef6b6b; --edit: #b59cf5;
+    --display: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --gap: 10px;
+    --media-h: min(46vh, 500px);          /* tallest any radar / satellite image gets */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { background: var(--ink); color: var(--text); font: 13.5px/1.4 var(--body); }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 14px;
+         border-bottom: 1px solid var(--rule); background: #0c151d; position: sticky; top: 0; z-index: 5; }
+  .bar h1 { font: 700 22px/1.1 var(--display); margin: 0; }
+  .bar h1 .exp { font: 700 11px var(--display); color: #111; background: var(--warn); border-radius: 3px; padding: 2px 5px;
+                 vertical-align: 4px; margin-right: 7px; letter-spacing: .06em; }
+  .bar .meta { color: var(--muted); font-size: 12.5px; }
+  .bar .spacer { flex: 1; }
+  .btn { background: var(--panel); color: var(--text); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;
+         font: 600 12.5px var(--display); padding: 4px 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+  .btn:hover { border-color: var(--accent); }
+  .btn[aria-pressed="true"] { border-color: var(--edit); color: var(--edit); box-shadow: inset 0 -2px 0 var(--edit); }
+  .stale { color: var(--warn); }
+
+  main { padding: var(--gap) 14px 18px; display: grid; gap: var(--gap); }
+  .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--gap); }
+  .chip { background: var(--panel); border: 1px solid var(--rule); border-radius: 5px; padding: 5px 10px;
+          display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
+  .chip .k { grid-column: 1 / -1; font: 600 11px var(--display); color: var(--muted); letter-spacing: .02em; }
+  .chip .v { font: 700 19px/1.15 var(--display); white-space: nowrap; }
+  .chip .s { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+
+  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 5px; padding: 8px 10px; min-width: 0; }
+  .card h2 { font: 700 15px var(--display); margin: 0 0 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+  .card h2 .r { margin-left: auto; }
+  .note { color: var(--muted); font-size: 11.5px; margin: 5px 0 0; line-height: 1.35; }
+  .row { display: grid; gap: var(--gap); align-items: start; }
+  .row > * { min-width: 0; }
+  .row-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, .95fr); }
+  .row-3 { grid-template-columns: minmax(0, .85fr) minmax(0, 1.2fr) minmax(0, 1fr); }
+  @media (max-width: 1400px) { .row-2, .row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 900px) { .row-2, .row-3 { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ERO strip */
+  .ero-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 1100px) { .ero-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 600px) { .ero-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ero-day { background: var(--ink); border-radius: 4px; padding: 4px; }
+  .ero-day .cap { display: flex; align-items: center; gap: 6px; font: 700 13.5px var(--display); margin: 0 0 3px; }
+  .ero-day .cap .t { font: 500 11px var(--body); color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .ero-day img { max-height: 180px; width: auto; margin: 0 auto; }
+  .ero-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; margin-top: 5px; align-items: center; }
+
+  #summary-wrap { padding: 6px 10px; }
+  #summary-wrap h2 { margin: 0 0 2px; font-size: 13.5px; }
+  #summary { white-space: pre-wrap; font-size: 15px; min-height: 1.4em; }
+  #summary:empty::before { content: attr(data-placeholder); color: var(--muted); }
+
+  /* NWS discussion: still the largest text on the board */
+  .afd { font-size: 15px; line-height: 1.45; }
+  .afd .scroll { max-height: calc(var(--media-h) + 70px); overflow-y: auto; padding-right: 4px; }
+  .afd h3 { font: 700 13.5px var(--display); margin: 8px 0 2px; color: var(--accent); letter-spacing: .02em; }
+  .afd .km { padding-left: 18px; margin: 2px 0 0; }
+  .afd .km li { margin: 5px 0; }
+  .afd .active { background: rgba(239,107,107,.12); border: 1px solid rgba(239,107,107,.45); border-radius: 4px; padding: 5px 8px;
+                 margin: 0 0 4px; font-size: 13px; line-height: 1.35; }
+
+  /* action items: compact */
+  .acts { list-style: none; margin: 0; padding: 0; font-size: 12.5px; line-height: 1.3; }
+  .acts li { position: relative; border-left: 3px solid var(--muted); background: var(--ink); border-radius: 3px; padding: 4px 8px; margin: 0 0 4px; }
+  .acts li.s3 { border-left-color: #e0402a; } .acts li.s2 { border-left-color: #f0b429; }
+  .acts li.s1 { border-left-color: #4fb0d0; } .acts li.s0 { border-left-color: var(--good); }
+  .acts .src { font-size: 11px; color: var(--muted); margin-left: 5px; }
+  .acts details { font-size: 11.5px; color: var(--muted); display: inline; margin-left: 5px; }
+  .acts details[open] { display: block; margin: 3px 0 0; }
+  .acts summary { cursor: pointer; display: inline; }
+  .acts-wrap { max-height: 430px; overflow-y: auto; padding-right: 4px; }
+  .tools { display: none; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
+  .editing .tools { display: flex; }
+  .tools button, .tools select { background: none; border: 1px solid var(--rule); color: var(--muted); border-radius: 3px;
+                                 font: 600 11px var(--display); padding: 1px 6px; cursor: pointer; }
+  .tools button:hover { color: var(--text); border-color: var(--edit); }
+  .tag { font: 600 10.5px var(--display); color: var(--edit); border: 1px solid var(--edit); border-radius: 3px; padding: 0 4px; margin-left: 5px; }
+  .editing [data-edit] { outline: 1px dashed rgba(181,156,245,.55); outline-offset: 2px; border-radius: 2px; cursor: text; }
+  .editing [data-edit]:focus { outline: 2px solid var(--edit); background: rgba(181,156,245,.08); }
+  .hidden-item { opacity: .45; }
+  .hidden-item .txt { text-decoration: line-through; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th { text-align: right; font: 600 11px var(--display); color: var(--muted); padding: 2px 5px 3px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  td { text-align: right; padding: 3px 5px; border-bottom: 1px solid #1d2e3d; white-space: nowrap; }
+  .grp { border-left: 1px solid var(--rule); }
+  .table-wrap { overflow-x: auto; }
+  .pill { display: inline-block; min-width: 28px; text-align: center; border-radius: 3px; padding: 0 4px; font: 700 11px var(--display); color: #111; }
+
+  .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { background: none; border: 0; color: var(--muted); font: 600 12px var(--display); padding: 3px 9px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--rule); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+  .seg .sep { width: 1px; background: var(--rule); align-self: stretch; }
+  img { display: block; max-width: 100%; height: auto; border-radius: 3px; cursor: zoom-in; }
+
+  /* radar and satellite share one size so the row lines up */
+  .media { width: 100%; height: var(--media-h); object-fit: contain; background: #0b141c; }
+  .loopbar { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .loopbar input[type=range] { flex: 1; min-width: 80px; accent-color: var(--accent); }
+  .loopbar .lab { font: 600 12px var(--display); color: var(--muted); min-width: 110px; text-align: right; white-space: nowrap; }
+  .loopbar .btn { padding: 3px 8px; }
+
+  /* rain gauges (KSC/CCSFS tipping buckets) + the gauge site embedded beside them */
+  .gauge-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--gap); align-items: stretch; }
+  @media (max-width: 1100px) { .gauge-grid { grid-template-columns: minmax(0, 1fr); } }
+  .gstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 6px; }
+  .gstat { background: var(--ink); border-radius: 4px; padding: 5px 8px; }
+  .gstat b { display: block; font: 700 19px/1.15 var(--display); }
+  .gstat span { font-size: 11px; color: var(--muted); }
+  .glist { max-height: 470px; overflow-y: auto; padding-right: 4px; }
+  .glist table td { padding: 3px 5px; }
+  .glist .gbar { height: 5px; border-radius: 2px; margin-top: 2px; }
+  .glist .near { color: var(--muted); font-size: 11.5px; }
+  .glist .part { font: 600 10.5px var(--display); color: var(--warn); border: 1px solid var(--warn); border-radius: 3px; padding: 0 3px; margin-left: 4px; }
+  .gframe { width: 100%; height: 100%; min-height: 560px; border: 0; border-radius: 4px; background: #0b141c; display: block; }
+  .pmap { position: relative; }
+  .pmap img { width: 100%; }
+  .pmark { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; padding: 0;
+           border: 2px solid transparent; background: transparent; cursor: pointer; }
+  .pmark:hover, .pmark:focus-visible, .pmark.on { border-color: #ffd84a; background: rgba(255,216,74,.18); outline: none; }
+  .site-btn { background: none; border: 0; color: var(--accent); font: inherit; padding: 0; cursor: pointer; text-align: left;
+              text-decoration: underline dotted; text-underline-offset: 3px; }
+  #pop { position: fixed; z-index: 40; width: min(340px, calc(100vw - 24px)); background: #f7f9fb; color: #17222c;
+         border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.5); padding: 12px 14px 10px; display: none; font-size: 13.5px; }
+  #pop.open { display: block; }
+  #pop h3 { font: 700 18px var(--display); margin: 0 26px 4px 0; }
+  #pop .when { color: #5a6b78; font-size: 12px; margin-bottom: 6px; }
+  #pop .x { position: absolute; top: 6px; right: 9px; background: none; border: 0; font-size: 22px; line-height: 1; color: #5a6b78; cursor: pointer; }
+  #pop .three { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 4px 0 8px; }
+  #pop .three b { display: block; font: 700 20px var(--display); }
+  #pop .three .mid b { font-size: 24px; }
+  #pop .three span { color: #5a6b78; font-size: 12px; }
+  #pop .pseg { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+  #pop .pseg button { background: #e6ecf1; border: 1px solid #ccd6de; color: #2a3a47; border-radius: 4px; font: 600 12px var(--display); padding: 1px 7px; cursor: pointer; }
+  #pop .pseg button[aria-pressed="true"] { background: #17222c; color: #fff; border-color: #17222c; }
+  #pop h4 { font: 700 12px var(--display); color: #5a6b78; margin: 2px 0 3px; }
+  #pop table { font-size: 13px; table-layout: fixed; }
+  #pop td { border-bottom: 1px solid #e1e7ec; padding: 3px 6px; color: #17222c; }
+  #pop td:first-child { width: 22%; }
+  #pop td.pbar { width: 58%; padding-left: 4px; }
+  #pop td:last-child { width: 20%; font-weight: 600; }
+  #pop td.pbar span { display: block; width: 100%; height: 9px; border-radius: 2px; background: #e1e7ec; overflow: hidden; }
+  #pop td.pbar i { display: block; height: 100%; background: #2f7fc1; }
+  #pop .src { color: #5a6b78; font-size: 11px; margin-top: 5px; }
+
+  .empty { border: 1px dashed var(--rule); border-radius: 5px; padding: 14px; color: var(--muted); }
+  #lightbox { position: fixed; inset: 0; background: rgba(6,11,16,.94); display: none; align-items: center; justify-content: center; z-index: 50; cursor: zoom-out; }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 96vw; max-height: 94vh; cursor: zoom-out; }
+
+  @media print {
+    body { background: #fff; color: #000; }
+    .bar { position: static; background: #fff; }
+    .btn, .tools, details summary, .loopbar, .seg { display: none !important; }
+    .card, .chip, .acts li, .ero-day { background: #fff; border-color: #bbb; }
+    .note, .chip .k, .chip .s, .acts .src, th { color: #444; }
+    .acts-wrap, .afd .scroll { max-height: none; overflow: visible; }
+    .editing [data-edit] { outline: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <h1 id="title">Flood Dashboard</h1>
+    <span class="meta" id="built"></span>
+    <span class="spacer"></span>
+    <button class="btn" id="b-edit" aria-pressed="false" title="Click any outlined text to change it">Edit</button>
+    <button class="btn" id="b-add" hidden>+ Action item</button>
+    <button class="btn" id="b-reset" hidden title="Remove every edit made in this browser">Reset edits</button>
+    <button class="btn" id="b-copy" title="Copy the board as plain text for an email or briefing">Copy text</button>
+    <button class="btn" id="b-print">Print</button>
+    <button class="btn" id="b-full">Full screen</button>
+    <a class="btn" id="b-back" href="./">Forecast site</a>
+  </div>
+
+  <main id="main">
+    <div class="chips" id="chips"></div>
+    <section class="card" id="summary-wrap" hidden></section>
+    <section class="card" id="c-ero"></section>
+    <div class="row row-2">
+      <section class="card afd" id="c-afd"></section>
+      <section class="card" id="c-radar"></section>
+      <section class="card" id="c-sat"></section>
+    </div>
+    <section class="card" id="c-gauge" hidden></section>
+    <div class="row row-3">
+      <section class="card" id="c-acts"></section>
+      <section class="card" id="c-table"></section>
+      <section class="card" id="c-ppp"></section>
+    </div>
+  </main>
+  <div id="pop" role="dialog" aria-label="Rainfall at a site"></div>
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="Full-size image"><img alt=""></div>
+
+<script src="zoom.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const fmtUTC = (iso, o) => new Date(iso).toLocaleString("en-US", Object.assign({ timeZone: "UTC", weekday: "short", hour: "2-digit", hour12: false }, o || {})) + "Z";
+  const fmtLocal = (iso) => new Date(iso).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  const fmtClock = (iso) => new Date(iso).toLocaleString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  const amt = (v) => v == null ? "—" : v.toFixed(2) + "″";
+  const hash = (t) => { let h = 5381; for (const c of String(t)) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return (h >>> 0).toString(36); };
+  const ERO = { 0: ["None", "#2f4352"], 1: ["MRGL", "#38a800"], 2: ["SLGT", "#fffe00"], 3: ["MDT", "#f50000"], 4: ["HIGH", "#ff69c5"] };
+  const ERO_NAME = ["None", "Marginal", "Slight", "Moderate", "High"];
+  const pill = (dn) => { const [n, c] = ERO[dn || 0] || ERO[0]; return `<span class="pill" style="background:${c};${dn ? "" : "color:var(--muted)"}">${n}</span>`; };
+  const tpill = (dn) => dn ? pill(dn) : `<span class="note" style="margin:0">–</span>`;
+  const empty = (t) => `<div class="empty">${t}</div>`;
+
+  // ---------- edits: saved in this browser only (keyed by the site path, so Cape and Raleigh stay separate)
+  const STORE = "board-edits:" + location.pathname.replace(/board\.html$/, "");
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } };
+  let E = Object.assign({ text: {}, hidden: {}, sev: {}, custom: [], summary: "" }, load());
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(E)); } catch (e) {} };
+  const pref = (k, d) => { try { return localStorage.getItem("board-pref:" + k) || d; } catch (e) { return d; } };
+  const setPref = (k, v) => { try { localStorage.setItem("board-pref:" + k, v); } catch (e) {} };
+  let editing = false, meta = null, stamp = "", dirty = false;
+
+  const ed = (key, original) => {
+    const v = E.text[key];
+    return `<span data-edit="${key}" data-orig="${esc(original)}">${esc(v != null ? v : original)}</span>${v != null ? `<span class="tag">edited</span>` : ""}`;
+  };
+
+  function actionItem(a, key, custom) {
+    const sev = E.sev[key] != null ? E.sev[key] : a.severity;
+    const hid = !!E.hidden[key];
+    return `<li class="s${sev}${hid ? " hidden-item" : ""}" data-key="${key}">
+      <span class="txt">${ed(key, a.text)}</span><span class="src">${custom ? "added by your team" : esc(a.source)}</span>${E.sev[key] != null && !custom ? '<span class="tag">priority changed</span>' : ""}
+      ${a.why ? `<details><summary>why</summary>${esc(a.why)}</details>` : ""}
+      <div class="tools">
+        <select data-sev="${key}" aria-label="Priority">
+          ${[[3, "Act now"], [2, "Prepare"], [1, "Monitor"], [0, "Info"]].map(([v, l]) => `<option value="${v}" ${v === sev ? "selected" : ""}>${l}</option>`).join("")}
+        </select>
+        ${custom ? `<button data-del="${key}">Delete</button>` : `<button data-hide="${key}">${hid ? "Show" : "Hide"}</button>`}
+        ${E.text[key] != null && !custom ? `<button data-revert="${key}">Revert text</button>` : ""}
+      </div></li>`;
+  }
+
+  // ---------- header, chips, summary
+  function drawHeader(b) {
+    const br = meta.branding || {};
+    const title = br.board_title || `Situational Awareness · ${br.area || br.title || ""}`;
+    const exp = /^experimental\s+/i.test(title);
+    document.title = title;
+    $("title").innerHTML = exp ? `<span class="exp">EXPERIMENTAL</span>${esc(title.replace(/^experimental\s+/i, ""))}` : esc(title);
+    const ageMin = Math.round((Date.now() - Date.parse(b.built)) / 60e3);
+    $("built").innerHTML = `Updated ${fmtLocal(b.built)} <span class="${ageMin > 90 ? "stale" : ""}">(${ageMin < 120 ? ageMin + " min" : Math.round(ageMin / 60) + " h"} ago)</span>`;
+  }
+
+  function drawChips(b) {
+    const days = (b.ero && b.ero.days) || {};
+    const top3 = Math.max(0, ...["1", "2", "3"].map(k => (days[k] || {}).max_in_view || 0));
+    const topDay = ["1", "2", "3"].find(k => ((days[k] || {}).max_in_view || 0) === top3);
+    const prim = meta.primary_site;
+    const ps = ((b.ppp_sites || {})[prim]) || {};
+    const haz = (b.afd && b.afd.hazards) || [];
+    const fl = (meta.flash && meta.flash.sites) || {};
+    const qmax = Math.max(0, ...Object.values(fl).map(v => v.CREST_MAXUNITSTREAMFLOW || 0));
+    const qtxt = qmax >= 6 ? "significant flooding range" : qmax >= 2 ? "flooding likely range" : "below flooding range";
+    const rain = (k, lab) => `<div class="chip"><div class="k">${esc(prim)} rain, ${lab}</div>
+        <div class="v">${amt((ps[k] || {}).expected)}</div><div class="s">low ${amt((ps[k] || {}).low)}<br>high ${amt((ps[k] || {}).high)}</div></div>`;
+    $("chips").innerHTML = [
+      `<div class="chip"><div class="k">Highest ERO, next 3 days</div><div class="v">${pill(top3)}</div>
+        <div class="s">${top3 ? ERO_NAME[top3] + ", Day " + topDay : "no risk on the map"}</div></div>`,
+      rain("d1", "Day 1"), rain("72", "72 h"),
+      `<div class="chip"><div class="k">NWS ${esc(b.wfo)} active products</div><div class="v" style="color:${haz.length ? "var(--bad)" : "var(--text)"}">${haz.length || "None"}</div>
+        <div class="s">${esc(haz.map(h => h.text.split(/ (until|from) /)[0]).slice(0, 2).join(" · ")) || "per the latest discussion"}</div></div>`,
+      `<div class="chip"><div class="k">Observed streamflow (FLASH)</div><div class="v">${qmax.toFixed(1)}</div>
+        <div class="s">m³ s⁻¹ km⁻²<br>${qtxt}</div></div>`,
+    ].join("");
+  }
+
+  function drawSummary() {
+    const w = $("summary-wrap");
+    w.hidden = !editing && !E.summary;
+    w.innerHTML = `<h2>Situation summary</h2>
+      <div id="summary" ${editing ? 'contenteditable="true"' : ""} data-placeholder="Type the operational summary for this period (saved in this browser).">${esc(E.summary || "")}</div>`;
+  }
+
+  function drawEro(b) {
+    const days = (b.ero && b.ero.days) || {};
+    const v = encodeURIComponent(b.built);
+    const maps = [1, 2, 3, 4, 5].map(d => {
+      const f = (b.images || {})["ero_d" + d]; const m = days[String(d)] || {};
+      if (!f) return "";
+      return `<div class="ero-day"><div class="cap">Day ${d} ${pill(m.max_in_view)}<span class="t">${esc(m.valid_time || "")}</span></div>
+        <img src="${f}?v=${v}" alt="ERO Day ${d}"></div>`;
+    }).filter(Boolean);
+    $("c-ero").innerHTML = `<h2>WPC Excessive Rainfall Outlook, Days 1–5
+        <span class="r ero-legend" style="margin:0">${[1, 2, 3, 4].map(d => `<span>${pill(d)} ${["", "≥5%", "≥15%", "≥40%", "≥70%"][d]}</span>`).join("")}
+        <span class="note" style="margin:0">chance of flash flooding within 25 mi ·
+        <a href="https://www.wpc.ncep.noaa.gov/qpf/excessive_rainfall_outlook_ero.php" target="_blank" rel="noreferrer">WPC</a></span></span></h2>
+      ${maps.length ? `<div class="ero-row">${maps.join("")}</div>` : empty("No ERO maps this run.")}`;
+  }
+
+  function drawAfd(b) {
+    const afd = b.afd;
+    if (!afd) { $("c-afd").innerHTML = `<h2>NWS discussion</h2>` + empty("The forecast discussion could not be retrieved this run."); return; }
+    $("c-afd").innerHTML = `<h2>${esc(afd.office)} <span class="r note" style="margin:0">${esc(afd.issued_text || "")}</span></h2>
+      <div class="scroll">
+      ${afd.hazards.length ? `<div class="active"><strong style="color:var(--bad)">Active:</strong> ${afd.hazards.map(h => esc(h.area + ": " + h.text)).join("<br>")}</div>` : ""}
+      <h3>Key messages</h3>
+      <ul class="km">${(afd.key_messages || []).map(k => `<li>${ed("km:" + hash(k), k)}</li>`).join("") || "<li>None listed.</li>"}</ul>
+      ${afd.hydrology ? `<h3>Hydrology</h3><p style="margin:2px 0 0">${ed("hy:" + hash(afd.hydrology), afd.hydrology)}</p>` : ""}
+      </div>
+      <p class="note"><a href="${afd.link}" target="_blank" rel="noreferrer">Full discussion</a> · source ${esc(afd.source)}</p>`;
+  }
+
+  // ---------- generic frame looper (satellite and forecast radar)
+  function Loop(prefix, delay) {
+    const L = { i: 0, frames: [], timer: null, src: f => f.url, label: () => "" };
+    L.show = () => {
+      const f = L.frames[L.i]; if (!f || !$(prefix + "-img")) return;
+      $(prefix + "-img").src = L.src(f);
+      $(prefix + "-slider").value = L.i;
+      $(prefix + "-lab").textContent = L.label(f, L.i);
+    };
+    L.play = () => {
+      if (L.frames.length < 2 || !$(prefix + "-play")) return;
+      $(prefix + "-play").textContent = "Pause";
+      const step = typeof delay === "function" ? delay() : delay;
+      L.timer = setInterval(() => {
+        L.i = (L.i + 1) % L.frames.length; L.show();
+        if (L.i === L.frames.length - 1) { clearInterval(L.timer); setTimeout(() => { if (L.timer) { L.timer = null; L.play(); } }, 1500); }
+      }, step);
+    };
+    L.stop = () => { clearInterval(L.timer); L.timer = null; const p = $(prefix + "-play"); if (p) p.textContent = "Play"; };
+    L.bar = () => `<div class="loopbar">
+        <button class="btn" id="${prefix}-prev" aria-label="Previous frame">◀</button>
+        <button class="btn" id="${prefix}-play">Play</button>
+        <button class="btn" id="${prefix}-next" aria-label="Next frame">▶</button>
+        <input type="range" id="${prefix}-slider" min="0" max="${Math.max(0, L.frames.length - 1)}" value="${L.i}" aria-label="Frame">
+        <span class="lab" id="${prefix}-lab"></span></div>`;
+    L.wire = () => {
+      $(prefix + "-play").onclick = () => L.timer ? L.stop() : L.play();
+      $(prefix + "-prev").onclick = () => { L.stop(); L.i = (L.i - 1 + L.frames.length) % L.frames.length; L.show(); };
+      $(prefix + "-next").onclick = () => { L.stop(); L.i = (L.i + 1) % L.frames.length; L.show(); };
+      $(prefix + "-slider").oninput = (e) => { L.stop(); L.i = +e.target.value; L.show(); };
+    };
+    return L;
+  }
+
+  // ---------- satellite
+  const satL = Loop("sat", 200);
+  let satBand = pref("satBand", "GEOCOLOR"), satKey = "";
+  satL.label = (f, i) => f.time ? fmtClock(f.time) + (i === satL.frames.length - 1 ? " (latest)" : "") : "latest";
+  function drawSat(b) {
+    const s = b.sat;
+    if (!s || !s.bands) { satKey = ""; $("c-sat").innerHTML = `<h2>Satellite</h2>` + empty("No satellite frames this run."); return; }
+    if (!s.bands[satBand]) satBand = Object.keys(s.bands)[0];
+    const frames = s.bands[satBand].frames || [];
+    const key = satBand + "|" + frames.map(f => f.url).slice(-1)[0];
+    if (key === satKey && $("sat-img")) return;           // unchanged: keep the loop running
+    const playing = !!satL.timer || !satKey;
+    satL.stop(); satKey = key; satL.frames = frames; satL.i = frames.length - 1;
+    $("c-sat").innerHTML = `<h2>GOES-East satellite
+        <span class="r seg">${Object.entries(s.bands).sort((a, b) => (b[0] === "GEOCOLOR") - (a[0] === "GEOCOLOR")).map(([k, v]) =>
+          `<button aria-pressed="${k === satBand}" data-band="${k}" title="${esc(v.label)}">${k === "GEOCOLOR" ? "GeoColor" : "Infrared"}</button>`).join("")}</span></h2>
+      <img class="media" id="sat-img" alt="GOES-East satellite loop">
+      ${satL.bar()}
+      <p class="note">${esc(s.bands[satBand].label)}, last ~${Math.round(frames.length * 10 / 60)} h, NOAA STAR.
+        <a href="https://weather.cod.edu/satrad/" target="_blank" rel="noreferrer">COD satellite &amp; radar</a> ·
+        <a href="${s.page}" target="_blank" rel="noreferrer">STAR sector</a></p>`;
+    frames.forEach(f => { const im = new Image(); im.src = f.url; });
+    satL.wire(); satL.show();
+    if (playing) satL.play();
+    $("c-sat").querySelectorAll("[data-band]").forEach(x => x.onclick = () => { satBand = x.dataset.band; setPref("satBand", satBand); satKey = ""; drawSat(meta.board); });
+  }
+
+  // ---------- radar: live NWS radar loop, or our HRRR / RRFS simulated-radar frames (fcst_radar.py)
+  const radL = Loop("rad", () => radL.frames.length > 30 ? 180 : 400);
+  let radTab = pref("radarTab", "live"), radKey = "", liveTimer = null, qpeH = pref("qpeHours", "24"), liveSrc = pref("liveSrc", "page");
+  radL.label = (f) => new Date(f.valid).toLocaleString("en-US", { weekday: "short", hour: "numeric", timeZoneName: "short" }) + ` · +${f.f} h`;
+  function drawRadar() {
+    const R = meta.radar || {}, models = R.models || {}, order = (R.order || []).filter(k => models[k]);
+    const site = (meta.board && meta.board.nexrad) || ("K" + ((meta.board && meta.board.wfo) || "MLB"));
+    const qpe = meta.board && meta.board.qpe && meta.board.qpe.accums && meta.board.qpe.order.length ? meta.board.qpe : null;
+    if (radTab === "qpe" ? !qpe : (radTab !== "live" && !models[radTab])) radTab = "live";
+    if (qpe && !qpe.accums[qpeH]) qpeH = qpe.order[qpe.order.length - 1];
+    const qa = qpe && qpe.accums[qpeH];
+    const m = models[radTab];
+    const key = [radTab, site, liveSrc, meta.board.live_url, R.built, m && m.init, radTab === "qpe" && qpeH, radTab === "qpe" && qa.valid].join("|");
+    if (key === radKey && $("rad-img")) return;
+    const keepPlaying = !!radL.timer || !radKey;
+    radL.stop(); clearInterval(liveTimer); radKey = key;
+    const tabs = `<span class="r seg"><button aria-pressed="${radTab === "live"}" data-rt="live">${esc(site)} live</button>${
+      qpe ? `<button aria-pressed="${radTab === "qpe"}" data-rt="qpe">MRMS rain totals</button>` : ""}${
+      order.map(k => `<button aria-pressed="${k === radTab}" data-rt="${k}">${esc(models[k].label)} forecast</button>`).join("")}</span>`;
+    if (radTab === "qpe") {
+      const hits = Object.entries(qa.sites || {}).filter(([, v]) => v != null && v >= 0.01).sort((a, b) => b[1] - a[1]);
+      const end = qa.valid ? new Date(qa.valid) : null;
+      const start = end ? new Date(end - qpeH * 3600e3) : null;
+      $("c-radar").innerHTML = `<h2>Radar ${tabs}</h2>
+        <div class="seg" style="margin:0 0 6px">${qpe.order.map(h => `<button aria-pressed="${h === qpeH}" data-qh="${h}">Last ${h} h</button>`).join("")}</div>
+        <img class="media" id="rad-img" alt="MRMS ${qpeH}-hour rainfall" src="${qa.img}?v=${encodeURIComponent(qa.valid || "")}">
+        <p class="note">MRMS multi-sensor rainfall (Pass 1, radar + gauges), ${qpeH} h ending
+          ${end ? fmtLocal(qa.valid) + " (" + fmtUTC(start.toISOString()).replace(/^\w+,? /, "") + "–" + fmtUTC(qa.valid).replace(/^\w+,? /, "") + ")" : "latest"}; WPC color scale, refreshed every 30 min.
+          ${hits.length ? "Sites: " + hits.slice(0, 6).map(([n, v]) => `${esc(n)} ${v.toFixed(2)}″`).join(" · ") : "No measurable rain at the board sites."}</p>`;
+      $("c-radar").querySelectorAll("[data-qh]").forEach(x => x.onclick = () => { qpeH = x.dataset.qh; setPref("qpeHours", qpeH); drawRadar(); });
+    } else if (radTab === "live" && meta.board.live_url && liveSrc === "page") {
+      const url = meta.board.live_url, name = meta.board.live_name || new URL(url).hostname;
+      $("c-radar").innerHTML = `<h2>Radar ${tabs}</h2>
+        <iframe class="media" id="rad-frame" src="${esc(url)}" title="${esc(name)} ${esc(site)} radar loop" style="border:0;display:block"></iframe>
+        <p class="note">Live ${esc(site)} radar loop from ${esc(name)}, reloaded every 10 minutes.
+          <a href="${esc(url)}" target="_blank" rel="noreferrer">Open full page</a> ·
+          <a href="#" id="live-nws">Show the NWS loop instead</a></p>`;
+      liveTimer = setInterval(() => { const f = $("rad-frame"); if (f && radTab === "live") f.src = url; }, 600000);
+      $("live-nws").onclick = (e) => { e.preventDefault(); liveSrc = "nws"; setPref("liveSrc", "nws"); radKey = ""; drawRadar(); };
+    } else if (radTab === "live") {
+      const base = `https://radar.weather.gov/ridge/standard/${site}`;
+      const stamp = () => Math.floor(Date.now() / 120000);
+      $("c-radar").innerHTML = `<h2>Radar ${tabs}</h2>
+        <img class="media" id="rad-img" alt="${esc(site)} radar loop" src="${base}_loop.gif?t=${stamp()}">
+        <p class="note">Live ${esc(site)} base reflectivity loop from the NWS, refreshed every 2 minutes.
+          <a href="https://radar.weather.gov/station/${site.toLowerCase()}/standard" target="_blank" rel="noreferrer">NWS radar page</a> ·
+          <a href="https://weather.cod.edu/satrad/nexrad/?parms=${site.slice(1)}-N0B-0-24-100-usa-rad" target="_blank" rel="noreferrer">COD NEXRAD</a>${
+          meta.board.live_url ? ` · <a href="#" id="live-page">Show the ${esc(meta.board.live_name || "embedded")} loop</a>` : ""}</p>`;
+      if ($("live-page")) $("live-page").onclick = (e) => { e.preventDefault(); liveSrc = "page"; setPref("liveSrc", "page"); radKey = ""; drawRadar(); };
+      const im = $("rad-img");
+      im.onerror = () => { if (!im.dataset.fallback) { im.dataset.fallback = 1; im.src = `${base}_0.gif?t=${stamp()}`; } };
+      liveTimer = setInterval(() => { const i = $("rad-img"); if (i && radTab === "live") { delete i.dataset.fallback; i.src = `${base}_loop.gif?t=${stamp()}`; } }, 120000);
+    } else {
+      radL.frames = m.frames || []; radL.i = 0;
+      const v = encodeURIComponent(m.init);
+      radL.src = f => f.img + "?v=" + v;
+      const last = radL.frames.length ? radL.frames[radL.frames.length - 1].f : 0;
+      $("c-radar").innerHTML = `<h2>Radar ${tabs}</h2>
+        <img class="media" id="rad-img" alt="${esc(m.label)} simulated radar">
+        ${radL.bar()}
+        <p class="note">${esc(m.label)} simulated radar (composite reflectivity, dBZ) hourly to ${last} h from the
+          ${fmtUTC(m.init, { day: "2-digit", month: "short" })} run, with sea-level pressure. Shows timing and pattern; storms won't land exactly where drawn.
+          <a href="https://www.wpc.ncep.noaa.gov/NationalForecastChart/map.php" target="_blank" rel="noreferrer">NWS forecast chart</a> ·
+          <a href="https://www.pivotalweather.com/model.php?m=${radTab}&p=refcmp" target="_blank" rel="noreferrer">Pivotal</a></p>`;
+      radL.frames.forEach(f => { const im = new Image(); im.src = radL.src(f); });
+      radL.wire(); radL.show();
+      if (keepPlaying) radL.play();
+    }
+    $("c-radar").querySelectorAll("[data-rt]").forEach(x => x.onclick = () => { radTab = x.dataset.rt; setPref("radarTab", radTab); radKey = ""; drawRadar(); });
+  }
+
+  // ---------- observed rain gauges: KSC/CCSFS tipping buckets from the gauge site's collector file
+  // (hourly inches, key = hour start UTC), totalled here; the site itself is embedded alongside
+  const KSC_RG = {1:[28.70363,-80.66857],2:[28.68755,-80.71951],4:[28.66433,-80.63913],5:[28.65818,-80.69936],6:[28.64397,-80.66639],7:[28.64238,-80.74762],8:[28.63888,-80.62254],9:[28.62142,-80.60797],10:[28.62412,-80.70151],11:[28.60576,-80.67387],12:[28.60226,-80.64094],13:[28.60205,-80.58942],14:[28.57852,-80.60859],15:[28.57676,-80.64310],16:[28.57530,-80.57311],17:[28.56205,-80.67003],18:[28.55518,-80.70212],19:[28.54948,-80.62039],20:[28.54170,-80.64443],21:[28.52575,-80.62210],22:[28.50693,-80.69359],24:[28.47859,-80.67487],25:[28.42474,-80.66380],26:[28.54938,-80.56699],27:[28.50308,-80.55812],28:[28.46024,-80.52722],29:[28.46256,-80.58356],30:[28.47511,-80.55842],31:[28.42033,-80.59116],32:[28.43688,-80.58010],33:[28.41532,-80.60582],34:[28.44982,-80.56350],35:[28.60205,-80.58942]};
+  const LANDMARKS = [["LC-39A",28.6083,-80.6041],["LC-39B",28.6272,-80.6208],["SLC-41",28.5833,-80.5829],["SLC-40",28.562,-80.5772],["SLC-37",28.5316,-80.565],
+    ["LC-36",28.4716,-80.5378],["SLC-46",28.4585,-80.5284],["Skid Strip",28.4676,-80.5666],["SLF",28.615,-80.6945],["VAB / LCC",28.5861,-80.6513],
+    ["Morrell Ops Ctr",28.4887,-80.5775],["KSC HQ",28.5244,-80.6508],["Banana River",28.43,-80.64],["Port Canaveral",28.41,-80.62]];
+  const WPC_L = [0.01, 0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 7, 10, 15, 20];
+  const WPC_C = ["#7fff00", "#00cd00", "#008b00", "#104e8b", "#1e90ff", "#00b2ee", "#00eeee", "#8968cd", "#912cee", "#8b008b", "#8b0000", "#cd0000", "#ee4000", "#ff7f00", "#cd8500", "#ffd700", "#ffff00", "#ffaeb9"];
+  const wpcColor = v => { let k = -1; WPC_L.forEach((l, i) => { if (v >= l) k = i; }); return k < 0 ? null : WPC_C[k]; };
+  const kmBetween = (a, b, c, d) => Math.hypot((d - b) * Math.cos((a + c) * Math.PI / 360) * 111.2, (c - a) * 111.2);
+  const nearest = (la, lo) => LANDMARKS.map(([n, a, b]) => [n, kmBetween(la, lo, a, b)]).sort((x, y) => x[1] - y[1])[0];
+  let gData = null, gErr = "", gHours = +pref("gaugeHours", "24"), gFrameUrl = "";
+  async function loadGauges() {
+    const gs = meta && meta.board && meta.board.gauge_site;
+    if (!gs) return;
+    try {
+      const r = await fetch(new URL(gs.json || "data/ksc_rain.json", gs.url).href + "?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      gData = await r.json(); gErr = "";
+    } catch (e) { gErr = e.message || String(e); }
+    drawGauges();
+  }
+  function gaugeTotals(hours) {
+    const H = (gData && gData.hourly) || {}, keys = Object.keys(H).sort();
+    if (!keys.length) return null;
+    const lastKey = keys[keys.length - 1], end = Date.parse(lastKey.replace("Z", ":00Z")) + 3600e3;
+    const start = end - hours * 3600e3;
+    const inWin = keys.filter(k => { const t = Date.parse(k.replace("Z", ":00Z")); return t >= start && t < end; });
+    const tot = {}, n = {};
+    inWin.forEach(k => Object.entries(H[k]).forEach(([g, v]) => { if (v == null) return; tot[g] = (tot[g] || 0) + v; n[g] = (n[g] || 0) + 1; }));
+    const rows = Object.keys(tot).map(g => ({ id: g, total: tot[g], hours: n[g], partial: n[g] < hours - 1, ll: KSC_RG[g] }))
+      .sort((a, b) => b.total - a.total);
+    // like the gauge site: a gauge reading 0.00" while a gauge within 5 km has 0.75"+ is suspect
+    rows.forEach(r => { r.suspect = r.total < 0.005 && !!r.ll && rows.some(o => o !== r && o.ll && o.total >= 0.75 &&
+      kmBetween(r.ll[0], r.ll[1], o.ll[0], o.ll[1]) <= 5); });
+    return { rows, start, end, have: inWin.length };
+  }
+  function drawGauges() {
+    const card = $("c-gauge"), gs = meta && meta.board && meta.board.gauge_site;
+    card.hidden = !gs;
+    if (!gs) return;
+    const frame = gs.url;
+    let left;
+    if (!gData) left = gErr ? empty(`Couldn't read the gauge file (${esc(gErr)}). The full site on the right still works.`) : empty("Loading gauges…");
+    else {
+      const t = gaugeTotals(gHours);
+      if (!t || !t.rows.length) left = empty("No gauge hours in the file yet.");
+      else {
+        const full = t.rows.filter(r => !r.partial && !r.suspect), top = full[0];
+        const ge = x => full.filter(r => r.total >= x).length;
+        const near = r => { if (!r.ll) return ""; const [n, d] = nearest(r.ll[0], r.ll[1]); return d < 1.5 ? `at ${n}` : `${d.toFixed(0)} km from ${n}`; };
+        const max = Math.max(0.01, ...t.rows.map(r => r.total));
+        const asOf = gData.updated ? fmtLocal(gData.updated) : "unknown";
+        left = `<div class="seg" style="margin:0 0 6px">${[6, 12, 24, 48, 72].map(h => `<button aria-pressed="${h === gHours}" data-gh="${h}">Last ${h} h</button>`).join("")}</div>
+          <div class="gstats">
+            <div class="gstat"><b>${top ? top.total.toFixed(2) + "″" : "—"}</b><span>Wettest: ${top ? "RG " + esc(top.id) + " " + esc(near(top)) : "n/a"}</span></div>
+            <div class="gstat"><b>${ge(2)}</b><span>gauges ≥ 2″ of ${full.length}</span></div>
+            <div class="gstat"><b>${ge(4)}</b><span>gauges ≥ 4″</span></div>
+          </div>
+          <div class="glist"><table><thead><tr><th>Gauge</th><th>Near</th><th>Total</th></tr></thead><tbody>
+          ${t.rows.map(r => { const c = wpcColor(r.total);
+            return `<tr><td>RG ${esc(r.id)}${r.partial ? '<span class="part" title="Missing hours in this period">partial</span>' : ""}${r.suspect ? '<span class="part" title="Reads zero while a gauge within 5 km has 0.75 in or more">check gauge</span>' : ""}</td>
+              <td class="near" style="text-align:left">${esc(near(r))}</td>
+              <td><strong>${r.total.toFixed(2)}″</strong><div class="gbar" style="width:${Math.round(r.total / max * 100)}%;background:${c || "var(--rule)"};margin-left:auto"></div></td></tr>`; }).join("")}
+          </tbody></table></div>
+          <p class="note">KSC / CCSFS tipping-bucket gauges, ${gHours} h ending ${fmtLocal(new Date(t.end).toISOString())}; collector file updated ${esc(asOf)}.
+            Bars use the WPC scale. "Partial" gauges are missing hours; "check gauge" reads zero while a gauge within 5 km has 0.75″+. Both are left out of the counts.</p>`;
+      }
+    }
+    if (!$("g-frame") || gFrameUrl !== frame) {
+      gFrameUrl = frame;
+      card.innerHTML = `<h2>Observed rain gauges <span class="r note" style="margin:0">
+          <a href="${esc(frame)}" target="_blank" rel="noreferrer">Open ${esc(gs.name || "gauge site")} ↗</a></span></h2>
+        <div class="gauge-grid"><div id="g-left"></div>
+          <iframe class="gframe" id="g-frame" src="${esc(frame)}" title="${esc(gs.name || "Rain gauge")} map" loading="lazy"></iframe></div>`;
+    }
+    $("g-left").innerHTML = left;
+    card.querySelectorAll("[data-gh]").forEach(x => x.onclick = () => { gHours = +x.dataset.gh; setPref("gaugeHours", gHours); drawGauges(); });
+  }
+
+  // ---------- action items
+  function drawActs(b) {
+    const acts = (b.actions || []).map(a => actionItem(a, "act:" + hash(a.text), false));
+    const custom = (E.custom || []).map(c => actionItem({ text: c.text, severity: c.severity }, c.key, true));
+    const ai = b.ai_actions ? `<h2 style="margin-top:8px;font-size:13.5px">AI-drafted summary <span class="note" style="margin:0;font-weight:500">from the AFD; verify before acting</span></h2>
+        <ul class="acts">${b.ai_actions.items.map(x => `<li class="s0">${ed("ai:" + hash(x), x)}</li>`).join("")}</ul>` : "";
+    $("c-acts").innerHTML = `<h2>Action items <span class="r note" style="margin:0">red act now · amber prepare · blue monitor</span></h2>
+      <div class="acts-wrap"><ul class="acts">${custom.join("")}${acts.join("")}</ul>${ai}</div>
+      <p class="note">Fixed rules, source named on each item. ${editing ? "Click any text to change it; edits are saved in this browser." : ""}</p>`;
+  }
+
+  // ---------- rainfall: period shared by the table and the maps (WPC 12Z-12Z days, or totals from about now)
+  let per = pref("pppPeriod", "d1");
+  const PER_NAME = { d1: "Day 1", d2: "Day 2", d3: "Day 3", "24": "24 h", "48": "48 h", "72": "72 h" };
+  function periods(b) { return ((b.ppp && b.ppp.order) || Object.keys((b.ppp && b.ppp.windows) || {})); }
+  function perTabs(b) {
+    const ks = periods(b);
+    if (!ks.includes(per)) per = ks[0] || "d1";
+    const btn = k => `<button aria-pressed="${k === per}" data-per="${k}">${PER_NAME[k] || k}</button>`;
+    const days = ks.filter(k => k[0] === "d"), tots = ks.filter(k => k[0] !== "d");
+    return `<span class="seg">${days.map(btn).join("")}${days.length && tots.length ? '<span class="sep"></span>' : ""}${tots.map(btn).join("")}</span>`;
+  }
+  function perWhen(b, k) {
+    const w = b.ppp && b.ppp.windows && b.ppp.windows[k];
+    return w ? `${fmtUTC(w.start)} to ${fmtUTC(w.end, { day: "2-digit", month: "short" })}` +
+      (w.past_h >= 3 ? ` (began ${w.past_h} h before this forecast)` : "") : "";
+  }
+  function setPer(k) { per = k; setPref("pppPeriod", k); drawTable(meta.board); drawPpp(meta.board); wire(); }
+
+  function drawTable(b) {
+    const es = (b.ero && b.ero.sites) || {};
+    const names = Object.keys(b.ppp_sites || es);
+    const days = periods(b).filter(k => k[0] === "d");
+    const rows = names.map(n => { const v = (b.ppp_sites || {})[n] || {}; const e = es[n] || {}; const p = v[per] || {};
+      return `<tr><td><button class="site-btn" data-site="${esc(n)}">${esc(n)}</button></td><td>${amt(p.low)}</td><td><strong>${amt(p.expected)}</strong></td><td>${amt(p.high)}</td>
+        <td class="grp">${days.map(d => amt((v[d] || {}).expected)).join("</td><td>")}</td>
+        <td class="grp">${tpill(e["1"])}</td><td>${tpill(e["2"])}</td><td>${tpill(e["3"])}</td></tr>`; }).join("");
+    $("c-table").innerHTML = `<h2>Rainfall by site <span class="r">${perTabs(b)}</span></h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th colspan="3" style="text-align:center">${PER_NAME[per] || per}</th>
+            <th class="grp" colspan="${days.length || 1}" style="text-align:center">Expected</th><th class="grp" colspan="3" style="text-align:center">ERO</th></tr>
+          <tr><th>Site</th><th>Low</th><th>Exp.</th><th>High</th><th class="grp">${days.map(d => "D" + d[1]).join("</th><th>")}</th>
+            <th class="grp">D1</th><th>D2</th><th>D3</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <p class="note">${PER_NAME[per] || per}: ${perWhen(b, per)}. Days are back-to-back 24-h periods from the forecast time (times above), not the ERO's 12Z–12Z days${(((b.ppp && b.ppp.windows) || {})["48"] || {}).aligned ? "; 48 h and 72 h cover Days 1–2 and 1–3, so expected amounts add up" : ""}.
+        Low end: 9 in 10 chance of more; high end: 1 in 10 (these don't add across days).
+        Click a site for the chance of each amount.
+        ${b.ppp ? `PPP cycle ${fmtUTC(b.ppp.cycle, { day: "2-digit", month: "short" })}.` : "PPP unavailable this run."}</p>`;
+    $("c-table").querySelectorAll("[data-per]").forEach(x => x.onclick = () => setPer(x.dataset.per));
+    $("c-table").querySelectorAll("[data-site]").forEach(x => x.onclick = () => openPop(x.dataset.site, x));
+  }
+
+  // two views: low / expected / high for one period, or the expected amount for Days 1-3 + 72 h side by side
+  let pppView = pref("pppView", "range");
+  function drawPpp(b) {
+    const v = encodeURIComponent(b.built);
+    const hasDays = !!(b.images || {}).ppp_days;
+    if (!hasDays) pppView = "range";
+    const views = hasDays ? `<span class="seg"><button aria-pressed="${pppView === "range"}" data-pv="range">Low / exp. / high</button><button aria-pressed="${pppView === "days"}" data-pv="days">Expected by day</button></span>` : "";
+    const card = $("c-ppp");
+    card.style.gridColumn = pppView === "days" ? "1 / -1" : "";          // 4 panels need the full width
+    if (pppView === "days") {
+      const keys = (b.ppp && b.ppp.days_keys) || [];
+      card.innerHTML = `<h2>Expected rain by day <span class="r">${views}</span></h2>
+        <div class="pmap"><img src="${b.images.ppp_days}?v=${v}" alt="Expected QPF for Days 1-3 and the 72-hour total">${pppMarks(b, "days", keys)}</div>
+        <p class="note">Official NWS expected amounts: ${keys.map(k => `${PER_NAME[k] || k} ${perWhen(b, k)}`).join("; ")}.
+          Click a site marker for its odds in that period, or the map to zoom.
+          <a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS PPP</a></p>`;
+    } else {
+      const f = (b.images || {})["ppp_" + per];
+      card.innerHTML = `<h2>Low / expected / high-end rain <span class="r">${views} ${perTabs(b)}</span></h2>
+        ${f ? `<div class="pmap"><img src="${f}?v=${v}" alt="Low, expected and high-end QPF, ${PER_NAME[per] || per}">${pppMarks(b, per)}</div>` : empty("No PPP maps for this period this run.")}
+        <p class="note">${PER_NAME[per] || per}: ${perWhen(b, per)}. Click a site marker for its odds, or the map to zoom.
+          <a href="https://www.wpc.ncep.noaa.gov/Prob_Precip/" target="_blank" rel="noreferrer">NWS PPP</a></p>`;
+    }
+    card.querySelectorAll("[data-per]").forEach(x => x.onclick = () => setPer(x.dataset.per));
+    card.querySelectorAll("[data-pv]").forEach(x => x.onclick = () => { pppView = x.dataset.pv; setPref("pppView", pppView); drawPpp(meta.board); });
+    card.querySelectorAll("[data-site]").forEach(x => x.onclick = (e) => { e.stopPropagation(); openPop(x.dataset.site, x, x.dataset.pper); });
+  }
+
+  // clickable site markers over each map panel (positions written by board.py when it drew the image);
+  // panelKeys gives each panel's period when the panels differ (the by-day view)
+  function pppMarks(b, key, panelKeys) {
+    const panels = (b.ppp_panels || {})[key], ll = b.site_ll || {};
+    if (!panels) return "";
+    return panels.map((pn, i) => Object.entries(ll).map(([n, [la, lo]]) => {
+      const [w, e, so, no] = pn.extent, [x0, y0, x1, y1] = pn.box;
+      if (lo < w || lo > e || la < so || la > no) return "";
+      const x = (x0 + (lo - w) / (e - w) * (x1 - x0)) * 100, y = (y0 + (no - la) / (no - so) * (y1 - y0)) * 100;
+      const pp = panelKeys ? panelKeys[i] : key;
+      return `<button class="pmark" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" data-site="${esc(n)}" data-pper="${pp}" title="${esc(n)}" aria-label="${esc(n)} rainfall"></button>`;
+    }).join("")).join("");
+  }
+
+  // ---------- site pop-up: low / expected / high and the chance of each amount, like the NWS portal
+  let popSite = null, popPer = null;
+  function openPop(name, anchor, period) {
+    popSite = name; popPer = period || per;
+    drawPop();
+    const pop = $("pop"), r = anchor.getBoundingClientRect();
+    pop.classList.add("open");
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    let x = r.right + 10, y = r.top - 20;
+    if (x + w > innerWidth - 12) x = Math.max(12, r.left - w - 10);
+    if (innerWidth < 640) { x = (innerWidth - w) / 2; y = 56; }          // phones: a sheet near the top
+    y = Math.min(Math.max(12, y), innerHeight - h - 12);
+    pop.style.left = x + "px"; pop.style.top = y + "px";
+    document.querySelectorAll(".pmark.on").forEach(m => m.classList.remove("on"));
+    document.querySelectorAll(`.pmark[data-site="${CSS.escape(name)}"]`).forEach(m => m.classList.add("on"));
+  }
+  function closePop() {
+    $("pop").classList.remove("open"); popSite = null;
+    document.querySelectorAll(".pmark.on").forEach(m => m.classList.remove("on"));
+  }
+  function drawPop() {
+    const b = meta.board, v = ((b.ppp_sites || {})[popSite] || {}), p = v[popPer] || {};
+    const ex = p.exceed || [];
+    const fmtThr = t => t < 1 ? t.toFixed(2) : String(+t.toFixed(2));
+    $("pop").innerHTML = `<button class="x" aria-label="Close">×</button>
+      <h3>${esc(popSite)}</h3>
+      <div class="pseg">${periods(b).map(k => `<button aria-pressed="${k === popPer}" data-pp="${k}">${PER_NAME[k] || k}</button>`).join("")}</div>
+      <div class="when">${PER_NAME[popPer] || popPer}: ${perWhen(b, popPer)}</div>
+      <div class="three"><div><b>${amt(p.low)}</b><span>Low end</span></div><div class="mid"><b>${amt(p.expected)}</b><span>Expected</span></div>
+        <div><b>${amt(p.high)}</b><span>High end</span></div></div>
+      ${ex.length ? `<h4>Chance of at least</h4><table>${ex.filter(([t]) => t <= 12).map(([t, pc]) =>
+          `<tr><td>${fmtThr(t)}″</td><td class="pbar"><span><i style="width:${pc}%"></i></span></td><td>${pc}%</td></tr>`).join("")}</table>`
+        : `<p class="when">No exceedance probabilities for this period.</p>`}
+      <div class="src">NWS Probabilistic Precipitation Portal, nearest 2.5-km grid point.</div>`;
+    $("pop").querySelector(".x").onclick = closePop;
+    $("pop").querySelectorAll("[data-pp]").forEach(x => x.onclick = (e) => { e.stopPropagation(); popPer = x.dataset.pp; drawPop(); });
+  }
+  document.addEventListener("click", e => {
+    if (popSite && !e.target.closest("#pop") && !e.target.closest("[data-site]")) closePop();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && popSite) closePop(); });
+
+  function render() {
+    const b = meta.board;
+    if (!b) { $("main").innerHTML = empty("The board has not been built yet. Run the main workflow once."); return; }
+    $("main").className = editing ? "editing" : "";
+    [drawHeader, drawChips, drawSummary, drawEro, drawAfd, drawSat, drawActs, drawTable, drawPpp].forEach(fn => {
+      try { fn(b); } catch (err) { console.error(fn.name, err); }
+    });
+    try { drawRadar(); } catch (err) { console.error("drawRadar", err); }
+    try { drawGauges(); if (!gData && !gErr) loadGauges(); } catch (err) { console.error("drawGauges", err); }
+    try { if (popSite) drawPop(); } catch (err) { closePop(); }
+    wire();
+  }
+
+  function wire() {
+    if (!editing) return;
+    document.querySelectorAll("[data-edit]").forEach(el => {
+      el.contentEditable = "true";
+      el.onblur = () => {
+        const key = el.dataset.edit, t = el.innerText.trim();
+        const custom = (E.custom || []).find(c => c.key === key);
+        if (custom) custom.text = t;
+        else if (t === el.dataset.orig || !t) delete E.text[key];
+        else E.text[key] = t;
+        save(); if (dirty) { dirty = false; render(); }
+      };
+      el.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); el.blur(); } };
+    });
+    const s = $("summary");
+    if (s) s.oninput = () => { E.summary = s.innerText; save(); };
+    document.querySelectorAll("[data-sev]").forEach(x => x.onchange = () => {
+      const k = x.dataset.sev, c = (E.custom || []).find(c => c.key === k);
+      if (c) c.severity = +x.value; else E.sev[k] = +x.value;
+      save(); render();
+    });
+    document.querySelectorAll("[data-hide]").forEach(x => x.onclick = () => { const k = x.dataset.hide; E.hidden[k] ? delete E.hidden[k] : (E.hidden[k] = 1); save(); render(); });
+    document.querySelectorAll("[data-del]").forEach(x => x.onclick = () => { E.custom = E.custom.filter(c => c.key !== x.dataset.del); save(); render(); });
+    document.querySelectorAll("[data-revert]").forEach(x => x.onclick = () => { delete E.text[x.dataset.revert]; delete E.sev[x.dataset.revert]; save(); render(); });
+  }
+
+  // ---------- toolbar
+  $("b-edit").onclick = () => {
+    editing = !editing;
+    $("b-edit").setAttribute("aria-pressed", editing);
+    $("b-edit").textContent = editing ? "Done editing" : "Edit";
+    $("b-add").hidden = $("b-reset").hidden = !editing;
+    render();
+  };
+  $("b-add").onclick = () => {
+    const key = "custom:" + Date.now().toString(36);
+    E.custom = [{ key, text: "New action item", severity: 2 }, ...(E.custom || [])];
+    save(); render();
+    const el = document.querySelector(`[data-edit="${key}"]`);
+    if (el) { el.focus(); document.getSelection().selectAllChildren(el); }
+  };
+  $("b-reset").onclick = () => {
+    if (!confirm("Remove every edit, hidden item, added item and the summary in this browser?")) return;
+    E = { text: {}, hidden: {}, sev: {}, custom: [], summary: "" }; save(); render();
+  };
+  $("b-print").onclick = () => window.print();
+  $("b-full").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {});
+  document.addEventListener("fullscreenchange", () => $("b-full").textContent = document.fullscreenElement ? "Exit full screen" : "Full screen");
+  $("b-copy").onclick = async () => {
+    const b = meta && meta.board; if (!b) return;
+    const lab = ["Info", "Monitor", "Prepare", "Act now"];
+    const items = [...(E.custom || []).map(c => ({ sev: c.severity, text: c.text })),
+      ...(b.actions || []).map(a => { const k = "act:" + hash(a.text); return E.hidden[k] ? null : { sev: E.sev[k] ?? a.severity, text: E.text[k] ?? a.text }; }).filter(Boolean)];
+    const d = (b.ero && b.ero.days) || {};
+    const br = meta.branding || {};
+    const t = [`${(br.board_title || "SITUATIONAL AWARENESS").toUpperCase()} as of ${fmtLocal(b.built)}`, "",
+      E.summary ? "SUMMARY\n" + E.summary.trim() + "\n" : "",
+      "ACTION ITEMS", ...items.map(i => `- [${lab[i.sev] || ""}] ${i.text}`), "",
+      ...(() => { const v = (b.ppp_sites || {})[meta.primary_site]; if (!v) return [];
+        return [`RAIN AT ${meta.primary_site.toUpperCase()} (low / expected / high)`, ...periods(b).map(k => { const p = v[k] || {};
+          return `- ${PER_NAME[k] || k}: ${amt(p.low)} / ${amt(p.expected)} / ${amt(p.high)}`; }), ""]; })(),
+      "EXCESSIVE RAINFALL OUTLOOK", ...["1", "2", "3", "4", "5"].map(k => `- Day ${k}: ${(d[k] || {}).name || "n/a"}${(d[k] || {}).valid_time ? " (" + d[k].valid_time + ")" : ""}`), "",
+      b.afd ? "KEY MESSAGES (" + b.afd.office + ")\n" + b.afd.key_messages.map(k => "- " + (E.text["km:" + hash(k)] ?? k)).join("\n") : ""].filter(x => x !== "").join("\n");
+    try { await navigator.clipboard.writeText(t); $("b-copy").textContent = "Copied"; } catch (e) { prompt("Copy this text:", t); }
+    setTimeout(() => $("b-copy").textContent = "Copy text", 1500);
+  };
+  // zoom / pan viewer (zoom.js) for every map; loops keep playing inside it
+  if (window.ZoomViewer) ZoomViewer.attach("#c-ero img, #c-ppp img, #sat-img, #rad-img");
+  $("lightbox").onclick = () => $("lightbox").classList.remove("open");
+  document.addEventListener("keydown", e => { if (e.key === "Escape") $("lightbox").classList.remove("open"); });
+
+  async function refresh() {
+    try {
+      const r = await fetch("meta.json?t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      const m = await r.json();
+      const sb = (m.board && m.board.sat && m.board.sat.bands) || {};
+      const sk = Object.values(sb).map(x => ((x.frames || []).slice(-1)[0] || {}).url).join(",");
+      const key = [(m.board && m.board.built) || "", m.generated_utc, sk, (m.flash && m.flash.valid) || "", (m.radar && m.radar.built) || "", JSON.stringify(((m.board && m.board.qpe) || {}).order || []) + (((((m.board || {}).qpe || {}).accums || {})["1"] || {}).valid || "")].join("|");
+      if (key === stamp) { if (meta && meta.board) drawHeader(meta.board); return; }
+      meta = m; stamp = key;
+      // don't yank text out from under someone mid-edit; redraw when they leave the field
+      if (editing && document.activeElement && document.activeElement.isContentEditable) dirty = true;
+      else render();
+    } catch (e) {
+      if (!meta) $("main").innerHTML = empty(`meta.json could not be loaded (${esc(e.message)}).`);
+    }
+  }
+  refresh();
+  setInterval(refresh, 2 * 60 * 1000);
+  setInterval(() => { if (meta) loadGauges(); }, 10 * 60 * 1000);      // the collector updates every ~20 min
+})();
+</script>
+</body>
+</html>
