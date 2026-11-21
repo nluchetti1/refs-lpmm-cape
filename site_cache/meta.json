@@ -1,0 +1,8128 @@
+{
+ "generated_utc": "2026-11-21T19:03:09+00:00",
+ "repo": "nluchetti1/refs-lpmm-cape",
+ "accum_hours": 48,
+ "valid_start": "2026-11-21T12:00:00+00:00",
+ "valid_end": "2026-11-23T12:00:00+00:00",
+ "runs": [
+  {
+   "label": "Latest",
+   "init": "2026-11-21T12:00:00+00:00",
+   "color": "#4fd1e8"
+  },
+  {
+   "label": "\u22126 h",
+   "init": "2026-11-21T06:00:00+00:00",
+   "color": "#f0b429"
+  },
+  {
+   "label": "\u221212 h",
+   "init": "2026-11-21T00:00:00+00:00",
+   "color": "#e0607e"
+  }
+ ],
+ "primary_site": "LC-39A",
+ "nbhd_km": 10.0,
+ "thresholds": [
+  1.0,
+  2.0,
+  3.0,
+  5.0
+ ],
+ "eas_thresholds": [
+  0.25,
+  0.5,
+  1.0,
+  2.0
+ ],
+ "regime": {
+  "name": "NE",
+  "dir": 13,
+  "spd_kt": 15.5,
+  "consistency": 0.91,
+  "n": 8
+ },
+ "regime_min_n": 5,
+ "regime_rules": {
+  "light_kt": 5.0,
+  "mixed_consistency": 0.5,
+  "layer": "10 m\u2013700 mb (pressure-weighted)",
+  "point": "XMR, 25 km mean",
+  "point_name": "XMR"
+ },
+ "branding": {
+  "title": "Space Coast REFS QPF",
+  "subtitle": "48-h ensemble QPF for Cape Canaveral and Kennedy Space Center",
+  "area": "Cape Canaveral and KSC",
+  "board_title": "Experimental 45 WS Flood Dashboard"
+ },
+ "domain_max": {
+  "value": 5.02,
+  "lat": 27.45,
+  "lon": -79.015
+ },
+ "sites": [
+  {
+   "name": "LC-39A",
+   "label": "LC-39A",
+   "lat": 28.6082,
+   "lon": -80.6041,
+   "pad": true,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.35,
+     "nbhd_max": 0.48,
+     "max_1h": 0.19,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.19,
+     "nbhd_max": 0.34,
+     "max_1h": 0.07,
+     "max_1h_valid": "2026-11-22T10:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.08,
+     "nbhd_max": 0.54,
+     "max_1h": 0.02,
+     "max_1h_valid": "2026-11-22T01:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.32,
+   "eas_max": {
+    "0.25": 27,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.06,
+     "ffg": 3.36,
+     "qpf": 0.19,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.06,
+     "ffg": 3.87,
+     "qpf": 0.24,
+     "ends": "2026-11-22T01:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.06,
+     "ffg": 4.54,
+     "qpf": 0.25,
+     "ends": "2026-11-22T02:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "LC-39B",
+   "label": "LC-39B",
+   "lat": 28.6272,
+   "lon": -80.6208,
+   "pad": true,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.47,
+     "nbhd_max": 0.48,
+     "max_1h": 0.26,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.24,
+     "nbhd_max": 0.29,
+     "max_1h": 0.11,
+     "max_1h_valid": "2026-11-22T10:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.07,
+     "nbhd_max": 0.22,
+     "max_1h": 0.02,
+     "max_1h_valid": "2026-11-22T01:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.38,
+   "eas_max": {
+    "0.25": 28,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.08,
+     "ffg": 3.31,
+     "qpf": 0.26,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.08,
+     "ffg": 3.82,
+     "qpf": 0.31,
+     "ends": "2026-11-22T01:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.07,
+     "ffg": 4.53,
+     "qpf": 0.32,
+     "ends": "2026-11-22T01:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "SLC-40",
+   "label": "SLC-40",
+   "lat": 28.5619,
+   "lon": -80.5772,
+   "pad": true,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.13,
+     "nbhd_max": 0.62,
+     "max_1h": 0.04,
+     "max_1h_valid": "2026-11-21T23:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.22,
+     "nbhd_max": 0.84,
+     "max_1h": 0.06,
+     "max_1h_valid": "2026-11-21T22:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.22,
+     "nbhd_max": 1.47,
+     "max_1h": 0.08,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.26,
+   "eas_max": {
+    "0.25": 28,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.01,
+     "ffg": 3.39,
+     "qpf": 0.04,
+     "ends": "2026-11-21T23:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.02,
+     "ffg": 3.98,
+     "qpf": 0.08,
+     "ends": "2026-11-22T01:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.02,
+     "ffg": 4.72,
+     "qpf": 0.1,
+     "ends": "2026-11-22T01:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "SLC-41",
+   "label": "SLC-41",
+   "lat": 28.5833,
+   "lon": -80.583,
+   "pad": true,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.14,
+     "nbhd_max": 0.48,
+     "max_1h": 0.04,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.16,
+     "nbhd_max": 0.55,
+     "max_1h": 0.05,
+     "max_1h_valid": "2026-11-22T04:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.13,
+     "nbhd_max": 1.2,
+     "max_1h": 0.04,
+     "max_1h_valid": "2026-11-22T04:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.24,
+   "eas_max": {
+    "0.25": 27,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.01,
+     "ffg": 3.36,
+     "qpf": 0.04,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.02,
+     "ffg": 3.88,
+     "qpf": 0.09,
+     "ends": "2026-11-22T01:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.02,
+     "ffg": 4.56,
+     "qpf": 0.11,
+     "ends": "2026-11-22T01:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "SLC-37",
+   "label": "SLC-37",
+   "lat": 28.5317,
+   "lon": -80.565,
+   "pad": true,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.14,
+     "nbhd_max": 0.62,
+     "max_1h": 0.04,
+     "max_1h_valid": "2026-11-21T23:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.31,
+     "nbhd_max": 1.12,
+     "max_1h": 0.14,
+     "max_1h_valid": "2026-11-21T22:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.71,
+     "nbhd_max": 1.52,
+     "max_1h": 0.47,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.26,
+   "eas_max": {
+    "0.25": 28,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.01,
+     "ffg": 3.37,
+     "qpf": 0.04,
+     "ends": "2026-11-21T23:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.02,
+     "ffg": 3.89,
+     "qpf": 0.07,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.02,
+     "ffg": 4.57,
+     "qpf": 0.1,
+     "ends": "2026-11-22T00:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "LC-36",
+   "label": "LC-36",
+   "lat": 28.4706,
+   "lon": -80.5378,
+   "pad": true,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.33,
+     "nbhd_max": 1.03,
+     "max_1h": 0.16,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.41,
+     "nbhd_max": 1.75,
+     "max_1h": 0.18,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.97,
+     "nbhd_max": 1.52,
+     "max_1h": 0.77,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.39,
+   "eas_max": {
+    "0.25": 28,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.05,
+     "ffg": 3.36,
+     "qpf": 0.16,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.05,
+     "ffg": 3.88,
+     "qpf": 0.18,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.06,
+     "ffg": 4.55,
+     "qpf": 0.27,
+     "ends": "2026-11-22T00:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "SLC-46",
+   "label": "SLC-46",
+   "lat": 28.4584,
+   "lon": -80.5284,
+   "pad": true,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.33,
+     "nbhd_max": 1.03,
+     "max_1h": 0.16,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.41,
+     "nbhd_max": 1.75,
+     "max_1h": 0.18,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.97,
+     "nbhd_max": 1.52,
+     "max_1h": 0.77,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.39,
+   "eas_max": {
+    "0.25": 28,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.05,
+     "ffg": 3.36,
+     "qpf": 0.16,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.05,
+     "ffg": 3.88,
+     "qpf": 0.18,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.06,
+     "ffg": 4.55,
+     "qpf": 0.27,
+     "ends": "2026-11-22T00:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "Skid Strip (KXMR)",
+   "label": "Skid Strip",
+   "lat": 28.4676,
+   "lon": -80.5669,
+   "pad": false,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.32,
+     "nbhd_max": 1.41,
+     "max_1h": 0.2,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.55,
+     "nbhd_max": 2.38,
+     "max_1h": 0.21,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 1.47,
+     "nbhd_max": 1.52,
+     "max_1h": 1.09,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.34,
+   "eas_max": {
+    "0.25": 29,
+    "0.5": 12,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.06,
+     "ffg": 3.36,
+     "qpf": 0.2,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.06,
+     "ffg": 3.88,
+     "qpf": 0.23,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.06,
+     "ffg": 4.55,
+     "qpf": 0.25,
+     "ends": "2026-11-22T00:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "SLF (KTTS)",
+   "label": "SLF",
+   "lat": 28.615,
+   "lon": -80.6945,
+   "pad": false,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.31,
+     "nbhd_max": 0.78,
+     "max_1h": 0.15,
+     "max_1h_valid": "2026-11-22T00:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.18,
+     "nbhd_max": 0.71,
+     "max_1h": 0.07,
+     "max_1h_valid": "2026-11-22T10:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.05,
+     "nbhd_max": 0.13,
+     "max_1h": 0.01,
+     "max_1h_valid": "2026-11-21T23:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.29,
+   "eas_max": {
+    "0.25": 30,
+    "0.5": 15,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.04,
+     "ffg": 3.46,
+     "qpf": 0.15,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.05,
+     "ffg": 3.98,
+     "qpf": 0.21,
+     "ends": "2026-11-22T00:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.05,
+     "ffg": 4.61,
+     "qpf": 0.22,
+     "ends": "2026-11-22T01:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "Patrick (KCOF)",
+   "label": "Patrick",
+   "lat": 28.2349,
+   "lon": -80.6101,
+   "pad": false,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.18,
+     "nbhd_max": 0.7,
+     "max_1h": 0.06,
+     "max_1h_valid": "2026-11-21T21:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.15,
+     "nbhd_max": 1.11,
+     "max_1h": 0.05,
+     "max_1h_valid": "2026-11-21T21:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.06,
+     "nbhd_max": 0.52,
+     "max_1h": 0.02,
+     "max_1h_valid": "2026-11-21T22:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.31,
+   "eas_max": {
+    "0.25": 27,
+    "0.5": 13,
+    "1": 4,
+    "2": 1
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.02,
+     "ffg": 3.42,
+     "qpf": 0.06,
+     "ends": "2026-11-21T21:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.03,
+     "ffg": 3.89,
+     "qpf": 0.11,
+     "ends": "2026-11-21T22:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.03,
+     "ffg": 4.5,
+     "qpf": 0.13,
+     "ends": "2026-11-22T00:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "Melbourne (KMLB)",
+   "label": "Melbourne",
+   "lat": 28.1028,
+   "lon": -80.6453,
+   "pad": false,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.08,
+     "nbhd_max": 0.25,
+     "max_1h": 0.01,
+     "max_1h_valid": "2026-11-21T21:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.07,
+     "nbhd_max": 0.21,
+     "max_1h": 0.02,
+     "max_1h_valid": "2026-11-22T07:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.04,
+     "nbhd_max": 0.13,
+     "max_1h": 0.01,
+     "max_1h_valid": "2026-11-21T21:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.17,
+   "eas_max": {
+    "0.25": 26,
+    "0.5": 13,
+    "1": 4,
+    "2": 1
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.0,
+     "ffg": 3.19,
+     "qpf": 0.01,
+     "ends": "2026-11-21T21:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.01,
+     "ffg": 3.86,
+     "qpf": 0.02,
+     "ends": "2026-11-22T04:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.01,
+     "ffg": 4.69,
+     "qpf": 0.04,
+     "ends": "2026-11-22T07:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "Palm Bay",
+   "label": "Palm Bay",
+   "lat": 28.0345,
+   "lon": -80.5887,
+   "pad": false,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.13,
+     "nbhd_max": 0.25,
+     "max_1h": 0.06,
+     "max_1h_valid": "2026-11-21T20:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.14,
+     "nbhd_max": 0.21,
+     "max_1h": 0.05,
+     "max_1h_valid": "2026-11-21T20:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.1,
+     "nbhd_max": 0.13,
+     "max_1h": 0.05,
+     "max_1h_valid": "2026-11-22T12:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.23,
+   "eas_max": {
+    "0.25": 26,
+    "0.5": 13,
+    "1": 5,
+    "2": 1
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.02,
+     "ffg": 3.42,
+     "qpf": 0.06,
+     "ends": "2026-11-21T20:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.02,
+     "ffg": 3.92,
+     "qpf": 0.06,
+     "ends": "2026-11-21T20:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.02,
+     "ffg": 4.55,
+     "qpf": 0.08,
+     "ends": "2026-11-21T21:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "Orlando (KMCO)",
+   "label": "Orlando",
+   "lat": 28.4294,
+   "lon": -81.3089,
+   "pad": false,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.46,
+     "nbhd_max": 1.04,
+     "max_1h": 0.25,
+     "max_1h_valid": "2026-11-21T21:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.34,
+     "nbhd_max": 0.89,
+     "max_1h": 0.21,
+     "max_1h_valid": "2026-11-21T21:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.06,
+     "nbhd_max": 0.19,
+     "max_1h": 0.02,
+     "max_1h_valid": "2026-11-22T08:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.31,
+   "eas_max": {
+    "0.25": 25,
+    "0.5": 13,
+    "1": 4,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.08,
+     "ffg": 3.23,
+     "qpf": 0.25,
+     "ends": "2026-11-21T21:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.08,
+     "ffg": 3.78,
+     "qpf": 0.29,
+     "ends": "2026-11-21T23:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.07,
+     "ffg": 4.49,
+     "qpf": 0.34,
+     "ends": "2026-11-21T23:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "Daytona (KDAB)",
+   "label": "Daytona",
+   "lat": 29.1799,
+   "lon": -81.0581,
+   "pad": false,
+   "runs": [
+    {
+     "run": "Latest",
+     "total": 0.05,
+     "nbhd_max": 0.17,
+     "max_1h": 0.01,
+     "max_1h_valid": "2026-11-21T20:00:00+00:00"
+    },
+    {
+     "run": "\u22126 h",
+     "total": 0.03,
+     "nbhd_max": 0.13,
+     "max_1h": 0.01,
+     "max_1h_valid": "2026-11-21T20:00:00+00:00"
+    },
+    {
+     "run": "\u221212 h",
+     "total": 0.01,
+     "nbhd_max": 0.05,
+     "max_1h": 0.0,
+     "max_1h_valid": "2026-11-22T01:00:00+00:00"
+    }
+   ],
+   "avrg_total": 0.09,
+   "eas_max": {
+    "0.25": 11,
+    "0.5": 5,
+    "1": 2,
+    "2": 0
+   },
+   "ffg_max": 0,
+   "ffg": {
+    "1": {
+     "ratio": 0.0,
+     "ffg": 3.15,
+     "qpf": 0.01,
+     "ends": "2026-11-21T20:00:00+00:00"
+    },
+    "3": {
+     "ratio": 0.0,
+     "ffg": 3.82,
+     "qpf": 0.02,
+     "ends": "2026-11-21T21:00:00+00:00"
+    },
+    "6": {
+     "ratio": 0.01,
+     "ffg": 4.69,
+     "qpf": 0.03,
+     "ends": "2026-11-22T00:00:00+00:00"
+    }
+   }
+  }
+ ],
+ "frames": [
+  {
+   "file": "loop_06h_01.png",
+   "start": "2026-11-21T12:00:00+00:00",
+   "end": "2026-11-21T18:00:00+00:00",
+   "fhr": "f00-f06"
+  },
+  {
+   "file": "loop_06h_02.png",
+   "start": "2026-11-21T18:00:00+00:00",
+   "end": "2026-11-22T00:00:00+00:00",
+   "fhr": "f06-f12"
+  },
+  {
+   "file": "loop_06h_03.png",
+   "start": "2026-11-22T00:00:00+00:00",
+   "end": "2026-11-22T06:00:00+00:00",
+   "fhr": "f12-f18"
+  },
+  {
+   "file": "loop_06h_04.png",
+   "start": "2026-11-22T06:00:00+00:00",
+   "end": "2026-11-22T12:00:00+00:00",
+   "fhr": "f18-f24"
+  },
+  {
+   "file": "loop_06h_05.png",
+   "start": "2026-11-22T12:00:00+00:00",
+   "end": "2026-11-22T18:00:00+00:00",
+   "fhr": "f24-f30"
+  },
+  {
+   "file": "loop_06h_06.png",
+   "start": "2026-11-22T18:00:00+00:00",
+   "end": "2026-11-23T00:00:00+00:00",
+   "fhr": "f30-f36"
+  },
+  {
+   "file": "loop_06h_07.png",
+   "start": "2026-11-23T00:00:00+00:00",
+   "end": "2026-11-23T06:00:00+00:00",
+   "fhr": "f36-f42"
+  },
+  {
+   "file": "loop_06h_08.png",
+   "start": "2026-11-23T06:00:00+00:00",
+   "end": "2026-11-23T12:00:00+00:00",
+   "fhr": "f42-f48"
+  }
+ ],
+ "eas_frames": {
+  "0.25": [
+   {
+    "file": "eas_0p25_01.png",
+    "start": "2026-11-21T12:00:00+00:00",
+    "end": "2026-11-21T18:00:00+00:00",
+    "fhr": "f00-f06"
+   },
+   {
+    "file": "eas_0p25_02.png",
+    "start": "2026-11-21T18:00:00+00:00",
+    "end": "2026-11-22T00:00:00+00:00",
+    "fhr": "f06-f12"
+   },
+   {
+    "file": "eas_0p25_03.png",
+    "start": "2026-11-22T00:00:00+00:00",
+    "end": "2026-11-22T06:00:00+00:00",
+    "fhr": "f12-f18"
+   },
+   {
+    "file": "eas_0p25_04.png",
+    "start": "2026-11-22T06:00:00+00:00",
+    "end": "2026-11-22T12:00:00+00:00",
+    "fhr": "f18-f24"
+   },
+   {
+    "file": "eas_0p25_05.png",
+    "start": "2026-11-22T12:00:00+00:00",
+    "end": "2026-11-22T18:00:00+00:00",
+    "fhr": "f24-f30"
+   },
+   {
+    "file": "eas_0p25_06.png",
+    "start": "2026-11-22T18:00:00+00:00",
+    "end": "2026-11-23T00:00:00+00:00",
+    "fhr": "f30-f36"
+   },
+   {
+    "file": "eas_0p25_07.png",
+    "start": "2026-11-23T00:00:00+00:00",
+    "end": "2026-11-23T06:00:00+00:00",
+    "fhr": "f36-f42"
+   },
+   {
+    "file": "eas_0p25_08.png",
+    "start": "2026-11-23T06:00:00+00:00",
+    "end": "2026-11-23T12:00:00+00:00",
+    "fhr": "f42-f48"
+   }
+  ],
+  "0.5": [
+   {
+    "file": "eas_0p5_01.png",
+    "start": "2026-11-21T12:00:00+00:00",
+    "end": "2026-11-21T18:00:00+00:00",
+    "fhr": "f00-f06"
+   },
+   {
+    "file": "eas_0p5_02.png",
+    "start": "2026-11-21T18:00:00+00:00",
+    "end": "2026-11-22T00:00:00+00:00",
+    "fhr": "f06-f12"
+   },
+   {
+    "file": "eas_0p5_03.png",
+    "start": "2026-11-22T00:00:00+00:00",
+    "end": "2026-11-22T06:00:00+00:00",
+    "fhr": "f12-f18"
+   },
+   {
+    "file": "eas_0p5_04.png",
+    "start": "2026-11-22T06:00:00+00:00",
+    "end": "2026-11-22T12:00:00+00:00",
+    "fhr": "f18-f24"
+   },
+   {
+    "file": "eas_0p5_05.png",
+    "start": "2026-11-22T12:00:00+00:00",
+    "end": "2026-11-22T18:00:00+00:00",
+    "fhr": "f24-f30"
+   },
+   {
+    "file": "eas_0p5_06.png",
+    "start": "2026-11-22T18:00:00+00:00",
+    "end": "2026-11-23T00:00:00+00:00",
+    "fhr": "f30-f36"
+   },
+   {
+    "file": "eas_0p5_07.png",
+    "start": "2026-11-23T00:00:00+00:00",
+    "end": "2026-11-23T06:00:00+00:00",
+    "fhr": "f36-f42"
+   },
+   {
+    "file": "eas_0p5_08.png",
+    "start": "2026-11-23T06:00:00+00:00",
+    "end": "2026-11-23T12:00:00+00:00",
+    "fhr": "f42-f48"
+   }
+  ],
+  "1": [
+   {
+    "file": "eas_1p0_01.png",
+    "start": "2026-11-21T12:00:00+00:00",
+    "end": "2026-11-21T18:00:00+00:00",
+    "fhr": "f00-f06"
+   },
+   {
+    "file": "eas_1p0_02.png",
+    "start": "2026-11-21T18:00:00+00:00",
+    "end": "2026-11-22T00:00:00+00:00",
+    "fhr": "f06-f12"
+   },
+   {
+    "file": "eas_1p0_03.png",
+    "start": "2026-11-22T00:00:00+00:00",
+    "end": "2026-11-22T06:00:00+00:00",
+    "fhr": "f12-f18"
+   },
+   {
+    "file": "eas_1p0_04.png",
+    "start": "2026-11-22T06:00:00+00:00",
+    "end": "2026-11-22T12:00:00+00:00",
+    "fhr": "f18-f24"
+   },
+   {
+    "file": "eas_1p0_05.png",
+    "start": "2026-11-22T12:00:00+00:00",
+    "end": "2026-11-22T18:00:00+00:00",
+    "fhr": "f24-f30"
+   },
+   {
+    "file": "eas_1p0_06.png",
+    "start": "2026-11-22T18:00:00+00:00",
+    "end": "2026-11-23T00:00:00+00:00",
+    "fhr": "f30-f36"
+   },
+   {
+    "file": "eas_1p0_07.png",
+    "start": "2026-11-23T00:00:00+00:00",
+    "end": "2026-11-23T06:00:00+00:00",
+    "fhr": "f36-f42"
+   },
+   {
+    "file": "eas_1p0_08.png",
+    "start": "2026-11-23T06:00:00+00:00",
+    "end": "2026-11-23T12:00:00+00:00",
+    "fhr": "f42-f48"
+   }
+  ],
+  "2": [
+   {
+    "file": "eas_2p0_01.png",
+    "start": "2026-11-21T12:00:00+00:00",
+    "end": "2026-11-21T18:00:00+00:00",
+    "fhr": "f00-f06"
+   },
+   {
+    "file": "eas_2p0_02.png",
+    "start": "2026-11-21T18:00:00+00:00",
+    "end": "2026-11-22T00:00:00+00:00",
+    "fhr": "f06-f12"
+   },
+   {
+    "file": "eas_2p0_03.png",
+    "start": "2026-11-22T00:00:00+00:00",
+    "end": "2026-11-22T06:00:00+00:00",
+    "fhr": "f12-f18"
+   },
+   {
+    "file": "eas_2p0_04.png",
+    "start": "2026-11-22T06:00:00+00:00",
+    "end": "2026-11-22T12:00:00+00:00",
+    "fhr": "f18-f24"
+   },
+   {
+    "file": "eas_2p0_05.png",
+    "start": "2026-11-22T12:00:00+00:00",
+    "end": "2026-11-22T18:00:00+00:00",
+    "fhr": "f24-f30"
+   },
+   {
+    "file": "eas_2p0_06.png",
+    "start": "2026-11-22T18:00:00+00:00",
+    "end": "2026-11-23T00:00:00+00:00",
+    "fhr": "f30-f36"
+   },
+   {
+    "file": "eas_2p0_07.png",
+    "start": "2026-11-23T00:00:00+00:00",
+    "end": "2026-11-23T06:00:00+00:00",
+    "fhr": "f36-f42"
+   },
+   {
+    "file": "eas_2p0_08.png",
+    "start": "2026-11-23T06:00:00+00:00",
+    "end": "2026-11-23T12:00:00+00:00",
+    "fhr": "f42-f48"
+   }
+  ]
+ },
+ "products": {
+  "eas": true,
+  "avrg": true,
+  "ffri": true,
+  "ffg": true,
+  "verify_map": true,
+  "verify": true,
+  "cases": true,
+  "flash": true,
+  "board": true,
+  "radar": true
+ },
+ "verify": {
+  "n": 63,
+  "ets1_lpmm": [
+   0.2,
+   23
+  ],
+  "ets1_avrg": [
+   0.25,
+   20
+  ],
+  "fbias1_lpmm": [
+   1.55,
+   22
+  ],
+  "fbias1_avrg": [
+   0.76,
+   20
+  ],
+  "by_regime": [
+   {
+    "regime": "SW",
+    "n": 13,
+    "sources": {
+     "anl": 12,
+     "raob": 1
+    },
+    "ets1_lpmm": 0.31,
+    "ets1_avrg": 0.35,
+    "n_ets": 13,
+    "bias_lpmm": 0.77,
+    "bias_avrg": 0.91
+   },
+   {
+    "regime": "SE",
+    "n": 2,
+    "sources": {
+     "raob": 1,
+     "anl": 1
+    },
+    "ets1_lpmm": 0.01,
+    "ets1_avrg": 0.0,
+    "n_ets": 1,
+    "bias_lpmm": 1.31,
+    "bias_avrg": 1.2
+   },
+   {
+    "regime": "NE",
+    "n": 34,
+    "sources": {
+     "anl": 32,
+     "raob": 2
+    },
+    "ets1_lpmm": 0.05,
+    "ets1_avrg": 0.07,
+    "n_ets": 27,
+    "bias_lpmm": 1.15,
+    "bias_avrg": 1.14
+   },
+   {
+    "regime": "NW",
+    "n": 2,
+    "sources": {
+     "raob": 2
+    },
+    "ets1_lpmm": 0.0,
+    "ets1_avrg": 0.0,
+    "n_ets": 2,
+    "bias_lpmm": 2.62,
+    "bias_avrg": 2.3
+   },
+   {
+    "regime": "Light",
+    "n": 12,
+    "sources": {
+     "anl": 6,
+     "raob": 6
+    },
+    "ets1_lpmm": 0.01,
+    "ets1_avrg": 0.0,
+    "n_ets": 12,
+    "bias_lpmm": 1.69,
+    "bias_avrg": 1.64
+   }
+  ],
+  "recent": [
+   {
+    "init": "2026-11-19T12:00:00+00:00",
+    "valid_end": "2026-11-21T12:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 2.7,
+    "obs_max": 17.19,
+    "pad": {
+     "obs": 7.94,
+     "lpmm": 6.86,
+     "avrg": 8.24
+    },
+    "lpmm": {
+     "mean": 2.07,
+     "bias_ratio": 0.77,
+     "ets": {
+      "0.5": 0.32,
+      "1": 0.31,
+      "2": 0.22
+     },
+     "fbias": {
+      "0.5": 1.05,
+      "1": 0.93,
+      "2": 0.69
+     }
+    },
+    "avrg": {
+     "mean": 2.72,
+     "bias_ratio": 1.01,
+     "ets": {
+      "0.5": 0.19,
+      "1": 0.28,
+      "2": 0.25
+     },
+     "fbias": {
+      "0.5": 1.24,
+      "1": 1.13,
+      "2": 0.92
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 204,
+     "spd_kt": 20.7,
+     "consistency": 0.89,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 268,
+     "spd_kt": 13.5,
+     "consistency": 0.72,
+     "n": 8
+    },
+    "regime_raob": {
+     "name": "SW",
+     "dir": 188,
+     "spd_kt": 12.6,
+     "consistency": 1.0,
+     "n": 1,
+     "soundings": [
+      "KXMR 21/00Z"
+     ]
+    },
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-19T06:00:00+00:00",
+    "valid_end": "2026-11-21T06:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 3.29,
+    "obs_max": 19.07,
+    "pad": {
+     "obs": 10.07,
+     "lpmm": 6.96,
+     "avrg": 8.89
+    },
+    "lpmm": {
+     "mean": 2.18,
+     "bias_ratio": 0.66,
+     "ets": {
+      "0.5": 0.18,
+      "1": 0.17,
+      "2": 0.15
+     },
+     "fbias": {
+      "0.5": 0.98,
+      "1": 0.85,
+      "2": 0.63
+     }
+    },
+    "avrg": {
+     "mean": 2.75,
+     "bias_ratio": 0.84,
+     "ets": {
+      "0.5": 0.14,
+      "1": 0.14,
+      "2": 0.16
+     },
+     "fbias": {
+      "0.5": 1.2,
+      "1": 1.07,
+      "2": 0.82
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 212,
+     "spd_kt": 24.9,
+     "consistency": 0.96,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 253,
+     "spd_kt": 16.3,
+     "consistency": 0.82,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-19T00:00:00+00:00",
+    "valid_end": "2026-11-21T00:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 3.44,
+    "obs_max": 19.94,
+    "pad": {
+     "obs": 10.99,
+     "lpmm": 6.1,
+     "avrg": 9.51
+    },
+    "lpmm": {
+     "mean": 2.52,
+     "bias_ratio": 0.73,
+     "ets": {
+      "0.5": 0.34,
+      "1": 0.32,
+      "2": 0.35
+     },
+     "fbias": {
+      "0.5": 0.87,
+      "1": 0.76,
+      "2": 0.71
+     }
+    },
+    "avrg": {
+     "mean": 3.43,
+     "bias_ratio": 1.0,
+     "ets": {
+      "0.5": 0.3,
+      "1": 0.28,
+      "2": 0.38
+     },
+     "fbias": {
+      "0.5": 1.11,
+      "1": 0.99,
+      "2": 0.92
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 220,
+     "spd_kt": 23.6,
+     "consistency": 0.96,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 246,
+     "spd_kt": 18.9,
+     "consistency": 0.89,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-18T18:00:00+00:00",
+    "valid_end": "2026-11-20T18:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 3.58,
+    "obs_max": 21.39,
+    "pad": {
+     "obs": 12.0,
+     "lpmm": 5.18,
+     "avrg": 6.64
+    },
+    "lpmm": {
+     "mean": 2.91,
+     "bias_ratio": 0.81,
+     "ets": {
+      "0.5": 0.6,
+      "1": 0.55,
+      "2": 0.51
+     },
+     "fbias": {
+      "0.5": 0.97,
+      "1": 0.92,
+      "2": 0.96
+     }
+    },
+    "avrg": {
+     "mean": 3.56,
+     "bias_ratio": 0.99,
+     "ets": {
+      "0.5": 0.55,
+      "1": 0.53,
+      "2": 0.52
+     },
+     "fbias": {
+      "0.5": 1.14,
+      "1": 1.14,
+      "2": 1.17
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 238,
+     "spd_kt": 21.8,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 239,
+     "spd_kt": 21.0,
+     "consistency": 0.97,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-18T12:00:00+00:00",
+    "valid_end": "2026-11-20T12:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 3.4,
+    "obs_max": 22.6,
+    "pad": {
+     "obs": 12.08,
+     "lpmm": 10.44,
+     "avrg": 9.69
+    },
+    "lpmm": {
+     "mean": 2.34,
+     "bias_ratio": 0.69,
+     "ets": {
+      "0.5": 0.49,
+      "1": 0.49,
+      "2": 0.48
+     },
+     "fbias": {
+      "0.5": 0.87,
+      "1": 0.84,
+      "2": 0.89
+     }
+    },
+    "avrg": {
+     "mean": 2.82,
+     "bias_ratio": 0.83,
+     "ets": {
+      "0.5": 0.52,
+      "1": 0.53,
+      "2": 0.51
+     },
+     "fbias": {
+      "0.5": 1.1,
+      "1": 1.09,
+      "2": 1.11
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 238,
+     "spd_kt": 23.9,
+     "consistency": 1.0,
+     "n": 7
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 236,
+     "spd_kt": 21.8,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-18T06:00:00+00:00",
+    "valid_end": "2026-11-20T06:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 3.2,
+    "obs_max": 21.79,
+    "pad": {
+     "obs": 11.01,
+     "lpmm": 11.94,
+     "avrg": 14.08
+    },
+    "lpmm": {
+     "mean": 2.01,
+     "bias_ratio": 0.63,
+     "ets": {
+      "0.5": 0.32,
+      "1": 0.4,
+      "2": 0.42
+     },
+     "fbias": {
+      "0.5": 0.7,
+      "1": 0.68,
+      "2": 0.69
+     }
+    },
+    "avrg": {
+     "mean": 2.63,
+     "bias_ratio": 0.82,
+     "ets": {
+      "0.5": 0.4,
+      "1": 0.5,
+      "2": 0.53
+     },
+     "fbias": {
+      "0.5": 0.93,
+      "1": 0.88,
+      "2": 0.9
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 236,
+     "spd_kt": 21.6,
+     "consistency": 1.0,
+     "n": 7
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 233,
+     "spd_kt": 22.7,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-18T00:00:00+00:00",
+    "valid_end": "2026-11-20T00:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 3.07,
+    "obs_max": 21.28,
+    "pad": {
+     "obs": 9.81,
+     "lpmm": 12.1,
+     "avrg": 12.97
+    },
+    "lpmm": {
+     "mean": 2.08,
+     "bias_ratio": 0.68,
+     "ets": {
+      "0.5": 0.32,
+      "1": 0.44,
+      "2": 0.44
+     },
+     "fbias": {
+      "0.5": 0.75,
+      "1": 0.71,
+      "2": 0.75
+     }
+    },
+    "avrg": {
+     "mean": 2.71,
+     "bias_ratio": 0.88,
+     "ets": {
+      "0.5": 0.36,
+      "1": 0.57,
+      "2": 0.58
+     },
+     "fbias": {
+      "0.5": 1.04,
+      "1": 0.95,
+      "2": 0.98
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 237,
+     "spd_kt": 20.2,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 233,
+     "spd_kt": 21.7,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-17T18:00:00+00:00",
+    "valid_end": "2026-11-19T18:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 2.91,
+    "obs_max": 20.04,
+    "pad": {
+     "obs": 8.87,
+     "lpmm": 12.95,
+     "avrg": 11.71
+    },
+    "lpmm": {
+     "mean": 1.98,
+     "bias_ratio": 0.68,
+     "ets": {
+      "0.5": 0.24,
+      "1": 0.34,
+      "2": 0.45
+     },
+     "fbias": {
+      "0.5": 0.83,
+      "1": 0.76,
+      "2": 0.75
+     }
+    },
+    "avrg": {
+     "mean": 2.41,
+     "bias_ratio": 0.83,
+     "ets": {
+      "0.5": 0.22,
+      "1": 0.46,
+      "2": 0.61
+     },
+     "fbias": {
+      "0.5": 1.05,
+      "1": 0.97,
+      "2": 0.98
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 238,
+     "spd_kt": 19.7,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 232,
+     "spd_kt": 20.4,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-17T12:00:00+00:00",
+    "valid_end": "2026-11-19T12:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 2.46,
+    "obs_max": 18.53,
+    "pad": {
+     "obs": 5.51,
+     "lpmm": 6.16,
+     "avrg": 6.99
+    },
+    "lpmm": {
+     "mean": 1.72,
+     "bias_ratio": 0.7,
+     "ets": {
+      "0.5": 0.22,
+      "1": 0.22,
+      "2": 0.37
+     },
+     "fbias": {
+      "0.5": 0.79,
+      "1": 0.7,
+      "2": 0.72
+     }
+    },
+    "avrg": {
+     "mean": 2.06,
+     "bias_ratio": 0.84,
+     "ets": {
+      "0.5": 0.18,
+      "1": 0.31,
+      "2": 0.49
+     },
+     "fbias": {
+      "0.5": 1.06,
+      "1": 0.95,
+      "2": 0.92
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 237,
+     "spd_kt": 17.7,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 231,
+     "spd_kt": 18.4,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   },
+   {
+    "init": "2026-11-17T06:00:00+00:00",
+    "valid_end": "2026-11-19T06:00:00+00:00",
+    "n": 19904,
+    "obs_mean": 1.85,
+    "obs_max": 14.47,
+    "pad": {
+     "obs": 3.5,
+     "lpmm": 2.45,
+     "avrg": 3.1
+    },
+    "lpmm": {
+     "mean": 1.52,
+     "bias_ratio": 0.82,
+     "ets": {
+      "0.5": 0.23,
+      "1": 0.23,
+      "2": 0.34
+     },
+     "fbias": {
+      "0.5": 0.83,
+      "1": 0.75,
+      "2": 0.91
+     }
+    },
+    "avrg": {
+     "mean": 1.71,
+     "bias_ratio": 0.92,
+     "ets": {
+      "0.5": 0.17,
+      "1": 0.3,
+      "2": 0.43
+     },
+     "fbias": {
+      "0.5": 1.1,
+      "1": 0.94,
+      "2": 1.12
+     }
+    },
+    "regime_fcst": {
+     "name": "SW",
+     "dir": 236,
+     "spd_kt": 16.6,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_anl": {
+     "name": "SW",
+     "dir": 230,
+     "spd_kt": 16.6,
+     "consistency": 0.99,
+     "n": 8
+    },
+    "regime_raob": null,
+    "regime": "SW"
+   }
+  ]
+ },
+ "colorscale": {
+  "levels": [
+   0.01,
+   0.1,
+   0.25,
+   0.5,
+   0.75,
+   1.0,
+   1.5,
+   2.0,
+   2.5,
+   3.0,
+   4.0,
+   5.0,
+   6.0,
+   8.0,
+   10.0,
+   12.0,
+   15.0,
+   18.0
+  ],
+  "colors": [
+   "#4fcfcf",
+   "#00ffff",
+   "#00de80",
+   "#00bf00",
+   "#80de00",
+   "#ffff00",
+   "#ff9e00",
+   "#ff0000",
+   "#ff1f80",
+   "#f040ff",
+   "#801fff",
+   "#4040ff",
+   "#1f1f80",
+   "#595959",
+   "#808080",
+   "#dedede",
+   "#edd4ba"
+  ]
+ },
+ "timelines": [
+  {
+   "site": "LC-39A",
+   "file": "timeline_lc_39a.png"
+  },
+  {
+   "site": "LC-39B",
+   "file": "timeline_lc_39b.png"
+  },
+  {
+   "site": "SLC-40",
+   "file": "timeline_slc_40.png"
+  },
+  {
+   "site": "SLC-41",
+   "file": "timeline_slc_41.png"
+  },
+  {
+   "site": "SLC-37",
+   "file": "timeline_slc_37.png"
+  },
+  {
+   "site": "LC-36",
+   "file": "timeline_lc_36.png"
+  },
+  {
+   "site": "SLC-46",
+   "file": "timeline_slc_46.png"
+  },
+  {
+   "site": "Skid Strip (KXMR)",
+   "file": "timeline_skid_strip.png"
+  },
+  {
+   "site": "SLF (KTTS)",
+   "file": "timeline_slf.png"
+  },
+  {
+   "site": "Patrick (KCOF)",
+   "file": "timeline_patrick.png"
+  }
+ ],
+ "flash": {
+  "valid": "2026-11-21T18:56:00+00:00",
+  "sites": {
+   "LC-39A": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 96.0
+   },
+   "LC-39B": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 96.0
+   },
+   "SLC-40": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 98.0
+   },
+   "SLC-41": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 95.0
+   },
+   "SLC-37": {
+    "CREST_MAXUNITSTREAMFLOW": 0.8,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 98.0
+   },
+   "LC-36": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 96.0
+   },
+   "SLC-46": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 93.0
+   },
+   "Skid Strip (KXMR)": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 96.0
+   },
+   "SLF (KTTS)": {
+    "CREST_MAXUNITSTREAMFLOW": 0.9,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 98.0
+   },
+   "Patrick (KCOF)": {
+    "CREST_MAXUNITSTREAMFLOW": 0.4,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 98.0
+   },
+   "Melbourne (KMLB)": {
+    "CREST_MAXUNITSTREAMFLOW": 0.4,
+    "QPE_FFGMAX": 5.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 93.0
+   },
+   "Palm Bay": {
+    "CREST_MAXUNITSTREAMFLOW": 0.6,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 95.0
+   },
+   "Orlando (KMCO)": {
+    "CREST_MAXUNITSTREAMFLOW": 0.5,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 72.0
+   },
+   "Daytona (KDAB)": {
+    "CREST_MAXUNITSTREAMFLOW": 0.6,
+    "QPE_FFGMAX": 0.0,
+    "QPE_ARIMAX": 0.0,
+    "CREST_MAXSOILSAT": 98.0
+   }
+  },
+  "frames": {
+   "QPE_FFGMAX": [
+    {
+     "file": "flash_qpe_ffgmax_01.png",
+     "start": "2026-11-21T17:06:00+00:00",
+     "end": "2026-11-21T17:06:00+00:00",
+     "fhr": "1706Z",
+     "label": "1706Z (11 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_02.png",
+     "start": "2026-11-21T17:16:00+00:00",
+     "end": "2026-11-21T17:16:00+00:00",
+     "fhr": "1716Z",
+     "label": "1716Z (10 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_03.png",
+     "start": "2026-11-21T17:26:00+00:00",
+     "end": "2026-11-21T17:26:00+00:00",
+     "fhr": "1726Z",
+     "label": "1726Z (9 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_04.png",
+     "start": "2026-11-21T17:36:00+00:00",
+     "end": "2026-11-21T17:36:00+00:00",
+     "fhr": "1736Z",
+     "label": "1736Z (8 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_05.png",
+     "start": "2026-11-21T17:46:00+00:00",
+     "end": "2026-11-21T17:46:00+00:00",
+     "fhr": "1746Z",
+     "label": "1746Z (7 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_06.png",
+     "start": "2026-11-21T17:56:00+00:00",
+     "end": "2026-11-21T17:56:00+00:00",
+     "fhr": "1756Z",
+     "label": "1756Z (6 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_07.png",
+     "start": "2026-11-21T18:06:00+00:00",
+     "end": "2026-11-21T18:06:00+00:00",
+     "fhr": "1806Z",
+     "label": "1806Z (5 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_08.png",
+     "start": "2026-11-21T18:16:00+00:00",
+     "end": "2026-11-21T18:16:00+00:00",
+     "fhr": "1816Z",
+     "label": "1816Z (4 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_09.png",
+     "start": "2026-11-21T18:26:00+00:00",
+     "end": "2026-11-21T18:26:00+00:00",
+     "fhr": "1826Z",
+     "label": "1826Z (3 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_10.png",
+     "start": "2026-11-21T18:36:00+00:00",
+     "end": "2026-11-21T18:36:00+00:00",
+     "fhr": "1836Z",
+     "label": "1836Z (2 scans ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_11.png",
+     "start": "2026-11-21T18:46:00+00:00",
+     "end": "2026-11-21T18:46:00+00:00",
+     "fhr": "1846Z",
+     "label": "1846Z (1 scan ago)"
+    },
+    {
+     "file": "flash_qpe_ffgmax_12.png",
+     "start": "2026-11-21T18:56:00+00:00",
+     "end": "2026-11-21T18:56:00+00:00",
+     "fhr": "1856Z",
+     "label": "1856Z (latest)"
+    }
+   ],
+   "CREST_MAXUNITSTREAMFLOW": [
+    {
+     "file": "flash_crest_maxunitstreamflow_01.png",
+     "start": "2026-11-21T17:00:00+00:00",
+     "end": "2026-11-21T17:00:00+00:00",
+     "fhr": "1700Z",
+     "label": "1700Z (11 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_02.png",
+     "start": "2026-11-21T17:10:00+00:00",
+     "end": "2026-11-21T17:10:00+00:00",
+     "fhr": "1710Z",
+     "label": "1710Z (10 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_03.png",
+     "start": "2026-11-21T17:20:00+00:00",
+     "end": "2026-11-21T17:20:00+00:00",
+     "fhr": "1720Z",
+     "label": "1720Z (9 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_04.png",
+     "start": "2026-11-21T17:30:00+00:00",
+     "end": "2026-11-21T17:30:00+00:00",
+     "fhr": "1730Z",
+     "label": "1730Z (8 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_05.png",
+     "start": "2026-11-21T17:40:00+00:00",
+     "end": "2026-11-21T17:40:00+00:00",
+     "fhr": "1740Z",
+     "label": "1740Z (7 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_06.png",
+     "start": "2026-11-21T17:50:00+00:00",
+     "end": "2026-11-21T17:50:00+00:00",
+     "fhr": "1750Z",
+     "label": "1750Z (6 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_07.png",
+     "start": "2026-11-21T18:00:00+00:00",
+     "end": "2026-11-21T18:00:00+00:00",
+     "fhr": "1800Z",
+     "label": "1800Z (5 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_08.png",
+     "start": "2026-11-21T18:10:00+00:00",
+     "end": "2026-11-21T18:10:00+00:00",
+     "fhr": "1810Z",
+     "label": "1810Z (4 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_09.png",
+     "start": "2026-11-21T18:20:00+00:00",
+     "end": "2026-11-21T18:20:00+00:00",
+     "fhr": "1820Z",
+     "label": "1820Z (3 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_10.png",
+     "start": "2026-11-21T18:30:00+00:00",
+     "end": "2026-11-21T18:30:00+00:00",
+     "fhr": "1830Z",
+     "label": "1830Z (2 scans ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_11.png",
+     "start": "2026-11-21T18:40:00+00:00",
+     "end": "2026-11-21T18:40:00+00:00",
+     "fhr": "1840Z",
+     "label": "1840Z (1 scan ago)"
+    },
+    {
+     "file": "flash_crest_maxunitstreamflow_12.png",
+     "start": "2026-11-21T18:50:00+00:00",
+     "end": "2026-11-21T18:50:00+00:00",
+     "fhr": "1850Z",
+     "label": "1850Z (latest)"
+    }
+   ]
+  },
+  "products": {
+   "CREST_MAXUNITSTREAMFLOW": {
+    "label": "CREST max unit streamflow",
+    "unit": "m\u00b3 s\u207b\u00b9 km\u207b\u00b2",
+    "short": "q",
+    "marks": [
+     2.0,
+     6.0
+    ]
+   },
+   "QPE_FFGMAX": {
+    "label": "QPE as % of FFG, max of 1/3/6 h",
+    "unit": "% of FFG",
+    "short": "QPE % of FFG",
+    "marks": [
+     100.0
+    ]
+   },
+   "QPE_ARIMAX": {
+    "label": "QPE recurrence interval, max",
+    "unit": "yr",
+    "short": "ARI",
+    "marks": [
+     100.0
+    ]
+   },
+   "CREST_MAXSOILSAT": {
+    "label": "CREST max soil saturation",
+    "unit": "%",
+    "short": "soil",
+    "marks": []
+   }
+  }
+ },
+ "ffg_frames": {
+  "1": [
+   {
+    "file": "ffgr_1h_01.png",
+    "start": "2026-11-21T12:00:00+00:00",
+    "end": "2026-11-21T13:00:00+00:00",
+    "fhr": "f00-f01",
+    "max_pct": 77
+   },
+   {
+    "file": "ffgr_1h_02.png",
+    "start": "2026-11-21T13:00:00+00:00",
+    "end": "2026-11-21T14:00:00+00:00",
+    "fhr": "f01-f02",
+    "max_pct": 83
+   },
+   {
+    "file": "ffgr_1h_03.png",
+    "start": "2026-11-21T14:00:00+00:00",
+    "end": "2026-11-21T15:00:00+00:00",
+    "fhr": "f02-f03",
+    "max_pct": 100
+   },
+   {
+    "file": "ffgr_1h_04.png",
+    "start": "2026-11-21T15:00:00+00:00",
+    "end": "2026-11-21T16:00:00+00:00",
+    "fhr": "f03-f04",
+    "max_pct": 35
+   },
+   {
+    "file": "ffgr_1h_05.png",
+    "start": "2026-11-21T16:00:00+00:00",
+    "end": "2026-11-21T17:00:00+00:00",
+    "fhr": "f04-f05",
+    "max_pct": 28
+   },
+   {
+    "file": "ffgr_1h_06.png",
+    "start": "2026-11-21T17:00:00+00:00",
+    "end": "2026-11-21T18:00:00+00:00",
+    "fhr": "f05-f06",
+    "max_pct": 23
+   },
+   {
+    "file": "ffgr_1h_07.png",
+    "start": "2026-11-21T18:00:00+00:00",
+    "end": "2026-11-21T19:00:00+00:00",
+    "fhr": "f06-f07",
+    "max_pct": 33
+   },
+   {
+    "file": "ffgr_1h_08.png",
+    "start": "2026-11-21T19:00:00+00:00",
+    "end": "2026-11-21T20:00:00+00:00",
+    "fhr": "f07-f08",
+    "max_pct": 46
+   },
+   {
+    "file": "ffgr_1h_09.png",
+    "start": "2026-11-21T20:00:00+00:00",
+    "end": "2026-11-21T21:00:00+00:00",
+    "fhr": "f08-f09",
+    "max_pct": 60
+   },
+   {
+    "file": "ffgr_1h_10.png",
+    "start": "2026-11-21T21:00:00+00:00",
+    "end": "2026-11-21T22:00:00+00:00",
+    "fhr": "f09-f10",
+    "max_pct": 45
+   },
+   {
+    "file": "ffgr_1h_11.png",
+    "start": "2026-11-21T22:00:00+00:00",
+    "end": "2026-11-21T23:00:00+00:00",
+    "fhr": "f10-f11",
+    "max_pct": 34
+   },
+   {
+    "file": "ffgr_1h_12.png",
+    "start": "2026-11-21T23:00:00+00:00",
+    "end": "2026-11-22T00:00:00+00:00",
+    "fhr": "f11-f12",
+    "max_pct": 45
+   },
+   {
+    "file": "ffgr_1h_13.png",
+    "start": "2026-11-22T00:00:00+00:00",
+    "end": "2026-11-22T01:00:00+00:00",
+    "fhr": "f12-f13",
+    "max_pct": 34
+   },
+   {
+    "file": "ffgr_1h_14.png",
+    "start": "2026-11-22T01:00:00+00:00",
+    "end": "2026-11-22T02:00:00+00:00",
+    "fhr": "f13-f14",
+    "max_pct": 30
+   },
+   {
+    "file": "ffgr_1h_15.png",
+    "start": "2026-11-22T02:00:00+00:00",
+    "end": "2026-11-22T03:00:00+00:00",
+    "fhr": "f14-f15",
+    "max_pct": 15
+   },
+   {
+    "file": "ffgr_1h_16.png",
+    "start": "2026-11-22T03:00:00+00:00",
+    "end": "2026-11-22T04:00:00+00:00",
+    "fhr": "f15-f16",
+    "max_pct": 13
+   },
+   {
+    "file": "ffgr_1h_17.png",
+    "start": "2026-11-22T04:00:00+00:00",
+    "end": "2026-11-22T05:00:00+00:00",
+    "fhr": "f16-f17",
+    "max_pct": 17
+   },
+   {
+    "file": "ffgr_1h_18.png",
+    "start": "2026-11-22T05:00:00+00:00",
+    "end": "2026-11-22T06:00:00+00:00",
+    "fhr": "f17-f18",
+    "max_pct": 10
+   },
+   {
+    "file": "ffgr_1h_19.png",
+    "start": "2026-11-22T06:00:00+00:00",
+    "end": "2026-11-22T07:00:00+00:00",
+    "fhr": "f18-f19",
+    "max_pct": 5
+   },
+   {
+    "file": "ffgr_1h_20.png",
+    "start": "2026-11-22T07:00:00+00:00",
+    "end": "2026-11-22T08:00:00+00:00",
+    "fhr": "f19-f20",
+    "max_pct": 4
+   },
+   {
+    "file": "ffgr_1h_21.png",
+    "start": "2026-11-22T08:00:00+00:00",
+    "end": "2026-11-22T09:00:00+00:00",
+    "fhr": "f20-f21",
+    "max_pct": 7
+   },
+   {
+    "file": "ffgr_1h_22.png",
+    "start": "2026-11-22T09:00:00+00:00",
+    "end": "2026-11-22T10:00:00+00:00",
+    "fhr": "f21-f22",
+    "max_pct": 6
+   },
+   {
+    "file": "ffgr_1h_23.png",
+    "start": "2026-11-22T10:00:00+00:00",
+    "end": "2026-11-22T11:00:00+00:00",
+    "fhr": "f22-f23",
+    "max_pct": 7
+   },
+   {
+    "file": "ffgr_1h_24.png",
+    "start": "2026-11-22T11:00:00+00:00",
+    "end": "2026-11-22T12:00:00+00:00",
+    "fhr": "f23-f24",
+    "max_pct": 7
+   },
+   {
+    "file": "ffgr_1h_25.png",
+    "start": "2026-11-22T12:00:00+00:00",
+    "end": "2026-11-22T13:00:00+00:00",
+    "fhr": "f24-f25",
+    "max_pct": 5
+   },
+   {
+    "file": "ffgr_1h_26.png",
+    "start": "2026-11-22T13:00:00+00:00",
+    "end": "2026-11-22T14:00:00+00:00",
+    "fhr": "f25-f26",
+    "max_pct": 7
+   },
+   {
+    "file": "ffgr_1h_27.png",
+    "start": "2026-11-22T14:00:00+00:00",
+    "end": "2026-11-22T15:00:00+00:00",
+    "fhr": "f26-f27",
+    "max_pct": 7
+   },
+   {
+    "file": "ffgr_1h_28.png",
+    "start": "2026-11-22T15:00:00+00:00",
+    "end": "2026-11-22T16:00:00+00:00",
+    "fhr": "f27-f28",
+    "max_pct": 5
+   },
+   {
+    "file": "ffgr_1h_29.png",
+    "start": "2026-11-22T16:00:00+00:00",
+    "end": "2026-11-22T17:00:00+00:00",
+    "fhr": "f28-f29",
+    "max_pct": 3
+   },
+   {
+    "file": "ffgr_1h_30.png",
+    "start": "2026-11-22T17:00:00+00:00",
+    "end": "2026-11-22T18:00:00+00:00",
+    "fhr": "f29-f30",
+    "max_pct": 6
+   },
+   {
+    "file": "ffgr_1h_31.png",
+    "start": "2026-11-22T18:00:00+00:00",
+    "end": "2026-11-22T19:00:00+00:00",
+    "fhr": "f30-f31",
+    "max_pct": 5
+   },
+   {
+    "file": "ffgr_1h_32.png",
+    "start": "2026-11-22T19:00:00+00:00",
+    "end": "2026-11-22T20:00:00+00:00",
+    "fhr": "f31-f32",
+    "max_pct": 10
+   },
+   {
+    "file": "ffgr_1h_33.png",
+    "start": "2026-11-22T20:00:00+00:00",
+    "end": "2026-11-22T21:00:00+00:00",
+    "fhr": "f32-f33",
+    "max_pct": 17
+   },
+   {
+    "file": "ffgr_1h_34.png",
+    "start": "2026-11-22T21:00:00+00:00",
+    "end": "2026-11-22T22:00:00+00:00",
+    "fhr": "f33-f34",
+    "max_pct": 15
+   },
+   {
+    "file": "ffgr_1h_35.png",
+    "start": "2026-11-22T22:00:00+00:00",
+    "end": "2026-11-22T23:00:00+00:00",
+    "fhr": "f34-f35",
+    "max_pct": 4
+   },
+   {
+    "file": "ffgr_1h_36.png",
+    "start": "2026-11-22T23:00:00+00:00",
+    "end": "2026-11-23T00:00:00+00:00",
+    "fhr": "f35-f36",
+    "max_pct": 5
+   },
+   {
+    "file": "ffgr_1h_37.png",
+    "start": "2026-11-23T00:00:00+00:00",
+    "end": "2026-11-23T01:00:00+00:00",
+    "fhr": "f36-f37",
+    "max_pct": 11
+   },
+   {
+    "file": "ffgr_1h_38.png",
+    "start": "2026-11-23T01:00:00+00:00",
+    "end": "2026-11-23T02:00:00+00:00",
+    "fhr": "f37-f38",
+    "max_pct": 7
+   },
+   {
+    "file": "ffgr_1h_39.png",
+    "start": "2026-11-23T02:00:00+00:00",
+    "end": "2026-11-23T03:00:00+00:00",
+    "fhr": "f38-f39",
+    "max_pct": 4
+   },
+   {
+    "file": "ffgr_1h_40.png",
+    "start": "2026-11-23T03:00:00+00:00",
+    "end": "2026-11-23T04:00:00+00:00",
+    "fhr": "f39-f40",
+    "max_pct": 0
+   },
+   {
+    "file": "ffgr_1h_41.png",
+    "start": "2026-11-23T04:00:00+00:00",
+    "end": "2026-11-23T05:00:00+00:00",
+    "fhr": "f40-f41",
+    "max_pct": 1
+   },
+   {
+    "file": "ffgr_1h_42.png",
+    "start": "2026-11-23T05:00:00+00:00",
+    "end": "2026-11-23T06:00:00+00:00",
+    "fhr": "f41-f42",
+    "max_pct": 1
+   },
+   {
+    "file": "ffgr_1h_43.png",
+    "start": "2026-11-23T06:00:00+00:00",
+    "end": "2026-11-23T07:00:00+00:00",
+    "fhr": "f42-f43",
+    "max_pct": 1
+   },
+   {
+    "file": "ffgr_1h_44.png",
+    "start": "2026-11-23T07:00:00+00:00",
+    "end": "2026-11-23T08:00:00+00:00",
+    "fhr": "f43-f44",
+    "max_pct": 1
+   },
+   {
+    "file": "ffgr_1h_45.png",
+    "start": "2026-11-23T08:00:00+00:00",
+    "end": "2026-11-23T09:00:00+00:00",
+    "fhr": "f44-f45",
+    "max_pct": 0
+   },
+   {
+    "file": "ffgr_1h_46.png",
+    "start": "2026-11-23T09:00:00+00:00",
+    "end": "2026-11-23T10:00:00+00:00",
+    "fhr": "f45-f46",
+    "max_pct": 0
+   },
+   {
+    "file": "ffgr_1h_47.png",
+    "start": "2026-11-23T10:00:00+00:00",
+    "end": "2026-11-23T11:00:00+00:00",
+    "fhr": "f46-f47",
+    "max_pct": 1
+   },
+   {
+    "file": "ffgr_1h_48.png",
+    "start": "2026-11-23T11:00:00+00:00",
+    "end": "2026-11-23T12:00:00+00:00",
+    "fhr": "f47-f48",
+    "max_pct": 1
+   }
+  ],
+  "3": [
+   {
+    "file": "ffgr_3h_01.png",
+    "start": "2026-11-21T12:00:00+00:00",
+    "end": "2026-11-21T15:00:00+00:00",
+    "fhr": "f00-f03",
+    "max_pct": 148
+   },
+   {
+    "file": "ffgr_3h_02.png",
+    "start": "2026-11-21T15:00:00+00:00",
+    "end": "2026-11-21T18:00:00+00:00",
+    "fhr": "f03-f06",
+    "max_pct": 30
+   },
+   {
+    "file": "ffgr_3h_03.png",
+    "start": "2026-11-21T18:00:00+00:00",
+    "end": "2026-11-21T21:00:00+00:00",
+    "fhr": "f06-f09",
+    "max_pct": 58
+   },
+   {
+    "file": "ffgr_3h_04.png",
+    "start": "2026-11-21T21:00:00+00:00",
+    "end": "2026-11-22T00:00:00+00:00",
+    "fhr": "f09-f12",
+    "max_pct": 49
+   },
+   {
+    "file": "ffgr_3h_05.png",
+    "start": "2026-11-22T00:00:00+00:00",
+    "end": "2026-11-22T03:00:00+00:00",
+    "fhr": "f12-f15",
+    "max_pct": 29
+   },
+   {
+    "file": "ffgr_3h_06.png",
+    "start": "2026-11-22T03:00:00+00:00",
+    "end": "2026-11-22T06:00:00+00:00",
+    "fhr": "f15-f18",
+    "max_pct": 20
+   },
+   {
+    "file": "ffgr_3h_07.png",
+    "start": "2026-11-22T06:00:00+00:00",
+    "end": "2026-11-22T09:00:00+00:00",
+    "fhr": "f18-f21",
+    "max_pct": 6
+   },
+   {
+    "file": "ffgr_3h_08.png",
+    "start": "2026-11-22T09:00:00+00:00",
+    "end": "2026-11-22T12:00:00+00:00",
+    "fhr": "f21-f24",
+    "max_pct": 6
+   },
+   {
+    "file": "ffgr_3h_09.png",
+    "start": "2026-11-22T12:00:00+00:00",
+    "end": "2026-11-22T15:00:00+00:00",
+    "fhr": "f24-f27",
+    "max_pct": 7
+   },
+   {
+    "file": "ffgr_3h_10.png",
+    "start": "2026-11-22T15:00:00+00:00",
+    "end": "2026-11-22T18:00:00+00:00",
+    "fhr": "f27-f30",
+    "max_pct": 5
+   },
+   {
+    "file": "ffgr_3h_11.png",
+    "start": "2026-11-22T18:00:00+00:00",
+    "end": "2026-11-22T21:00:00+00:00",
+    "fhr": "f30-f33",
+    "max_pct": 15
+   },
+   {
+    "file": "ffgr_3h_12.png",
+    "start": "2026-11-22T21:00:00+00:00",
+    "end": "2026-11-23T00:00:00+00:00",
+    "fhr": "f33-f36",
+    "max_pct": 14
+   },
+   {
+    "file": "ffgr_3h_13.png",
+    "start": "2026-11-23T00:00:00+00:00",
+    "end": "2026-11-23T03:00:00+00:00",
+    "fhr": "f36-f39",
+    "max_pct": 9
+   },
+   {
+    "file": "ffgr_3h_14.png",
+    "start": "2026-11-23T03:00:00+00:00",
+    "end": "2026-11-23T06:00:00+00:00",
+    "fhr": "f39-f42",
+    "max_pct": 1
+   },
+   {
+    "file": "ffgr_3h_15.png",
+    "start": "2026-11-23T06:00:00+00:00",
+    "end": "2026-11-23T09:00:00+00:00",
+    "fhr": "f42-f45",
+    "max_pct": 2
+   },
+   {
+    "file": "ffgr_3h_16.png",
+    "start": "2026-11-23T09:00:00+00:00",
+    "end": "2026-11-23T12:00:00+00:00",
+    "fhr": "f45-f48",
+    "max_pct": 1
+   }
+  ],
+  "6": [
+   {
+    "file": "ffgr_6h_01.png",
+    "start": "2026-11-21T12:00:00+00:00",
+    "end": "2026-11-21T18:00:00+00:00",
+    "fhr": "f00-f06",
+    "max_pct": 127
+   },
+   {
+    "file": "ffgr_6h_02.png",
+    "start": "2026-11-21T18:00:00+00:00",
+    "end": "2026-11-22T00:00:00+00:00",
+    "fhr": "f06-f12",
+    "max_pct": 65
+   },
+   {
+    "file": "ffgr_6h_03.png",
+    "start": "2026-11-22T00:00:00+00:00",
+    "end": "2026-11-22T06:00:00+00:00",
+    "fhr": "f12-f18",
+    "max_pct": 25
+   },
+   {
+    "file": "ffgr_6h_04.png",
+    "start": "2026-11-22T06:00:00+00:00",
+    "end": "2026-11-22T12:00:00+00:00",
+    "fhr": "f18-f24",
+    "max_pct": 6
+   },
+   {
+    "file": "ffgr_6h_05.png",
+    "start": "2026-11-22T12:00:00+00:00",
+    "end": "2026-11-22T18:00:00+00:00",
+    "fhr": "f24-f30",
+    "max_pct": 6
+   },
+   {
+    "file": "ffgr_6h_06.png",
+    "start": "2026-11-22T18:00:00+00:00",
+    "end": "2026-11-23T00:00:00+00:00",
+    "fhr": "f30-f36",
+    "max_pct": 18
+   },
+   {
+    "file": "ffgr_6h_07.png",
+    "start": "2026-11-23T00:00:00+00:00",
+    "end": "2026-11-23T06:00:00+00:00",
+    "fhr": "f36-f42",
+    "max_pct": 8
+   },
+   {
+    "file": "ffgr_6h_08.png",
+    "start": "2026-11-23T06:00:00+00:00",
+    "end": "2026-11-23T12:00:00+00:00",
+    "fhr": "f42-f48",
+    "max_pct": 1
+   }
+  ]
+ },
+ "ffg_issued": "2026-11-21T12:00:00+00:00",
+ "diagnostics": {
+  "eas": {
+   "f06": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   },
+   "f18": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   },
+   "f24": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   },
+   "f12": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   },
+   "f30": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   },
+   "f36": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   },
+   "f48": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   },
+   "f42": {
+    "thresholds_in": [
+     0.01,
+     0.25,
+     0.5,
+     1.0,
+     2.0,
+     3.0
+    ],
+    "matched": [
+     0.25,
+     0.5,
+     1.0,
+     2.0
+    ]
+   }
+  },
+  "ffri": {
+   "f06": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   },
+   "f12": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   },
+   "f24": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   },
+   "f18": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   },
+   "f30": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   },
+   "f36": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   },
+   "f42": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   },
+   "f48": {
+    "ari_years": [
+     1,
+     2,
+     5,
+     10,
+     25,
+     50,
+     100
+    ],
+    "ffg": true
+   }
+  }
+ },
+ "board": {
+  "built": "2026-11-21T19:05:56+00:00",
+  "wfo": "MLB",
+  "images": {
+   "ppp_d1": "ppp_d1.png",
+   "ppp_d2": "ppp_d2.png",
+   "ppp_d3": "ppp_d3.png",
+   "ppp_48": "ppp_48h.png",
+   "ppp_72": "ppp_72h.png",
+   "ppp_days": "ppp_days_expected.png",
+   "ero_d1": "ero_d1.png",
+   "ero_d2": "ero_d2.png",
+   "ero_d3": "ero_d3.png",
+   "ero_d4": "ero_d4.png",
+   "ero_d5": "ero_d5.png"
+  },
+  "nexrad": "KMLB",
+  "live_url": "https://weather.sfwmd.gov/sfwmd/common/images/weather/webplots/radlooper.html?region=KMLB",
+  "live_name": "SFWMD",
+  "gauge_site": {
+   "url": "https://cyclonecizek.github.io/SpaceCoast-Rainfall/",
+   "json": "data/ksc_rain.json",
+   "name": "Space Coast Rainfall"
+  },
+  "ppp": {
+   "cycle": "2026-11-21T17:00:00+00:00",
+   "windows": {
+    "d1": {
+     "start": "2026-11-21T12:00:00+00:00",
+     "end": "2026-11-22T12:00:00+00:00",
+     "label": "Day 1 (24 hr)",
+     "past_h": 5,
+     "aligned": true
+    },
+    "d2": {
+     "start": "2026-11-22T12:00:00+00:00",
+     "end": "2026-11-23T12:00:00+00:00",
+     "label": "Day 2 (24 hr)",
+     "past_h": 0,
+     "aligned": true
+    },
+    "d3": {
+     "start": "2026-11-23T12:00:00+00:00",
+     "end": "2026-11-24T12:00:00+00:00",
+     "label": "Day 3 (24 hr)",
+     "past_h": 0,
+     "aligned": true
+    },
+    "48": {
+     "start": "2026-11-21T12:00:00+00:00",
+     "end": "2026-11-23T12:00:00+00:00",
+     "label": "48 hr total (Days 1-2)",
+     "past_h": 5,
+     "aligned": true
+    },
+    "72": {
+     "start": "2026-11-21T12:00:00+00:00",
+     "end": "2026-11-24T12:00:00+00:00",
+     "label": "72 hr total (Days 1-3)",
+     "past_h": 5,
+     "aligned": true
+    }
+   },
+   "order": [
+    "d1",
+    "d2",
+    "d3",
+    "48",
+    "72"
+   ],
+   "days_keys": [
+    "d1",
+    "d2",
+    "d3",
+    "72"
+   ]
+  },
+  "ppp_sites": {
+   "LC-39A": {
+    "d1": {
+     "expected": 0.1,
+     "low": 0.0,
+     "high": 0.86,
+     "exceed": [
+      [
+       0.01,
+       82
+      ],
+      [
+       0.1,
+       54
+      ],
+      [
+       0.25,
+       41
+      ],
+      [
+       0.5,
+       24
+      ],
+      [
+       1.0,
+       9
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       8
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       1
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       2
+      ],
+      [
+       0.25,
+       0
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.1,
+     "low": 0.0,
+     "high": 0.9,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       55
+      ],
+      [
+       0.25,
+       41
+      ],
+      [
+       0.5,
+       24
+      ],
+      [
+       1.0,
+       9
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.1,
+     "low": 0.0,
+     "high": 0.79,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       64
+      ],
+      [
+       0.25,
+       40
+      ],
+      [
+       0.5,
+       20
+      ],
+      [
+       1.0,
+       7
+      ],
+      [
+       2.0,
+       2
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "LC-39B": {
+    "d1": {
+     "expected": 0.09,
+     "low": 0.0,
+     "high": 0.88,
+     "exceed": [
+      [
+       0.01,
+       84
+      ],
+      [
+       0.1,
+       56
+      ],
+      [
+       0.25,
+       41
+      ],
+      [
+       0.5,
+       23
+      ],
+      [
+       1.0,
+       9
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       9
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       1
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       2
+      ],
+      [
+       0.25,
+       0
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.09,
+     "low": 0.0,
+     "high": 0.91,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       57
+      ],
+      [
+       0.25,
+       41
+      ],
+      [
+       0.5,
+       24
+      ],
+      [
+       1.0,
+       9
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.09,
+     "low": 0.0,
+     "high": 0.78,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       63
+      ],
+      [
+       0.25,
+       38
+      ],
+      [
+       0.5,
+       19
+      ],
+      [
+       1.0,
+       6
+      ],
+      [
+       2.0,
+       1
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "SLC-40": {
+    "d1": {
+     "expected": 0.18,
+     "low": 0.0,
+     "high": 1.06,
+     "exceed": [
+      [
+       0.01,
+       83
+      ],
+      [
+       0.1,
+       62
+      ],
+      [
+       0.25,
+       45
+      ],
+      [
+       0.5,
+       30
+      ],
+      [
+       1.0,
+       12
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.02,
+     "exceed": [
+      [
+       0.01,
+       16
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       2
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       1
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.18,
+     "low": 0.0,
+     "high": 1.06,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       64
+      ],
+      [
+       0.25,
+       46
+      ],
+      [
+       0.5,
+       31
+      ],
+      [
+       1.0,
+       12
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.18,
+     "low": 0.0,
+     "high": 0.86,
+     "exceed": [
+      [
+       0.01,
+       88
+      ],
+      [
+       0.1,
+       71
+      ],
+      [
+       0.25,
+       47
+      ],
+      [
+       0.5,
+       26
+      ],
+      [
+       1.0,
+       7
+      ],
+      [
+       2.0,
+       2
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "SLC-41": {
+    "d1": {
+     "expected": 0.14,
+     "low": 0.0,
+     "high": 0.97,
+     "exceed": [
+      [
+       0.01,
+       83
+      ],
+      [
+       0.1,
+       61
+      ],
+      [
+       0.25,
+       44
+      ],
+      [
+       0.5,
+       27
+      ],
+      [
+       1.0,
+       10
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       8
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       1
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       3
+      ],
+      [
+       0.25,
+       0
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.14,
+     "low": 0.0,
+     "high": 1.0,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       63
+      ],
+      [
+       0.25,
+       44
+      ],
+      [
+       0.5,
+       27
+      ],
+      [
+       1.0,
+       10
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.14,
+     "low": 0.0,
+     "high": 0.82,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       67
+      ],
+      [
+       0.25,
+       44
+      ],
+      [
+       0.5,
+       22
+      ],
+      [
+       1.0,
+       7
+      ],
+      [
+       2.0,
+       2
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "SLC-37": {
+    "d1": {
+     "expected": 0.2,
+     "low": 0.0,
+     "high": 1.14,
+     "exceed": [
+      [
+       0.01,
+       83
+      ],
+      [
+       0.1,
+       63
+      ],
+      [
+       0.25,
+       46
+      ],
+      [
+       0.5,
+       32
+      ],
+      [
+       1.0,
+       14
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.02,
+     "exceed": [
+      [
+       0.01,
+       19
+      ],
+      [
+       0.1,
+       5
+      ],
+      [
+       0.25,
+       3
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       1
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.2,
+     "low": 0.0,
+     "high": 1.14,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       65
+      ],
+      [
+       0.25,
+       47
+      ],
+      [
+       0.5,
+       34
+      ],
+      [
+       1.0,
+       14
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.2,
+     "low": 0.0,
+     "high": 0.91,
+     "exceed": [
+      [
+       0.01,
+       88
+      ],
+      [
+       0.1,
+       73
+      ],
+      [
+       0.25,
+       49
+      ],
+      [
+       0.5,
+       31
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       2
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "LC-36": {
+    "d1": {
+     "expected": 0.24,
+     "low": 0.0,
+     "high": 1.42,
+     "exceed": [
+      [
+       0.01,
+       84
+      ],
+      [
+       0.1,
+       65
+      ],
+      [
+       0.25,
+       47
+      ],
+      [
+       0.5,
+       31
+      ],
+      [
+       1.0,
+       18
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       1
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.04,
+     "exceed": [
+      [
+       0.01,
+       21
+      ],
+      [
+       0.1,
+       7
+      ],
+      [
+       0.25,
+       4
+      ],
+      [
+       0.5,
+       2
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       3
+      ],
+      [
+       0.5,
+       1
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.24,
+     "low": 0.0,
+     "high": 1.42,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       66
+      ],
+      [
+       0.25,
+       48
+      ],
+      [
+       0.5,
+       35
+      ],
+      [
+       1.0,
+       19
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       1
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.24,
+     "low": 0.0,
+     "high": 0.84,
+     "exceed": [
+      [
+       0.01,
+       88
+      ],
+      [
+       0.1,
+       75
+      ],
+      [
+       0.25,
+       49
+      ],
+      [
+       0.5,
+       31
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "SLC-46": {
+    "d1": {
+     "expected": 0.23,
+     "low": 0.0,
+     "high": 1.55,
+     "exceed": [
+      [
+       0.01,
+       85
+      ],
+      [
+       0.1,
+       65
+      ],
+      [
+       0.25,
+       47
+      ],
+      [
+       0.5,
+       31
+      ],
+      [
+       1.0,
+       19
+      ],
+      [
+       2.0,
+       5
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       1
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.04,
+     "exceed": [
+      [
+       0.01,
+       21
+      ],
+      [
+       0.1,
+       8
+      ],
+      [
+       0.25,
+       4
+      ],
+      [
+       0.5,
+       2
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       3
+      ],
+      [
+       0.5,
+       1
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.23,
+     "low": 0.0,
+     "high": 1.55,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       67
+      ],
+      [
+       0.25,
+       48
+      ],
+      [
+       0.5,
+       35
+      ],
+      [
+       1.0,
+       20
+      ],
+      [
+       2.0,
+       5
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       2
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.23,
+     "low": 0.0,
+     "high": 0.84,
+     "exceed": [
+      [
+       0.01,
+       88
+      ],
+      [
+       0.1,
+       74
+      ],
+      [
+       0.25,
+       49
+      ],
+      [
+       0.5,
+       31
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "Skid Strip (KXMR)": {
+    "d1": {
+     "expected": 0.23,
+     "low": 0.0,
+     "high": 1.61,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       66
+      ],
+      [
+       0.25,
+       49
+      ],
+      [
+       0.5,
+       36
+      ],
+      [
+       1.0,
+       20
+      ],
+      [
+       2.0,
+       5
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       1
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.03,
+     "exceed": [
+      [
+       0.01,
+       20
+      ],
+      [
+       0.1,
+       8
+      ],
+      [
+       0.25,
+       4
+      ],
+      [
+       0.5,
+       2
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       2
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.23,
+     "low": 0.0,
+     "high": 1.61,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       68
+      ],
+      [
+       0.25,
+       49
+      ],
+      [
+       0.5,
+       38
+      ],
+      [
+       1.0,
+       21
+      ],
+      [
+       2.0,
+       5
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       1
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.23,
+     "low": 0.0,
+     "high": 0.93,
+     "exceed": [
+      [
+       0.01,
+       89
+      ],
+      [
+       0.1,
+       76
+      ],
+      [
+       0.25,
+       51
+      ],
+      [
+       0.5,
+       35
+      ],
+      [
+       1.0,
+       9
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "SLF (KTTS)": {
+    "d1": {
+     "expected": 0.06,
+     "low": 0.0,
+     "high": 0.8,
+     "exceed": [
+      [
+       0.01,
+       69
+      ],
+      [
+       0.1,
+       46
+      ],
+      [
+       0.25,
+       36
+      ],
+      [
+       0.5,
+       22
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       8
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       1
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       0
+      ],
+      [
+       0.25,
+       0
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.06,
+     "low": 0.0,
+     "high": 0.9,
+     "exceed": [
+      [
+       0.01,
+       70
+      ],
+      [
+       0.1,
+       47
+      ],
+      [
+       0.25,
+       36
+      ],
+      [
+       0.5,
+       22
+      ],
+      [
+       1.0,
+       9
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       1
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.06,
+     "low": 0.0,
+     "high": 0.79,
+     "exceed": [
+      [
+       0.01,
+       73
+      ],
+      [
+       0.1,
+       59
+      ],
+      [
+       0.25,
+       40
+      ],
+      [
+       0.5,
+       21
+      ],
+      [
+       1.0,
+       7
+      ],
+      [
+       2.0,
+       1
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "Patrick (KCOF)": {
+    "d1": {
+     "expected": 0.14,
+     "low": 0.0,
+     "high": 0.83,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       59
+      ],
+      [
+       0.25,
+       39
+      ],
+      [
+       0.5,
+       21
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       2
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.05,
+     "exceed": [
+      [
+       0.01,
+       22
+      ],
+      [
+       0.1,
+       5
+      ],
+      [
+       0.25,
+       2
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       2
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.14,
+     "low": 0.0,
+     "high": 0.83,
+     "exceed": [
+      [
+       0.01,
+       88
+      ],
+      [
+       0.1,
+       63
+      ],
+      [
+       0.25,
+       39
+      ],
+      [
+       0.5,
+       21
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       4
+      ],
+      [
+       4.0,
+       3
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.14,
+     "low": 0.0,
+     "high": 0.75,
+     "exceed": [
+      [
+       0.01,
+       87
+      ],
+      [
+       0.1,
+       61
+      ],
+      [
+       0.25,
+       39
+      ],
+      [
+       0.5,
+       20
+      ],
+      [
+       1.0,
+       5
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       3
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "Melbourne (KMLB)": {
+    "d1": {
+     "expected": 0.11,
+     "low": 0.0,
+     "high": 1.0,
+     "exceed": [
+      [
+       0.01,
+       71
+      ],
+      [
+       0.1,
+       47
+      ],
+      [
+       0.25,
+       34
+      ],
+      [
+       0.5,
+       21
+      ],
+      [
+       1.0,
+       10
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       2
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       9
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       2
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       3
+      ],
+      [
+       0.5,
+       1
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.11,
+     "low": 0.0,
+     "high": 1.0,
+     "exceed": [
+      [
+       0.01,
+       72
+      ],
+      [
+       0.1,
+       49
+      ],
+      [
+       0.25,
+       35
+      ],
+      [
+       0.5,
+       22
+      ],
+      [
+       1.0,
+       10
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       2
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.11,
+     "low": 0.0,
+     "high": 0.8,
+     "exceed": [
+      [
+       0.01,
+       83
+      ],
+      [
+       0.1,
+       58
+      ],
+      [
+       0.25,
+       44
+      ],
+      [
+       0.5,
+       30
+      ],
+      [
+       1.0,
+       5
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       2
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "Palm Bay": {
+    "d1": {
+     "expected": 0.17,
+     "low": 0.0,
+     "high": 1.12,
+     "exceed": [
+      [
+       0.01,
+       78
+      ],
+      [
+       0.1,
+       49
+      ],
+      [
+       0.25,
+       36
+      ],
+      [
+       0.5,
+       23
+      ],
+      [
+       1.0,
+       12
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       2
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.05,
+     "exceed": [
+      [
+       0.01,
+       22
+      ],
+      [
+       0.1,
+       5
+      ],
+      [
+       0.25,
+       2
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       5
+      ],
+      [
+       0.1,
+       4
+      ],
+      [
+       0.25,
+       3
+      ],
+      [
+       0.5,
+       1
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.17,
+     "low": 0.0,
+     "high": 1.12,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       50
+      ],
+      [
+       0.25,
+       37
+      ],
+      [
+       0.5,
+       23
+      ],
+      [
+       1.0,
+       12
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       2
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.17,
+     "low": 0.0,
+     "high": 0.96,
+     "exceed": [
+      [
+       0.01,
+       86
+      ],
+      [
+       0.1,
+       59
+      ],
+      [
+       0.25,
+       44
+      ],
+      [
+       0.5,
+       31
+      ],
+      [
+       1.0,
+       9
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       3
+      ],
+      [
+       4.0,
+       3
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   },
+   "Orlando (KMCO)": {
+    "d1": {
+     "expected": 0.06,
+     "low": 0.0,
+     "high": 0.83,
+     "exceed": [
+      [
+       0.01,
+       66
+      ],
+      [
+       0.1,
+       46
+      ],
+      [
+       0.25,
+       37
+      ],
+      [
+       0.5,
+       23
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d2": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       8
+      ],
+      [
+       0.1,
+       3
+      ],
+      [
+       0.25,
+       0
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "d3": {
+     "expected": 0.0,
+     "low": 0.0,
+     "high": 0.0,
+     "exceed": [
+      [
+       0.01,
+       0
+      ],
+      [
+       0.1,
+       0
+      ],
+      [
+       0.25,
+       0
+      ],
+      [
+       0.5,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "48": {
+     "expected": 0.06,
+     "low": 0.0,
+     "high": 0.83,
+     "exceed": [
+      [
+       0.01,
+       69
+      ],
+      [
+       0.1,
+       46
+      ],
+      [
+       0.25,
+       37
+      ],
+      [
+       0.5,
+       23
+      ],
+      [
+       1.0,
+       8
+      ],
+      [
+       2.0,
+       4
+      ],
+      [
+       3.0,
+       2
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    },
+    "72": {
+     "expected": 0.06,
+     "low": 0.0,
+     "high": 0.73,
+     "exceed": [
+      [
+       0.01,
+       73
+      ],
+      [
+       0.1,
+       53
+      ],
+      [
+       0.25,
+       40
+      ],
+      [
+       0.5,
+       23
+      ],
+      [
+       1.0,
+       7
+      ],
+      [
+       2.0,
+       0
+      ],
+      [
+       3.0,
+       0
+      ],
+      [
+       4.0,
+       0
+      ],
+      [
+       6.0,
+       0
+      ],
+      [
+       8.0,
+       0
+      ],
+      [
+       12.0,
+       0
+      ]
+     ]
+    }
+   }
+  },
+  "ppp_panels": {
+   "d1": [
+    {
+     "box": [
+      0.04547,
+      0.16,
+      0.30621,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.36963,
+      0.16,
+      0.63037,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.69379,
+      0.16,
+      0.95453,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    }
+   ],
+   "d2": [
+    {
+     "box": [
+      0.04547,
+      0.16,
+      0.30621,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.36963,
+      0.16,
+      0.63037,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.69379,
+      0.16,
+      0.95453,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    }
+   ],
+   "d3": [
+    {
+     "box": [
+      0.04547,
+      0.16,
+      0.30621,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.36963,
+      0.16,
+      0.63037,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.69379,
+      0.16,
+      0.95453,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    }
+   ],
+   "48": [
+    {
+     "box": [
+      0.04547,
+      0.16,
+      0.30621,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.36963,
+      0.16,
+      0.63037,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.69379,
+      0.16,
+      0.95453,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    }
+   ],
+   "72": [
+    {
+     "box": [
+      0.04547,
+      0.16,
+      0.30621,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.36963,
+      0.16,
+      0.63037,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.69379,
+      0.16,
+      0.95453,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    }
+   ],
+   "days": [
+    {
+     "box": [
+      0.02712,
+      0.16,
+      0.23832,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.27197,
+      0.16,
+      0.48317,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.51683,
+      0.16,
+      0.72803,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    },
+    {
+     "box": [
+      0.76168,
+      0.16,
+      0.97288,
+      0.8
+     ],
+     "extent": [
+      -83.0,
+      -79.0,
+      26.5,
+      30.5
+     ]
+    }
+   ]
+  },
+  "site_ll": {
+   "LC-39A": [
+    28.6082,
+    -80.6041
+   ],
+   "LC-39B": [
+    28.6272,
+    -80.6208
+   ],
+   "SLC-40": [
+    28.5619,
+    -80.5772
+   ],
+   "SLC-41": [
+    28.5833,
+    -80.583
+   ],
+   "SLC-37": [
+    28.5317,
+    -80.565
+   ],
+   "LC-36": [
+    28.4706,
+    -80.5378
+   ],
+   "SLC-46": [
+    28.4584,
+    -80.5284
+   ],
+   "Skid Strip (KXMR)": [
+    28.4676,
+    -80.5669
+   ],
+   "SLF (KTTS)": [
+    28.615,
+    -80.6945
+   ],
+   "Patrick (KCOF)": [
+    28.2349,
+    -80.6101
+   ],
+   "Melbourne (KMLB)": [
+    28.1028,
+    -80.6453
+   ],
+   "Palm Bay": [
+    28.0345,
+    -80.5887
+   ],
+   "Orlando (KMCO)": [
+    28.4294,
+    -81.3089
+   ]
+  },
+  "ero": {
+   "days": {
+    "1": {
+     "max_in_view": 1,
+     "name": "Marginal",
+     "issue_time": "2026-11-21 16:08:00",
+     "start_time": "2026-11-21 16:00:00",
+     "end_time": "2026-11-22 12:00:00",
+     "valid_time": "16Z 11/21/26 - 12Z 11/22/26"
+    },
+    "2": {
+     "max_in_view": 0,
+     "name": "None",
+     "issue_time": "2026-11-21 07:55:00",
+     "start_time": "2026-11-22 12:00:00",
+     "end_time": "2026-11-23 12:00:00",
+     "valid_time": "12Z 11/22/26 - 12Z 11/23/26"
+    },
+    "3": {
+     "max_in_view": 0,
+     "name": "None"
+    },
+    "4": {
+     "max_in_view": 1,
+     "name": "Marginal",
+     "issue_time": "2026-11-21 07:52:00",
+     "start_time": "2026-11-24 12:00:00",
+     "end_time": "2026-11-25 12:00:00",
+     "valid_time": "12Z 11/24/26 - 12Z 11/25/26"
+    },
+    "5": {
+     "max_in_view": 0,
+     "name": "None",
+     "issue_time": "2026-11-21 07:52:00",
+     "start_time": "2026-11-25 12:00:00",
+     "end_time": "2026-11-26 12:00:00",
+     "valid_time": "12Z 11/25/26 - 12Z 11/26/26"
+    }
+   },
+   "sites": {
+    "LC-39A": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "LC-39B": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "SLC-40": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "SLC-41": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "SLC-37": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "LC-36": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "SLC-46": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "Skid Strip (KXMR)": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "SLF (KTTS)": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "Patrick (KCOF)": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "Melbourne (KMLB)": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "Palm Bay": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    },
+    "Orlando (KMCO)": {
+     "1": 1,
+     "2": 0,
+     "3": 0,
+     "4": 0,
+     "5": 0
+    }
+   }
+  },
+  "afd": {
+   "office": "National Weather Service Melbourne FL",
+   "issued_text": "1257 PM EST Sat Nov 21 2026",
+   "key_messages": [
+    "Scattered showers and isolated storms are forecast across east central Florida today and could aggravate sensitive locations that remain fully saturated and flooded. Lightning, gusty winds, and even small hail will be possible with the strongest storms that develop.",
+    "Hazardous beach and boating conditions continue through today, though a slow improvement is anticipated through the remainder of this weekend.",
+    "Prolonged river flooding continues along the St. Johns River due to recent heavy rainfall across the basin. Any additional rainfall will lead to additional rises."
+   ],
+   "hydrology": "River flood warnings remain in effect for Cocoa (COCF1), Geneva (GENF1), Astor (ASTF1), Deland (DLAF1) and Sanford (SNFF1) on the St. Johns River. All five river points are either actively in Major Flood Stage or are forecast to reach it in the coming days. Prolonged flooding impacts along the St. Johns are anticipated, and any additional rainfall across the basin may lead to additional rises. River forecasts out five days are issued twice daily by the NWS Southeast River Forecast Center in collaboration with NWS Melbourne and are available at water.noaa.gov/wfo/MLB.",
+   "hazards": [
+    {
+     "area": "AM",
+     "text": "Small Craft Advisory until 7 AM EST Sunday for AMZ570-572."
+    },
+    {
+     "area": "AM",
+     "text": "Small Craft Advisory until 1 AM EST Sunday for AMZ575."
+    }
+   ],
+   "source": "api.weather.gov",
+   "issued": "2026-11-21T17:57:00+00:00",
+   "link": "https://forecast.weather.gov/product.php?site=MLB&issuedby=MLB&product=AFD"
+  },
+  "actions": [
+   {
+    "severity": 3,
+    "text": "Active NWS product (AM): Small Craft Advisory until 7 AM EST Sunday for AMZ570-572.",
+    "source": "AFD watches/warnings/advisories",
+    "why": ""
+   },
+   {
+    "severity": 3,
+    "text": "Active NWS product (AM): Small Craft Advisory until 1 AM EST Sunday for AMZ575.",
+    "source": "AFD watches/warnings/advisories",
+    "why": ""
+   },
+   {
+    "severity": 3,
+    "text": "River(s) at or forecast to major flood stage: coordinate road closures and check river forecasts.",
+    "source": "AFD hydrology",
+    "why": "River flood warnings remain in effect for Cocoa (COCF1), Geneva (GENF1), Astor (ASTF1), Deland (DLAF1) and Sanford (SNFF1) on the St. Johns River. All five river points are either actively in Major Flood Stage or are forecast to reach it in the coming days. Pr\u2026"
+   },
+   {
+    "severity": 2,
+    "text": "River flooding ongoing or forecast: monitor river forecasts and affected crossings.",
+    "source": "AFD key messages",
+    "why": "Prolonged river flooding continues along the St. Johns River due to recent heavy rainfall across the basin. Any additional rainfall will lead to additional rises."
+   },
+   {
+    "severity": 2,
+    "text": "Heavy rain potential noted: check low-water crossings, drainage and pump readiness.",
+    "source": "AFD key messages",
+    "why": "Prolonged river flooding continues along the St. Johns River due to recent heavy rainfall across the basin. Any additional rainfall will lead to additional rises."
+   },
+   {
+    "severity": 2,
+    "text": "Strong to severe storms possible: secure loose equipment and review lightning/wind safety.",
+    "source": "AFD key messages",
+    "why": "Scattered showers and isolated storms are forecast across east central Florida today and could aggravate sensitive locations that remain fully saturated and flooded. Lightning, gusty winds, and even small hail will be possible with the strongest storms that de\u2026"
+   },
+   {
+    "severity": 1,
+    "text": "Beach and surf hazards: notify beach operations and lifeguard coordinators.",
+    "source": "AFD key messages",
+    "why": "Hazardous beach and boating conditions continue through today, though a slow improvement is anticipated through the remainder of this weekend."
+   },
+   {
+    "severity": 1,
+    "text": "Awareness: WPC Day 1 Marginal risk (\u22655% chance of flash flooding within 25 mi) at 13 of 13 sites, including LC-39A, LC-39B, SLC-40.",
+    "source": "WPC Excessive Rainfall Outlook",
+    "why": "16Z 11/21/26 - 12Z 11/22/26"
+   }
+  ],
+  "sat": {
+   "sector": "se",
+   "bands": {
+    "GEOCOLOR": {
+     "label": "GeoColor (visible by day, IR at night)",
+     "frames": [
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251506_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T15:06:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251516_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T15:16:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251526_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T15:26:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251536_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T15:36:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251546_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T15:46:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251556_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T15:56:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251606_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T16:06:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251616_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T16:16:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251626_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T16:26:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251636_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T16:36:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251646_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T16:46:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251656_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T16:56:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251706_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T17:06:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251716_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T17:16:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251726_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T17:26:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251736_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T17:36:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251746_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T17:46:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251756_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T17:56:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251806_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T18:06:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251816_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T18:16:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251826_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T18:26:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251836_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T18:36:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251846_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T18:46:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/20263251856_GOES19-ABI-se-GEOCOLOR-1200x1200.jpg",
+       "time": "2026-11-21T18:56:00+00:00"
+      }
+     ]
+    },
+    "13": {
+     "label": "Infrared (band 13)",
+     "frames": [
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251511_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T15:11:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251521_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T15:21:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251531_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T15:31:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251541_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T15:41:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251551_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T15:51:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251601_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T16:01:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251611_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T16:11:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251621_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T16:21:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251631_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T16:31:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251641_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T16:41:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251651_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T16:51:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251701_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T17:01:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251711_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T17:11:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251721_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T17:21:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251731_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T17:31:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251741_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T17:41:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251751_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T17:51:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251801_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T18:01:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251811_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T18:11:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251821_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T18:21:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251831_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T18:31:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251841_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T18:41:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251851_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T18:51:00+00:00"
+      },
+      {
+       "url": "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/20263251901_GOES19-ABI-se-13-1200x1200.jpg",
+       "time": "2026-11-21T19:01:00+00:00"
+      }
+     ]
+    }
+   },
+   "page": "https://www.star.nesdis.noaa.gov/GOES/sector.php?sat=G19&sector=se"
+  },
+  "qpe": {
+   "order": [
+    "1",
+    "3",
+    "6",
+    "12",
+    "24",
+    "48",
+    "72"
+   ],
+   "accums": {
+    "1": {
+     "img": "mrms_qpe01h.png",
+     "valid": "2026-11-21T18:00:00+00:00",
+     "max_in": 1.6,
+     "sites": {
+      "LC-39A": 0.0,
+      "LC-39B": 0.0,
+      "SLC-40": 0.0,
+      "SLC-41": 0.0,
+      "SLC-37": 0.0,
+      "LC-36": 0.0,
+      "SLC-46": 0.0,
+      "Skid Strip (KXMR)": 0.0,
+      "SLF (KTTS)": 0.0,
+      "Patrick (KCOF)": 0.0,
+      "Melbourne (KMLB)": 0.0,
+      "Palm Bay": 0.0,
+      "Orlando (KMCO)": 0.0
+     }
+    },
+    "3": {
+     "img": "mrms_qpe03h.png",
+     "valid": "2026-11-21T18:00:00+00:00",
+     "max_in": 1.6,
+     "sites": {
+      "LC-39A": 0.0,
+      "LC-39B": 0.0,
+      "SLC-40": 0.0,
+      "SLC-41": 0.0,
+      "SLC-37": 0.0,
+      "LC-36": 0.0,
+      "SLC-46": 0.0,
+      "Skid Strip (KXMR)": 0.0,
+      "SLF (KTTS)": 0.0,
+      "Patrick (KCOF)": 0.0,
+      "Melbourne (KMLB)": 0.0,
+      "Palm Bay": 0.0,
+      "Orlando (KMCO)": 0.0
+     }
+    },
+    "6": {
+     "img": "mrms_qpe06h.png",
+     "valid": "2026-11-21T18:00:00+00:00",
+     "max_in": 1.74,
+     "sites": {
+      "LC-39A": 0.0,
+      "LC-39B": 0.0,
+      "SLC-40": 0.0,
+      "SLC-41": 0.0,
+      "SLC-37": 0.0,
+      "LC-36": 0.0,
+      "SLC-46": 0.0,
+      "Skid Strip (KXMR)": 0.0,
+      "SLF (KTTS)": 0.0,
+      "Patrick (KCOF)": 0.0,
+      "Melbourne (KMLB)": 0.0,
+      "Palm Bay": 0.0,
+      "Orlando (KMCO)": 0.0
+     }
+    },
+    "12": {
+     "img": "mrms_qpe12h.png",
+     "valid": "2026-11-21T18:00:00+00:00",
+     "max_in": 4.01,
+     "sites": {
+      "LC-39A": 0.0,
+      "LC-39B": 0.0,
+      "SLC-40": 0.0,
+      "SLC-41": 0.0,
+      "SLC-37": 0.0,
+      "LC-36": 0.0,
+      "SLC-46": 0.0,
+      "Skid Strip (KXMR)": 0.0,
+      "SLF (KTTS)": 0.0,
+      "Patrick (KCOF)": 0.0,
+      "Melbourne (KMLB)": 0.0,
+      "Palm Bay": 0.0,
+      "Orlando (KMCO)": 0.01
+     }
+    },
+    "24": {
+     "img": "mrms_qpe24h.png",
+     "valid": "2026-11-21T18:00:00+00:00",
+     "max_in": 8.06,
+     "sites": {
+      "LC-39A": 0.0,
+      "LC-39B": 0.0,
+      "SLC-40": 0.0,
+      "SLC-41": 0.0,
+      "SLC-37": 0.0,
+      "LC-36": 0.0,
+      "SLC-46": 0.0,
+      "Skid Strip (KXMR)": 0.0,
+      "SLF (KTTS)": 0.0,
+      "Patrick (KCOF)": 0.0,
+      "Melbourne (KMLB)": 0.0,
+      "Palm Bay": 0.0,
+      "Orlando (KMCO)": 0.01
+     }
+    },
+    "48": {
+     "img": "mrms_qpe48h.png",
+     "valid": "2026-11-21T18:00:00+00:00",
+     "max_in": 14.97,
+     "sites": {
+      "LC-39A": 3.81,
+      "LC-39B": 4.18,
+      "SLC-40": 4.31,
+      "SLC-41": 4.28,
+      "SLC-37": 5.02,
+      "LC-36": 4.18,
+      "SLC-46": 4.43,
+      "Skid Strip (KXMR)": 4.37,
+      "SLF (KTTS)": 3.58,
+      "Patrick (KCOF)": 3.67,
+      "Melbourne (KMLB)": 0.49,
+      "Palm Bay": 0.36,
+      "Orlando (KMCO)": 0.31
+     }
+    },
+    "72": {
+     "img": "mrms_qpe72h.png",
+     "valid": "2026-11-21T18:00:00+00:00",
+     "max_in": 20.69,
+     "sites": {
+      "LC-39A": 11.36,
+      "LC-39B": 11.08,
+      "SLC-40": 12.8,
+      "SLC-41": 13.21,
+      "SLC-37": 15.04,
+      "LC-36": 14.59,
+      "SLC-46": 15.93,
+      "Skid Strip (KXMR)": 14.45,
+      "SLF (KTTS)": 10.91,
+      "Patrick (KCOF)": 13.13,
+      "Melbourne (KMLB)": 4.58,
+      "Palm Bay": 7.05,
+      "Orlando (KMCO)": 2.42
+     }
+    }
+   }
+  },
+  "ppp_sites_primary": {
+   "d1": {
+    "expected": 0.1,
+    "low": 0.0,
+    "high": 0.86,
+    "exceed": [
+     [
+      0.01,
+      82
+     ],
+     [
+      0.1,
+      54
+     ],
+     [
+      0.25,
+      41
+     ],
+     [
+      0.5,
+      24
+     ],
+     [
+      1.0,
+      9
+     ],
+     [
+      2.0,
+      4
+     ],
+     [
+      3.0,
+      1
+     ],
+     [
+      4.0,
+      0
+     ],
+     [
+      6.0,
+      0
+     ],
+     [
+      8.0,
+      0
+     ],
+     [
+      12.0,
+      0
+     ]
+    ]
+   },
+   "d2": {
+    "expected": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "exceed": [
+     [
+      0.01,
+      8
+     ],
+     [
+      0.1,
+      4
+     ],
+     [
+      0.25,
+      1
+     ],
+     [
+      0.5,
+      0
+     ],
+     [
+      1.0,
+      0
+     ],
+     [
+      2.0,
+      0
+     ],
+     [
+      3.0,
+      0
+     ],
+     [
+      4.0,
+      0
+     ],
+     [
+      6.0,
+      0
+     ],
+     [
+      8.0,
+      0
+     ],
+     [
+      12.0,
+      0
+     ]
+    ]
+   },
+   "d3": {
+    "expected": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "exceed": [
+     [
+      0.01,
+      5
+     ],
+     [
+      0.1,
+      2
+     ],
+     [
+      0.25,
+      0
+     ],
+     [
+      0.5,
+      0
+     ],
+     [
+      1.0,
+      0
+     ],
+     [
+      2.0,
+      0
+     ],
+     [
+      3.0,
+      0
+     ],
+     [
+      4.0,
+      0
+     ],
+     [
+      6.0,
+      0
+     ],
+     [
+      8.0,
+      0
+     ],
+     [
+      12.0,
+      0
+     ]
+    ]
+   },
+   "48": {
+    "expected": 0.1,
+    "low": 0.0,
+    "high": 0.9,
+    "exceed": [
+     [
+      0.01,
+      86
+     ],
+     [
+      0.1,
+      55
+     ],
+     [
+      0.25,
+      41
+     ],
+     [
+      0.5,
+      24
+     ],
+     [
+      1.0,
+      9
+     ],
+     [
+      2.0,
+      4
+     ],
+     [
+      3.0,
+      1
+     ],
+     [
+      4.0,
+      0
+     ],
+     [
+      6.0,
+      0
+     ],
+     [
+      8.0,
+      0
+     ],
+     [
+      12.0,
+      0
+     ]
+    ]
+   },
+   "72": {
+    "expected": 0.1,
+    "low": 0.0,
+    "high": 0.79,
+    "exceed": [
+     [
+      0.01,
+      86
+     ],
+     [
+      0.1,
+      64
+     ],
+     [
+      0.25,
+      40
+     ],
+     [
+      0.5,
+      20
+     ],
+     [
+      1.0,
+      7
+     ],
+     [
+      2.0,
+      2
+     ],
+     [
+      3.0,
+      0
+     ],
+     [
+      4.0,
+      0
+     ],
+     [
+      6.0,
+      0
+     ],
+     [
+      8.0,
+      0
+     ],
+     [
+      12.0,
+      0
+     ]
+    ]
+   }
+  }
+ },
+ "radar": {
+  "built": "2026-11-21T19:07:15+00:00",
+  "order": [
+   "hrrr",
+   "rrfs"
+  ],
+  "models": {
+   "hrrr": {
+    "label": "HRRR",
+    "note": "hourly",
+    "init": "2026-11-21T12:00:00+00:00",
+    "frames": [
+     {
+      "f": 1,
+      "valid": "2026-11-21T13:00:00+00:00",
+      "img": "radar/hrrr_f001.png"
+     },
+     {
+      "f": 2,
+      "valid": "2026-11-21T14:00:00+00:00",
+      "img": "radar/hrrr_f002.png"
+     },
+     {
+      "f": 3,
+      "valid": "2026-11-21T15:00:00+00:00",
+      "img": "radar/hrrr_f003.png"
+     },
+     {
+      "f": 4,
+      "valid": "2026-11-21T16:00:00+00:00",
+      "img": "radar/hrrr_f004.png"
+     },
+     {
+      "f": 5,
+      "valid": "2026-11-21T17:00:00+00:00",
+      "img": "radar/hrrr_f005.png"
+     },
+     {
+      "f": 6,
+      "valid": "2026-11-21T18:00:00+00:00",
+      "img": "radar/hrrr_f006.png"
+     },
+     {
+      "f": 7,
+      "valid": "2026-11-21T19:00:00+00:00",
+      "img": "radar/hrrr_f007.png"
+     },
+     {
+      "f": 8,
+      "valid": "2026-11-21T20:00:00+00:00",
+      "img": "radar/hrrr_f008.png"
+     },
+     {
+      "f": 9,
+      "valid": "2026-11-21T21:00:00+00:00",
+      "img": "radar/hrrr_f009.png"
+     },
+     {
+      "f": 10,
+      "valid": "2026-11-21T22:00:00+00:00",
+      "img": "radar/hrrr_f010.png"
+     },
+     {
+      "f": 11,
+      "valid": "2026-11-21T23:00:00+00:00",
+      "img": "radar/hrrr_f011.png"
+     },
+     {
+      "f": 12,
+      "valid": "2026-11-22T00:00:00+00:00",
+      "img": "radar/hrrr_f012.png"
+     },
+     {
+      "f": 13,
+      "valid": "2026-11-22T01:00:00+00:00",
+      "img": "radar/hrrr_f013.png"
+     },
+     {
+      "f": 14,
+      "valid": "2026-11-22T02:00:00+00:00",
+      "img": "radar/hrrr_f014.png"
+     },
+     {
+      "f": 15,
+      "valid": "2026-11-22T03:00:00+00:00",
+      "img": "radar/hrrr_f015.png"
+     },
+     {
+      "f": 16,
+      "valid": "2026-11-22T04:00:00+00:00",
+      "img": "radar/hrrr_f016.png"
+     },
+     {
+      "f": 17,
+      "valid": "2026-11-22T05:00:00+00:00",
+      "img": "radar/hrrr_f017.png"
+     },
+     {
+      "f": 18,
+      "valid": "2026-11-22T06:00:00+00:00",
+      "img": "radar/hrrr_f018.png"
+     },
+     {
+      "f": 19,
+      "valid": "2026-11-22T07:00:00+00:00",
+      "img": "radar/hrrr_f019.png"
+     },
+     {
+      "f": 20,
+      "valid": "2026-11-22T08:00:00+00:00",
+      "img": "radar/hrrr_f020.png"
+     },
+     {
+      "f": 21,
+      "valid": "2026-11-22T09:00:00+00:00",
+      "img": "radar/hrrr_f021.png"
+     },
+     {
+      "f": 22,
+      "valid": "2026-11-22T10:00:00+00:00",
+      "img": "radar/hrrr_f022.png"
+     },
+     {
+      "f": 23,
+      "valid": "2026-11-22T11:00:00+00:00",
+      "img": "radar/hrrr_f023.png"
+     },
+     {
+      "f": 24,
+      "valid": "2026-11-22T12:00:00+00:00",
+      "img": "radar/hrrr_f024.png"
+     },
+     {
+      "f": 25,
+      "valid": "2026-11-22T13:00:00+00:00",
+      "img": "radar/hrrr_f025.png"
+     },
+     {
+      "f": 26,
+      "valid": "2026-11-22T14:00:00+00:00",
+      "img": "radar/hrrr_f026.png"
+     },
+     {
+      "f": 27,
+      "valid": "2026-11-22T15:00:00+00:00",
+      "img": "radar/hrrr_f027.png"
+     },
+     {
+      "f": 28,
+      "valid": "2026-11-22T16:00:00+00:00",
+      "img": "radar/hrrr_f028.png"
+     },
+     {
+      "f": 29,
+      "valid": "2026-11-22T17:00:00+00:00",
+      "img": "radar/hrrr_f029.png"
+     },
+     {
+      "f": 30,
+      "valid": "2026-11-22T18:00:00+00:00",
+      "img": "radar/hrrr_f030.png"
+     },
+     {
+      "f": 31,
+      "valid": "2026-11-22T19:00:00+00:00",
+      "img": "radar/hrrr_f031.png"
+     },
+     {
+      "f": 32,
+      "valid": "2026-11-22T20:00:00+00:00",
+      "img": "radar/hrrr_f032.png"
+     },
+     {
+      "f": 33,
+      "valid": "2026-11-22T21:00:00+00:00",
+      "img": "radar/hrrr_f033.png"
+     },
+     {
+      "f": 34,
+      "valid": "2026-11-22T22:00:00+00:00",
+      "img": "radar/hrrr_f034.png"
+     },
+     {
+      "f": 35,
+      "valid": "2026-11-22T23:00:00+00:00",
+      "img": "radar/hrrr_f035.png"
+     },
+     {
+      "f": 36,
+      "valid": "2026-11-23T00:00:00+00:00",
+      "img": "radar/hrrr_f036.png"
+     },
+     {
+      "f": 37,
+      "valid": "2026-11-23T01:00:00+00:00",
+      "img": "radar/hrrr_f037.png"
+     },
+     {
+      "f": 38,
+      "valid": "2026-11-23T02:00:00+00:00",
+      "img": "radar/hrrr_f038.png"
+     },
+     {
+      "f": 39,
+      "valid": "2026-11-23T03:00:00+00:00",
+      "img": "radar/hrrr_f039.png"
+     },
+     {
+      "f": 40,
+      "valid": "2026-11-23T04:00:00+00:00",
+      "img": "radar/hrrr_f040.png"
+     },
+     {
+      "f": 41,
+      "valid": "2026-11-23T05:00:00+00:00",
+      "img": "radar/hrrr_f041.png"
+     },
+     {
+      "f": 42,
+      "valid": "2026-11-23T06:00:00+00:00",
+      "img": "radar/hrrr_f042.png"
+     },
+     {
+      "f": 43,
+      "valid": "2026-11-23T07:00:00+00:00",
+      "img": "radar/hrrr_f043.png"
+     },
+     {
+      "f": 44,
+      "valid": "2026-11-23T08:00:00+00:00",
+      "img": "radar/hrrr_f044.png"
+     },
+     {
+      "f": 45,
+      "valid": "2026-11-23T09:00:00+00:00",
+      "img": "radar/hrrr_f045.png"
+     },
+     {
+      "f": 46,
+      "valid": "2026-11-23T10:00:00+00:00",
+      "img": "radar/hrrr_f046.png"
+     },
+     {
+      "f": 47,
+      "valid": "2026-11-23T11:00:00+00:00",
+      "img": "radar/hrrr_f047.png"
+     },
+     {
+      "f": 48,
+      "valid": "2026-11-23T12:00:00+00:00",
+      "img": "radar/hrrr_f048.png"
+     }
+    ]
+   },
+   "rrfs": {
+    "label": "RRFS",
+    "note": "hourly",
+    "init": "2026-11-21T12:00:00+00:00",
+    "frames": [
+     {
+      "f": 1,
+      "valid": "2026-11-21T13:00:00+00:00",
+      "img": "radar/rrfs_f001.png"
+     },
+     {
+      "f": 2,
+      "valid": "2026-11-21T14:00:00+00:00",
+      "img": "radar/rrfs_f002.png"
+     },
+     {
+      "f": 3,
+      "valid": "2026-11-21T15:00:00+00:00",
+      "img": "radar/rrfs_f003.png"
+     },
+     {
+      "f": 4,
+      "valid": "2026-11-21T16:00:00+00:00",
+      "img": "radar/rrfs_f004.png"
+     },
+     {
+      "f": 5,
+      "valid": "2026-11-21T17:00:00+00:00",
+      "img": "radar/rrfs_f005.png"
+     },
+     {
+      "f": 6,
+      "valid": "2026-11-21T18:00:00+00:00",
+      "img": "radar/rrfs_f006.png"
+     },
+     {
+      "f": 7,
+      "valid": "2026-11-21T19:00:00+00:00",
+      "img": "radar/rrfs_f007.png"
+     },
+     {
+      "f": 8,
+      "valid": "2026-11-21T20:00:00+00:00",
+      "img": "radar/rrfs_f008.png"
+     },
+     {
+      "f": 9,
+      "valid": "2026-11-21T21:00:00+00:00",
+      "img": "radar/rrfs_f009.png"
+     },
+     {
+      "f": 10,
+      "valid": "2026-11-21T22:00:00+00:00",
+      "img": "radar/rrfs_f010.png"
+     },
+     {
+      "f": 11,
+      "valid": "2026-11-21T23:00:00+00:00",
+      "img": "radar/rrfs_f011.png"
+     },
+     {
+      "f": 12,
+      "valid": "2026-11-22T00:00:00+00:00",
+      "img": "radar/rrfs_f012.png"
+     },
+     {
+      "f": 13,
+      "valid": "2026-11-22T01:00:00+00:00",
+      "img": "radar/rrfs_f013.png"
+     },
+     {
+      "f": 14,
+      "valid": "2026-11-22T02:00:00+00:00",
+      "img": "radar/rrfs_f014.png"
+     },
+     {
+      "f": 15,
+      "valid": "2026-11-22T03:00:00+00:00",
+      "img": "radar/rrfs_f015.png"
+     },
+     {
+      "f": 16,
+      "valid": "2026-11-22T04:00:00+00:00",
+      "img": "radar/rrfs_f016.png"
+     },
+     {
+      "f": 17,
+      "valid": "2026-11-22T05:00:00+00:00",
+      "img": "radar/rrfs_f017.png"
+     },
+     {
+      "f": 18,
+      "valid": "2026-11-22T06:00:00+00:00",
+      "img": "radar/rrfs_f018.png"
+     },
+     {
+      "f": 19,
+      "valid": "2026-11-22T07:00:00+00:00",
+      "img": "radar/rrfs_f019.png"
+     },
+     {
+      "f": 20,
+      "valid": "2026-11-22T08:00:00+00:00",
+      "img": "radar/rrfs_f020.png"
+     },
+     {
+      "f": 21,
+      "valid": "2026-11-22T09:00:00+00:00",
+      "img": "radar/rrfs_f021.png"
+     },
+     {
+      "f": 22,
+      "valid": "2026-11-22T10:00:00+00:00",
+      "img": "radar/rrfs_f022.png"
+     },
+     {
+      "f": 23,
+      "valid": "2026-11-22T11:00:00+00:00",
+      "img": "radar/rrfs_f023.png"
+     },
+     {
+      "f": 24,
+      "valid": "2026-11-22T12:00:00+00:00",
+      "img": "radar/rrfs_f024.png"
+     },
+     {
+      "f": 25,
+      "valid": "2026-11-22T13:00:00+00:00",
+      "img": "radar/rrfs_f025.png"
+     },
+     {
+      "f": 26,
+      "valid": "2026-11-22T14:00:00+00:00",
+      "img": "radar/rrfs_f026.png"
+     },
+     {
+      "f": 27,
+      "valid": "2026-11-22T15:00:00+00:00",
+      "img": "radar/rrfs_f027.png"
+     },
+     {
+      "f": 28,
+      "valid": "2026-11-22T16:00:00+00:00",
+      "img": "radar/rrfs_f028.png"
+     },
+     {
+      "f": 29,
+      "valid": "2026-11-22T17:00:00+00:00",
+      "img": "radar/rrfs_f029.png"
+     },
+     {
+      "f": 30,
+      "valid": "2026-11-22T18:00:00+00:00",
+      "img": "radar/rrfs_f030.png"
+     },
+     {
+      "f": 31,
+      "valid": "2026-11-22T19:00:00+00:00",
+      "img": "radar/rrfs_f031.png"
+     },
+     {
+      "f": 32,
+      "valid": "2026-11-22T20:00:00+00:00",
+      "img": "radar/rrfs_f032.png"
+     },
+     {
+      "f": 33,
+      "valid": "2026-11-22T21:00:00+00:00",
+      "img": "radar/rrfs_f033.png"
+     },
+     {
+      "f": 34,
+      "valid": "2026-11-22T22:00:00+00:00",
+      "img": "radar/rrfs_f034.png"
+     },
+     {
+      "f": 35,
+      "valid": "2026-11-22T23:00:00+00:00",
+      "img": "radar/rrfs_f035.png"
+     },
+     {
+      "f": 36,
+      "valid": "2026-11-23T00:00:00+00:00",
+      "img": "radar/rrfs_f036.png"
+     },
+     {
+      "f": 37,
+      "valid": "2026-11-23T01:00:00+00:00",
+      "img": "radar/rrfs_f037.png"
+     },
+     {
+      "f": 38,
+      "valid": "2026-11-23T02:00:00+00:00",
+      "img": "radar/rrfs_f038.png"
+     },
+     {
+      "f": 39,
+      "valid": "2026-11-23T03:00:00+00:00",
+      "img": "radar/rrfs_f039.png"
+     },
+     {
+      "f": 40,
+      "valid": "2026-11-23T04:00:00+00:00",
+      "img": "radar/rrfs_f040.png"
+     },
+     {
+      "f": 41,
+      "valid": "2026-11-23T05:00:00+00:00",
+      "img": "radar/rrfs_f041.png"
+     },
+     {
+      "f": 42,
+      "valid": "2026-11-23T06:00:00+00:00",
+      "img": "radar/rrfs_f042.png"
+     },
+     {
+      "f": 43,
+      "valid": "2026-11-23T07:00:00+00:00",
+      "img": "radar/rrfs_f043.png"
+     },
+     {
+      "f": 44,
+      "valid": "2026-11-23T08:00:00+00:00",
+      "img": "radar/rrfs_f044.png"
+     },
+     {
+      "f": 45,
+      "valid": "2026-11-23T09:00:00+00:00",
+      "img": "radar/rrfs_f045.png"
+     },
+     {
+      "f": 46,
+      "valid": "2026-11-23T10:00:00+00:00",
+      "img": "radar/rrfs_f046.png"
+     },
+     {
+      "f": 47,
+      "valid": "2026-11-23T11:00:00+00:00",
+      "img": "radar/rrfs_f047.png"
+     },
+     {
+      "f": 48,
+      "valid": "2026-11-23T12:00:00+00:00",
+      "img": "radar/rrfs_f048.png"
+     },
+     {
+      "f": 49,
+      "valid": "2026-11-23T13:00:00+00:00",
+      "img": "radar/rrfs_f049.png"
+     },
+     {
+      "f": 50,
+      "valid": "2026-11-23T14:00:00+00:00",
+      "img": "radar/rrfs_f050.png"
+     },
+     {
+      "f": 51,
+      "valid": "2026-11-23T15:00:00+00:00",
+      "img": "radar/rrfs_f051.png"
+     },
+     {
+      "f": 52,
+      "valid": "2026-11-23T16:00:00+00:00",
+      "img": "radar/rrfs_f052.png"
+     },
+     {
+      "f": 53,
+      "valid": "2026-11-23T17:00:00+00:00",
+      "img": "radar/rrfs_f053.png"
+     },
+     {
+      "f": 54,
+      "valid": "2026-11-23T18:00:00+00:00",
+      "img": "radar/rrfs_f054.png"
+     },
+     {
+      "f": 55,
+      "valid": "2026-11-23T19:00:00+00:00",
+      "img": "radar/rrfs_f055.png"
+     },
+     {
+      "f": 56,
+      "valid": "2026-11-23T20:00:00+00:00",
+      "img": "radar/rrfs_f056.png"
+     },
+     {
+      "f": 57,
+      "valid": "2026-11-23T21:00:00+00:00",
+      "img": "radar/rrfs_f057.png"
+     },
+     {
+      "f": 58,
+      "valid": "2026-11-23T22:00:00+00:00",
+      "img": "radar/rrfs_f058.png"
+     },
+     {
+      "f": 59,
+      "valid": "2026-11-23T23:00:00+00:00",
+      "img": "radar/rrfs_f059.png"
+     },
+     {
+      "f": 60,
+      "valid": "2026-11-24T00:00:00+00:00",
+      "img": "radar/rrfs_f060.png"
+     },
+     {
+      "f": 61,
+      "valid": "2026-11-24T01:00:00+00:00",
+      "img": "radar/rrfs_f061.png"
+     },
+     {
+      "f": 62,
+      "valid": "2026-11-24T02:00:00+00:00",
+      "img": "radar/rrfs_f062.png"
+     },
+     {
+      "f": 63,
+      "valid": "2026-11-24T03:00:00+00:00",
+      "img": "radar/rrfs_f063.png"
+     },
+     {
+      "f": 64,
+      "valid": "2026-11-24T04:00:00+00:00",
+      "img": "radar/rrfs_f064.png"
+     },
+     {
+      "f": 65,
+      "valid": "2026-11-24T05:00:00+00:00",
+      "img": "radar/rrfs_f065.png"
+     },
+     {
+      "f": 66,
+      "valid": "2026-11-24T06:00:00+00:00",
+      "img": "radar/rrfs_f066.png"
+     },
+     {
+      "f": 67,
+      "valid": "2026-11-24T07:00:00+00:00",
+      "img": "radar/rrfs_f067.png"
+     },
+     {
+      "f": 68,
+      "valid": "2026-11-24T08:00:00+00:00",
+      "img": "radar/rrfs_f068.png"
+     },
+     {
+      "f": 69,
+      "valid": "2026-11-24T09:00:00+00:00",
+      "img": "radar/rrfs_f069.png"
+     },
+     {
+      "f": 70,
+      "valid": "2026-11-24T10:00:00+00:00",
+      "img": "radar/rrfs_f070.png"
+     },
+     {
+      "f": 71,
+      "valid": "2026-11-24T11:00:00+00:00",
+      "img": "radar/rrfs_f071.png"
+     },
+     {
+      "f": 72,
+      "valid": "2026-11-24T12:00:00+00:00",
+      "img": "radar/rrfs_f072.png"
+     }
+    ]
+   }
+  },
+  "extent": [
+   -88,
+   -74,
+   23,
+   33.5
+  ]
+ }
+}
